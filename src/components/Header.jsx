@@ -177,69 +177,32 @@ export function Header({ onOpenSettings }) {
         )}
       </div>
 
-      {/* Right Controls: Caregiver Switcher + PWA Install + Notification Status + Wake Window + Sync Status */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-        {/* PWA Install Button */}
-        {canInstallPWA && (
-          <button
-            className="header-pwa-install-btn"
-            onClick={installPWA}
-            title="Install Baby Tracker as a standalone mobile app"
-            id="pwa-install-btn"
-          >
-            <Download size={13} />
-            <span>Install</span>
-          </button>
-        )}
-
-        {/* Notification Tray Status (when timer is active) */}
-        {(Boolean(activeTimers.breast || activeTimers.sleep?.running || activeTimers.pump?.running) && notificationPermission !== 'granted') && (
-          <button
-            className="header-notification-prompt-btn"
-            onClick={requestNotificationPermission}
-            title="Show live timers in your Android notification tray while phone is locked"
-            id="notification-permission-btn"
-          >
-            <Bell size={13} />
-            <span>Enable Tray</span>
-          </button>
-        )}
-
-        {/* Caregiver Switcher Button */}
+      {/* Right Controls: Streamlined Caregiver & Sync Status */}
+      <div className="header-right-controls">
         <button
           className="header-caregiver-btn"
           onClick={() => openModal('CAREGIVER')}
-          title={`Active Caregiver: ${activeCaregiver?.name} (${activeCaregiver?.role}) - Tap to switch`}
+          title={`Active Caregiver: ${activeCaregiver?.name} (${activeCaregiver?.role}) · Tap to switch profile`}
           id="caregiver-switcher-btn"
         >
-          <div
-            className="header-caregiver-avatar"
-            style={{ backgroundColor: activeCaregiver?.color || 'var(--color-terracotta)' }}
-          >
-            {activeCaregiver?.name ? activeCaregiver.name.charAt(0).toUpperCase() : 'C'}
+          <div className="header-avatar-wrap">
+            <div
+              className="header-caregiver-avatar"
+              style={{ backgroundColor: activeCaregiver?.color || 'var(--color-terracotta)' }}
+            >
+              {activeCaregiver?.name ? activeCaregiver.name.charAt(0).toUpperCase() : 'C'}
+            </div>
+            {/* Live sync indicator dot on avatar */}
+            <span
+              className={`header-avatar-sync-dot status-${syncStatus}`}
+              title={syncStatus === 'connected' ? 'Synced with family backend' : syncStatus === 'connecting' ? 'Connecting...' : 'Offline'}
+            />
           </div>
+
           <div className="header-caregiver-text">
-            <span className="header-caregiver-role">{activeCaregiver?.role || 'Parent'}</span>
             <span className="header-caregiver-name">{activeCaregiver?.name || 'Caregiver'}</span>
           </div>
         </button>
-
-        {/* Live Sync Status Pill */}
-        <div
-          className={`header-sync-pill status-${syncStatus}`}
-          title={syncStatus === 'connected' ? 'Multi-device live sync active' : syncStatus === 'connecting' ? 'Connecting to backend server...' : 'Offline (Changes cached locally)'}
-        >
-          <span className="sync-pulse-dot" />
-          <span className="sync-label">
-            {syncStatus === 'connected' ? 'Synced' : syncStatus === 'connecting' ? 'Sync...' : 'Offline'}
-          </span>
-        </div>
-
-        {/* Wake Window Pill */}
-        <div className={`wake-window-pill status-${wakeStatus.status}`}>
-          <span className="wake-dot" />
-          <span>{wakeStatus.label}</span>
-        </div>
       </div>
     </header>
   );

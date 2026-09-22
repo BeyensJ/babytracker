@@ -240,12 +240,12 @@ export function TimelineItem({ event }) {
             ))}
           </div>
 
-          {event.note && <div className="item-note">"{event.note}"</div>}
+          {event.note && <div className="item-note">{event.note}</div>}
 
           {det.caregiver && (
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            <div className="item-caregiver-tag">
               <User size={11} />
-              Logged by {det.caregiver}
+              <span>Logged by {det.caregiver}</span>
             </div>
           )}
         </div>

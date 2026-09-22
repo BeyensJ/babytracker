@@ -67,33 +67,6 @@ export function ActiveTimersDock() {
           onUpdateStartTime={(newTs) => updateTimerStartTime('pump', newTs)}
         />
       )}
-
-      {/* Android Notification Tray Hint */}
-      {notificationPermission !== 'granted' && !dismissTrayHint && (
-        <div className="notification-tray-hint">
-          <div className="tray-hint-left">
-            <Bell size={13} color="var(--color-terracotta)" />
-            <span>Keep active timer in your Android notification tray while locked</span>
-          </div>
-          <div className="tray-hint-actions">
-            <button
-              type="button"
-              className="tray-enable-btn"
-              onClick={requestNotificationPermission}
-            >
-              Enable Tray
-            </button>
-            <button
-              type="button"
-              className="tray-dismiss-btn"
-              onClick={() => setDismissTrayHint(true)}
-              title="Dismiss hint"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

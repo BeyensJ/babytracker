@@ -2,10 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { calculateTrends } from '../../utils/trendsCalculator';
 import { formatDurationMs, formatVolume, formatWeight, formatLength } from '../../utils/formatters';
-import { Moon, Utensils, Sparkles, TrendingUp, Clock, Scale } from 'lucide-react';
+import { Moon, Utensils, Sparkles, TrendingUp, Clock, Scale, Plus } from 'lucide-react';
+import { WHOGrowthChart } from '../charts/WHOGrowthChart';
 
 export function TrendsView() {
-  const { events, activeChildId, preferences } = useApp();
+  const { events, activeChildId, preferences, openModal } = useApp();
   const [timeframe, setTimeframe] = useState(7); // 1, 7, 14, 30
 
   const trends = useMemo(() => {
@@ -203,42 +204,79 @@ export function TrendsView() {
         </div>
       </div>
 
-      {/* 4. Growth Trends (if available) */}
-      {trends.growth.length > 0 && (
-        <div className="trend-card">
-          <div className="trend-card-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div style={{ width: 30, height: 30, borderRadius: '50%', backgroundColor: 'var(--color-sage-light)', color: 'var(--color-sage)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Scale size={16} />
+      {/* 4. WHO Guidelines Growth Standards Chart */}
+      <WHOGrowthChart allEvents={events} />
+
+      {/* 5. Comprehensive Growth Log */}
+      {(() => {
+        const childGrowthEvents = events
+          .filter(e => e.type === 'GROWTH' && (!e.childKey || e.childKey === activeChildId))
+          .sort((a, b) => b.beginDt - a.beginDt);
+
+        if (childGrowthEvents.length === 0) return null;
+
+        return (
+          <div className="trend-card">
+            <div className="trend-card-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ width: 30, height: 30, borderRadius: '50%', backgroundColor: 'var(--color-sage-light)', color: 'var(--color-sage)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Scale size={16} />
+                </div>
+                <h3>Growth History</h3>
               </div>
-              <h3>Growth Log</h3>
+              <button
+                className="btn-secondary"
+                style={{ padding: '0.35rem 0.65rem', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                onClick={() => openModal('GROWTH')}
+              >
+                <Plus size={13} />
+                <span>Log Checkup</span>
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+              {childGrowthEvents.map((ev) => {
+                const det = ev.details || {};
+                return (
+                  <div
+                    key={ev.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.65rem 0.85rem',
+                      backgroundColor: 'var(--bg-input)',
+                      borderRadius: 'var(--radius-md)',
+                      fontSize: '0.84rem',
+                      cursor: 'pointer',
+                      transition: 'all var(--transition-fast)',
+                    }}
+                    onClick={() => openModal('GROWTH', ev)}
+                    title="Tap to edit this measurement"
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+                      <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {new Date(ev.beginDt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                      {det.caregiver && (
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
+                          Logged by {det.caregiver}
+                        </span>
+                      )}
+                    </div>
+
+                    <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                      {det.weightKg && isMetric ? `${det.weightKg} kg` : (det.weightLb ? formatWeight(det.weightLb, preferences.weightUnit) : '')}
+                      {det.heightCm && preferences.lengthUnit === 'cm' ? ` • ${det.heightCm} cm` : (det.heightIn ? ` • ${formatLength(det.heightIn, preferences.lengthUnit)}` : '')}
+                      {det.headCm && preferences.lengthUnit === 'cm' ? ` • Head: ${det.headCm} cm` : (det.headIn ? ` • Head: ${formatLength(det.headIn, preferences.lengthUnit)}` : '')}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {trends.growth.map((g, idx) => (
-              <div
-                key={idx}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  padding: '0.75rem',
-                  backgroundColor: 'var(--bg-card-subtle)',
-                  borderRadius: 'var(--radius-md)',
-                  fontSize: '0.85rem',
-                }}
-              >
-                <span>{new Date(g.date).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
-                <span style={{ fontWeight: 600 }}>
-                  {g.weightKg && isMetric ? `${g.weightKg} kg` : (g.weightLb ? formatWeight(g.weightLb, preferences.weightUnit) : '')}
-                  {g.heightCm && preferences.lengthUnit === 'cm' ? ` • ${g.heightCm} cm` : (g.heightIn ? ` • ${formatLength(g.heightIn, preferences.lengthUnit)}` : '')}
-                  {g.headCm && preferences.lengthUnit === 'cm' ? ` • Head: ${g.headCm} cm` : (g.headIn ? ` • Head: ${formatLength(g.headIn, preferences.lengthUnit)}` : '')}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
