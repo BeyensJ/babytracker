@@ -1,16 +1,33 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Milk, X } from 'lucide-react';
+import { triggerHaptic } from '../../utils/haptics';
+import { Milk, X, Plus, Minus, Calculator, Sparkles, Check } from 'lucide-react';
 
 export function BottleModal() {
   const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences } = useApp();
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
-  const isMetric = preferences.volumeUnit === 'ml';
+  const defaultUnit = preferences.volumeUnit === 'ml' ? 'ml' : 'oz';
 
-  const [volumeFloz, setVolumeFloz] = useState(() => {
-    return modalInitialData?.details?.volumeFloz || 4.0;
+  const [unit, setUnit] = useState(() => {
+    return modalInitialData?.details?.volumeUnit || defaultUnit;
   });
+
+  const [amount, setAmount] = useState(() => {
+    const rawFloz = modalInitialData?.details?.volumeFloz;
+    if (rawFloz !== undefined && rawFloz !== null) {
+      if (defaultUnit === 'ml') {
+        return Math.round(rawFloz * 29.5735);
+      }
+      return Math.round(rawFloz * 100) / 100;
+    }
+    return defaultUnit === 'ml' ? 120 : 4.0;
+  });
+
+  // Offered vs Leftover Subtraction Mode
+  const [calcMode, setCalcMode] = useState('DIRECT'); // 'DIRECT' | 'OFFERED_LEFT'
+  const [offeredAmount, setOfferedAmount] = useState(() => (unit === 'ml' ? 150 : 5.0));
+  const [leftoverAmount, setLeftoverAmount] = useState(0);
 
   const [milkType, setMilkType] = useState(() => {
     return modalInitialData?.details?.milkType || 'BREAST_MILK';
@@ -29,16 +46,62 @@ export function BottleModal() {
 
   if (activeModal !== 'BOTTLE') return null;
 
-  // Preset quick chips
-  const ozPresets = [2.0, 3.0, 3.5, 4.0, 4.5, 5.0, 6.0];
-  const mlPresets = [60, 90, 100, 120, 140, 150, 180];
+  const isMl = unit === 'ml';
+  const maxVolume = isMl ? 330 : 11.0;
 
-  const handleSelectPreset = (val) => {
-    if (isMetric) {
-      setVolumeFloz(Math.round((val / 29.5735) * 10) / 10);
+  // Presets
+  const mlPresets = [30, 60, 90, 120, 150, 180, 210, 240, 270, 300];
+  const ozPresets = [1.0, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 6.0, 8.0];
+
+  // Unit Switching
+  const handleToggleUnit = (newUnit) => {
+    if (newUnit === unit) return;
+    triggerHaptic('light', preferences?.haptics);
+    if (newUnit === 'ml') {
+      const converted = Math.round(amount * 29.5735);
+      setAmount(converted);
+      setOfferedAmount(Math.round(offeredAmount * 29.5735));
+      setLeftoverAmount(Math.round(leftoverAmount * 29.5735));
     } else {
-      setVolumeFloz(val);
+      const converted = Math.round((amount / 29.5735) * 100) / 100;
+      setAmount(converted);
+      setOfferedAmount(Math.round((offeredAmount / 29.5735) * 100) / 100);
+      setLeftoverAmount(Math.round((leftoverAmount / 29.5735) * 100) / 100);
     }
+    setUnit(newUnit);
+  };
+
+  // Adjust Amount by delta
+  const handleAdjust = (delta) => {
+    triggerHaptic('light', preferences?.haptics);
+    setAmount((prev) => {
+      const current = parseFloat(prev) || 0;
+      const next = isMl
+        ? Math.max(0, Math.min(maxVolume, Math.round(current + delta)))
+        : Math.max(0, Math.min(maxVolume, Math.round((current + delta) * 100) / 100));
+      return next;
+    });
+  };
+
+  // Preset Selection
+  const handleSelectPreset = (val) => {
+    triggerHaptic('light', preferences?.haptics);
+    setAmount(val);
+  };
+
+  // Subtraction updates
+  const handleOfferedChange = (val) => {
+    const off = parseFloat(val) || 0;
+    setOfferedAmount(off);
+    const drank = Math.max(0, off - (parseFloat(leftoverAmount) || 0));
+    setAmount(isMl ? Math.round(drank) : Math.round(drank * 100) / 100);
+  };
+
+  const handleLeftoverChange = (val) => {
+    const left = parseFloat(val) || 0;
+    setLeftoverAmount(left);
+    const drank = Math.max(0, (parseFloat(offeredAmount) || 0) - left);
+    setAmount(isMl ? Math.round(drank) : Math.round(drank * 100) / 100);
   };
 
   const handleSave = (e) => {
@@ -48,15 +111,24 @@ export function BottleModal() {
     dateObj.setHours(h, m, 0, 0);
     const beginDt = dateObj.getTime();
 
+    // Preserve exact fl oz conversion
+    const numAmount = parseFloat(amount) || 0;
+    const finalFloz = isMl ? numAmount / 29.5735 : numAmount;
+
     const eventPayload = {
       type: 'BOTTLE',
       beginDt,
       endDt: null,
       durationMs: 15 * 60 * 1000,
       details: {
-        volumeFloz: Number(volumeFloz),
+        volumeFloz: Math.round(finalFloz * 10000) / 10000,
+        volumeUnit: unit,
+        inputAmount: numAmount,
         milkType,
         formulaName: milkType === 'FORMULA' ? formulaName : '',
+        calcMode,
+        offeredAmount: calcMode === 'OFFERED_LEFT' ? offeredAmount : undefined,
+        leftoverAmount: calcMode === 'OFFERED_LEFT' ? leftoverAmount : undefined,
       },
       note,
     };
@@ -70,16 +142,18 @@ export function BottleModal() {
     closeModal();
   };
 
-  const displayVolume = isMetric
-    ? Math.round(volumeFloz * 29.5735)
-    : volumeFloz;
-
   return (
     <div className="modal-overlay" onClick={closeModal}>
-      <div className="modal-card" onClick={e => e.stopPropagation()}>
+      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-title-wrap">
-            <div className="modal-title-icon" style={{ backgroundColor: 'var(--color-caramel-light)', color: 'var(--color-caramel)' }}>
+            <div
+              className="modal-title-icon"
+              style={{
+                backgroundColor: 'var(--color-caramel-light)',
+                color: 'var(--color-caramel)',
+              }}
+            >
               <Milk size={18} />
             </div>
             <h2>{isEditing ? 'Edit Bottle' : 'Log Bottle Feed'}</h2>
@@ -91,21 +165,27 @@ export function BottleModal() {
 
         <form onSubmit={handleSave}>
           <div className="modal-body">
-            {/* Milk Type Toggle */}
+            {/* Milk Type Selection */}
             <div className="form-group">
               <label className="form-label">Milk Type</label>
               <div className="segmented-control">
                 <button
                   type="button"
                   className={`segmented-btn ${milkType === 'BREAST_MILK' ? 'active' : ''}`}
-                  onClick={() => setMilkType('BREAST_MILK')}
+                  onClick={() => {
+                    setMilkType('BREAST_MILK');
+                    triggerHaptic('light', preferences?.haptics);
+                  }}
                 >
                   Breast Milk
                 </button>
                 <button
                   type="button"
                   className={`segmented-btn ${milkType === 'FORMULA' ? 'active' : ''}`}
-                  onClick={() => setMilkType('FORMULA')}
+                  onClick={() => {
+                    setMilkType('FORMULA');
+                    triggerHaptic('light', preferences?.haptics);
+                  }}
                 >
                   Formula
                 </button>
@@ -121,53 +201,283 @@ export function BottleModal() {
                   className="form-input"
                   placeholder="e.g. Kendamil, Enfamil, Similac"
                   value={formulaName}
-                  onChange={e => setFormulaName(e.target.value)}
+                  onChange={(e) => setFormulaName(e.target.value)}
                 />
               </div>
             )}
 
-            {/* Volume Input */}
-            <div className="form-group">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label className="form-label">Amount</label>
-                <span style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--color-caramel)' }}>
-                  {displayVolume} {isMetric ? 'mL' : 'oz'}
-                </span>
+            {/* Precision Volume Hero Card */}
+            <div className="bottle-volume-card">
+              {/* Input Mode Selector */}
+              <div className="segmented-control bottle-mode-toggle">
+                <button
+                  type="button"
+                  className={`segmented-btn ${calcMode === 'DIRECT' ? 'active' : ''}`}
+                  onClick={() => {
+                    setCalcMode('DIRECT');
+                    triggerHaptic('light', preferences?.haptics);
+                  }}
+                >
+                  Exact Amount
+                </button>
+                <button
+                  type="button"
+                  className={`segmented-btn ${calcMode === 'OFFERED_LEFT' ? 'active' : ''}`}
+                  onClick={() => {
+                    setCalcMode('OFFERED_LEFT');
+                    triggerHaptic('light', preferences?.haptics);
+                  }}
+                >
+                  <Calculator size={13} style={{ marginRight: 4 }} />
+                  Offered & Left
+                </button>
               </div>
-              <input
-                type="range"
-                min={isMetric ? 30 : 0.5}
-                max={isMetric ? 300 : 10}
-                step={isMetric ? 10 : 0.5}
-                value={displayVolume}
-                onChange={e => {
-                  const val = parseFloat(e.target.value);
-                  setVolumeFloz(isMetric ? Math.round((val / 29.5735) * 10) / 10 : val);
-                }}
-                style={{ width: '100%', accentColor: 'var(--color-caramel)' }}
-              />
-            </div>
 
-            {/* Quick Presets */}
-            <div className="form-group">
-              <label className="form-label">Quick Presets</label>
-              <div className="chip-grid">
-                {(isMetric ? mlPresets : ozPresets).map(preset => {
-                  const isSelected = isMetric
-                    ? Math.abs(Math.round(volumeFloz * 29.5735) - preset) < 5
-                    : Math.abs(volumeFloz - preset) < 0.1;
+              {/* Calculator Box if in Offered/Left mode */}
+              {calcMode === 'OFFERED_LEFT' && (
+                <div className="bottle-calc-box">
+                  <div className="bottle-calc-row">
+                    <div className="bottle-calc-field">
+                      <label className="bottle-calc-label">Prepared / Offered ({unit})</label>
+                      <input
+                        type="number"
+                        className="bottle-calc-input"
+                        step={isMl ? '5' : '0.25'}
+                        min="0"
+                        value={offeredAmount}
+                        onChange={(e) => handleOfferedChange(e.target.value)}
+                        placeholder="150"
+                      />
+                    </div>
+                    <div className="bottle-calc-field">
+                      <label className="bottle-calc-label">Left in Bottle ({unit})</label>
+                      <input
+                        type="number"
+                        className="bottle-calc-input"
+                        step={isMl ? '5' : '0.25'}
+                        min="0"
+                        value={leftoverAmount}
+                        onChange={(e) => handleLeftoverChange(e.target.value)}
+                        placeholder="35"
+                      />
+                    </div>
+                  </div>
+                  <div className="bottle-calc-result">
+                    <span>Amount Baby Drank:</span>
+                    <strong style={{ fontSize: '1rem' }}>
+                      {amount} {unit}
+                    </strong>
+                  </div>
+                </div>
+              )}
 
-                  return (
+              {/* Direct Volume Controls */}
+              <div className="bottle-controls-col">
+                  {/* Hero Number Display with Unit Toggle */}
+                  <div className="bottle-hero-display">
                     <button
-                      key={preset}
                       type="button"
-                      className={`chip-btn ${isSelected ? 'selected' : ''}`}
-                      onClick={() => handleSelectPreset(preset)}
+                      className="bottle-step-btn primary"
+                      onClick={() => handleAdjust(isMl ? -5 : -0.25)}
+                      aria-label="Decrease amount"
+                      title={isMl ? 'Decrease by 5 mL' : 'Decrease by 0.25 oz'}
                     >
-                      {preset} {isMetric ? 'mL' : 'oz'}
+                      <Minus size={18} />
                     </button>
-                  );
-                })}
+
+                    <div className="bottle-number-input-wrap">
+                      <input
+                        type="number"
+                        className="bottle-number-input"
+                        step={isMl ? '1' : '0.1'}
+                        min="0"
+                        max={maxVolume}
+                        value={amount}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          setAmount(isNaN(val) ? '' : Math.max(0, Math.min(maxVolume, val)));
+                        }}
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      className="bottle-step-btn primary"
+                      onClick={() => handleAdjust(isMl ? 5 : 0.25)}
+                      aria-label="Increase amount"
+                      title={isMl ? 'Increase by 5 mL' : 'Increase by 0.25 oz'}
+                    >
+                      <Plus size={18} />
+                    </button>
+
+                    {/* Unit Switcher */}
+                    <div className="bottle-unit-toggle">
+                      <button
+                        type="button"
+                        className={`bottle-unit-btn ${unit === 'ml' ? 'active' : ''}`}
+                        onClick={() => handleToggleUnit('ml')}
+                      >
+                        mL
+                      </button>
+                      <button
+                        type="button"
+                        className={`bottle-unit-btn ${unit === 'oz' ? 'active' : ''}`}
+                        onClick={() => handleToggleUnit('oz')}
+                      >
+                        oz
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Micro Stepper Buttons */}
+                  <div className="bottle-steppers-row">
+                    {isMl ? (
+                      <>
+                        <button
+                          type="button"
+                          className="bottle-step-btn"
+                          onClick={() => handleAdjust(-30)}
+                          title="Minus 30 mL (1 oz scoop)"
+                        >
+                          -30
+                        </button>
+                        <button
+                          type="button"
+                          className="bottle-step-btn"
+                          onClick={() => handleAdjust(-10)}
+                        >
+                          -10
+                        </button>
+                        <button
+                          type="button"
+                          className="bottle-step-btn"
+                          onClick={() => handleAdjust(-1)}
+                          title="Fine adjust -1 mL"
+                        >
+                          -1
+                        </button>
+                        <button
+                          type="button"
+                          className="bottle-step-btn"
+                          onClick={() => handleAdjust(1)}
+                          title="Fine adjust +1 mL"
+                        >
+                          +1
+                        </button>
+                        <button
+                          type="button"
+                          className="bottle-step-btn"
+                          onClick={() => handleAdjust(10)}
+                        >
+                          +10
+                        </button>
+                        <button
+                          type="button"
+                          className="bottle-step-btn"
+                          onClick={() => handleAdjust(30)}
+                          title="Plus 30 mL (1 oz scoop)"
+                        >
+                          +30
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className="bottle-step-btn"
+                          onClick={() => handleAdjust(-1.0)}
+                        >
+                          -1.0
+                        </button>
+                        <button
+                          type="button"
+                          className="bottle-step-btn"
+                          onClick={() => handleAdjust(-0.5)}
+                        >
+                          -0.5
+                        </button>
+                        <button
+                          type="button"
+                          className="bottle-step-btn"
+                          onClick={() => handleAdjust(-0.1)}
+                          title="Fine adjust -0.1 oz"
+                        >
+                          -0.1
+                        </button>
+                        <button
+                          type="button"
+                          className="bottle-step-btn"
+                          onClick={() => handleAdjust(0.1)}
+                          title="Fine adjust +0.1 oz"
+                        >
+                          +0.1
+                        </button>
+                        <button
+                          type="button"
+                          className="bottle-step-btn"
+                          onClick={() => handleAdjust(0.5)}
+                        >
+                          +0.5
+                        </button>
+                        <button
+                          type="button"
+                          className="bottle-step-btn"
+                          onClick={() => handleAdjust(1.0)}
+                        >
+                          +1.0
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Range Slider Scrubber */}
+                  <div className="bottle-slider-wrap">
+                    <input
+                      type="range"
+                      className="bottle-range-slider"
+                      min="0"
+                      max={maxVolume}
+                      step={isMl ? '1' : '0.05'}
+                      value={amount || 0}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        setAmount(isMl ? Math.round(val) : Math.round(val * 100) / 100);
+                      }}
+                    />
+                    <div className="bottle-slider-labels">
+                      <span>0 {unit}</span>
+                      <span>
+                        {isMl ? '150 mL' : '5 oz'}
+                      </span>
+                      <span>
+                        {maxVolume} {unit}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+              {/* Quick Presets Chips */}
+              <div>
+                <label className="form-label" style={{ marginBottom: '0.4rem' }}>
+                  Quick Presets
+                </label>
+                <div className="chip-grid">
+                  {(isMl ? mlPresets : ozPresets).map((preset) => {
+                    const isSelected =
+                      Math.abs((parseFloat(amount) || 0) - preset) < (isMl ? 0.5 : 0.05);
+
+                    return (
+                      <button
+                        key={preset}
+                        type="button"
+                        className={`chip-btn ${isSelected ? 'selected caramel' : ''}`}
+                        onClick={() => handleSelectPreset(preset)}
+                      >
+                        {preset} {unit}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
@@ -178,7 +488,7 @@ export function BottleModal() {
                 type="time"
                 className="form-input"
                 value={timeStr}
-                onChange={e => setTimeStr(e.target.value)}
+                onChange={(e) => setTimeStr(e.target.value)}
               />
             </div>
 
@@ -190,7 +500,7 @@ export function BottleModal() {
                 rows="2"
                 placeholder="Drank smoothly, warm bottle, burped well..."
                 value={note}
-                onChange={e => setNote(e.target.value)}
+                onChange={(e) => setNote(e.target.value)}
               />
             </div>
           </div>
@@ -199,7 +509,11 @@ export function BottleModal() {
             <button type="button" className="btn-secondary" onClick={closeModal}>
               Cancel
             </button>
-            <button type="submit" className="btn-primary">
+            <button
+              type="submit"
+              className="btn-primary"
+              style={{ backgroundColor: 'var(--color-caramel)' }}
+            >
               {isEditing ? 'Save Changes' : 'Log Bottle'}
             </button>
           </div>
@@ -208,3 +522,4 @@ export function BottleModal() {
     </div>
   );
 }
+

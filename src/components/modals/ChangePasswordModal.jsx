@@ -77,107 +77,120 @@ export function ChangePasswordModal({ isOpen, onClose }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {/* Current Password */}
-          <div>
-            <label className="form-label">Current Password</label>
-            <div className="login-input-wrapper">
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {/* Current Password */}
+            <div>
+              <label className="form-label">Current Password</label>
+              <div className="login-input-wrapper">
+                <input
+                  type={showCurrent ? 'text' : 'password'}
+                  className="form-input"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password"
+                  required
+                />
+                <button
+                  type="button"
+                  className="login-toggle-password-btn"
+                  onClick={() => setShowCurrent(!showCurrent)}
+                  tabIndex={-1}
+                >
+                  {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            {/* New Password */}
+            <div>
+              <label className="form-label">New Password</label>
+              <div className="login-input-wrapper">
+                <input
+                  type={showNew ? 'text' : 'password'}
+                  className="form-input"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="At least 4 characters"
+                  required
+                />
+                <button
+                  type="button"
+                  className="login-toggle-password-btn"
+                  onClick={() => setShowNew(!showNew)}
+                  tabIndex={-1}
+                >
+                  {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label className="form-label">Confirm New Password</label>
               <input
-                type={showCurrent ? 'text' : 'password'}
+                type="password"
                 className="form-input"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="Enter current password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Re-enter new password"
                 required
               />
-              <button
-                type="button"
-                className="login-toggle-password-btn"
-                onClick={() => setShowCurrent(!showCurrent)}
-                tabIndex={-1}
+            </div>
+
+            {/* Feedback */}
+            {errorMessage && (
+              <div
+                style={{
+                  backgroundColor: 'var(--status-red-light)',
+                  color: 'var(--status-red)',
+                  padding: '0.65rem 0.85rem',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                }}
               >
-                {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-          </div>
+                <AlertCircle size={16} />
+                <span>{errorMessage}</span>
+              </div>
+            )}
 
-          {/* New Password */}
-          <div>
-            <label className="form-label">New Password</label>
-            <div className="login-input-wrapper">
-              <input
-                type={showNew ? 'text' : 'password'}
-                className="form-input"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="At least 4 characters"
-                required
-              />
-              <button
-                type="button"
-                className="login-toggle-password-btn"
-                onClick={() => setShowNew(!showNew)}
-                tabIndex={-1}
+            {successMessage && (
+              <div
+                style={{
+                  backgroundColor: 'var(--status-green-light)',
+                  color: 'var(--status-green)',
+                  padding: '0.65rem 0.85rem',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                }}
               >
-                {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
+                <Check size={16} />
+                <span>{successMessage}</span>
+              </div>
+            )}
           </div>
-
-          {/* Confirm Password */}
-          <div>
-            <label className="form-label">Confirm New Password</label>
-            <input
-              type="password"
-              className="form-input"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Re-enter new password"
-              required
-            />
-          </div>
-
-          {/* Feedback */}
-          {errorMessage && (
-            <div className="login-error-banner" style={{ margin: 0 }}>
-              <span>{errorMessage}</span>
-            </div>
-          )}
-
-          {successMessage && (
-            <div
-              style={{
-                backgroundColor: 'var(--status-green-light)',
-                color: 'var(--status-green)',
-                padding: '0.6rem 0.8rem',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-              }}
-            >
-              <Check size={16} />
-              <span>{successMessage}</span>
-            </div>
-          )}
 
           {/* Actions */}
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+          <div className="modal-footer">
             <button
               type="button"
-              className="btn btn-secondary"
+              className="btn-secondary"
               onClick={onClose}
-              style={{ flex: 1 }}
               disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="btn btn-primary"
-              style={{ flex: 1 }}
+              className="btn-primary"
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Updating...' : 'Update Password'}

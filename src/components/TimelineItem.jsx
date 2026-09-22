@@ -121,8 +121,9 @@ export function TimelineItem({ event }) {
           chips: [
             det.totalFloz
               ? formatVolume(det.totalFloz, preferences.volumeUnit)
-              : det.leftFloz || det.rightFloz
-              ? `L: ${det.leftFloz || 0}oz | R: ${det.rightFloz || 0}oz`
+              : '',
+            (det.leftFloz || det.rightFloz) && det.totalFloz !== (det.leftFloz || 0)
+              ? `L: ${formatVolume(det.leftFloz || 0, preferences.volumeUnit)} | R: ${formatVolume(det.rightFloz || 0, preferences.volumeUnit)}`
               : '',
             formatDurationMs(event.durationMs),
           ].filter(Boolean),

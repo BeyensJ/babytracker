@@ -627,6 +627,7 @@ export function AppProvider({ children }) {
     const p = activeTimers.pump;
     const now = Date.now();
     const start = p?.startMs || now - 15 * 60 * 1000;
+    const pumpSide = p?.side || 'BOTH';
 
     broadcastTimers(prev => {
       const next = { ...prev };
@@ -638,7 +639,11 @@ export function AppProvider({ children }) {
       beginDt: start,
       endDt: now,
       durationMs: Math.max(0, now - start),
-      details: { leftFloz: 2.0, rightFloz: 2.0 },
+      details: {
+        side: pumpSide,
+        leftFloz: pumpSide === 'RIGHT' ? 0 : 2.0,
+        rightFloz: pumpSide === 'LEFT' ? 0 : 2.0,
+      },
     });
   };
 

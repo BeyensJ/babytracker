@@ -293,6 +293,12 @@ export function CaregiverModal() {
             </button>
           </div>
         </div>
+
+        <div className="modal-footer">
+          <button type="button" className="btn-primary" onClick={closeModal} style={{ width: '100%' }}>
+            Done
+          </button>
+        </div>
       </div>
     </div>
   );

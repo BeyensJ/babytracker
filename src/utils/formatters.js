@@ -164,7 +164,7 @@ export function formatVolume(valFloz, unit = 'oz') {
     const ml = Math.round(valFloz * 29.5735);
     return `${ml} mL`;
   }
-  const rounded = Math.round(valFloz * 10) / 10;
+  const rounded = Math.round(valFloz * 100) / 100;
   return `${rounded} oz`;
 }
 
