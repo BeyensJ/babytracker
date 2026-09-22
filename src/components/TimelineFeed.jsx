@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { toDateKey, formatDateHeading } from '../utils/formatters';
 import { TimelineItem } from './TimelineItem';
-import { Sparkles, Calendar, Filter } from 'lucide-react';
+import { GroupedDayActivity } from './GroupedDayActivity';
+import { Sparkles, Calendar, Layers, Clock } from 'lucide-react';
 
 export function TimelineFeed({ limitDays = null }) {
   const { events, activeChildId, openModal } = useApp();
   const [activeFilter, setActiveFilter] = useState('ALL');
+  const [viewMode, setViewMode] = useState('grouped'); // 'grouped' | 'stream'
 
   // Filter by active child
   const childEvents = events.filter(e => !e.childKey || e.childKey === activeChildId);
@@ -47,22 +49,46 @@ export function TimelineFeed({ limitDays = null }) {
   return (
     <section className="timeline-section">
       <div className="timeline-header">
-        <div className="section-label" style={{ margin: 0 }}>
-          <span>Activity Timeline</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div className="section-label" style={{ margin: 0 }}>
+            <span>Activity Log</span>
+          </div>
+
+          {/* Grouped by Type vs Chronological Stream Toggle */}
+          <div className="feed-view-mode-toggle">
+            <button
+              className={`feed-mode-btn ${viewMode === 'grouped' ? 'active' : ''}`}
+              onClick={() => setViewMode('grouped')}
+              title="Group entries by type (Feeds, Sleep, Diapers, Other)"
+            >
+              <Layers size={13} />
+              <span>Grouped</span>
+            </button>
+            <button
+              className={`feed-mode-btn ${viewMode === 'stream' ? 'active' : ''}`}
+              onClick={() => setViewMode('stream')}
+              title="Chronological timeline stream"
+            >
+              <Clock size={13} />
+              <span>Stream</span>
+            </button>
+          </div>
         </div>
 
-        {/* Category Filters */}
-        <div className="timeline-filters">
-          {filters.map(f => (
-            <button
-              key={f.id}
-              className={`filter-chip ${activeFilter === f.id ? 'active' : ''}`}
-              onClick={() => setActiveFilter(f.id)}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
+        {/* Category Filters (visible when in stream mode or filtering) */}
+        {viewMode === 'stream' && (
+          <div className="timeline-filters">
+            {filters.map(f => (
+              <button
+                key={f.id}
+                className={`filter-chip ${activeFilter === f.id ? 'active' : ''}`}
+                onClick={() => setActiveFilter(f.id)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {dayKeys.length === 0 ? (
@@ -79,16 +105,27 @@ export function TimelineFeed({ limitDays = null }) {
           </button>
         </div>
       ) : (
-        dayKeys.map(dateKey => (
+        dayKeys.map((dateKey, dayIdx) => (
           <div key={dateKey} className="timeline-day-group">
             <div className="timeline-day-label">
               <Calendar size={14} color="var(--text-tertiary)" />
               <span>{formatDateHeading(dateKey)}</span>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', fontWeight: 400 }}>
+                ({groupedByDay[dateKey].length} {groupedByDay[dateKey].length === 1 ? 'entry' : 'entries'})
+              </span>
             </div>
 
-            {groupedByDay[dateKey].map(ev => (
-              <TimelineItem key={ev.id} event={ev} />
-            ))}
+            {viewMode === 'grouped' ? (
+              <GroupedDayActivity
+                dateKey={dateKey}
+                events={groupedByDay[dateKey]}
+                defaultExpanded={dayIdx === 0} // expand first/today by default
+              />
+            ) : (
+              groupedByDay[dateKey].map(ev => (
+                <TimelineItem key={ev.id} event={ev} />
+              ))
+            )}
           </div>
         ))
       )}

@@ -33,9 +33,10 @@ export function TrendsView() {
           { days: 7, label: '7 Days' },
           { days: 14, label: '14 Days' },
           { days: 30, label: '30 Days' },
+          { days: 'all', label: 'Lifetime' },
         ].map(t => (
           <button
-            key={t.days}
+            key={String(t.days)}
             className={`timeframe-btn ${timeframe === t.days ? 'active' : ''}`}
             onClick={() => setTimeframe(t.days)}
           >
@@ -54,7 +55,7 @@ export function TrendsView() {
             <h3>Sleep Patterns</h3>
           </div>
           <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-slate)' }}>
-            Avg {formatDurationMs(Math.round(trends.sleep.totalSleepMs / Math.max(1, timeframe)))} / day
+            Avg {formatDurationMs(Math.round(trends.sleep.totalSleepMs / Math.max(1, trends.timeframeDays)))} / day
           </span>
         </div>
 
@@ -78,10 +79,10 @@ export function TrendsView() {
         {/* Daily Sleep Bar Chart */}
         <div style={{ marginTop: '0.5rem' }}>
           <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
-            Daily Sleep (Hours)
+            {trends.seriesAggregation === 'weekly' ? 'Weekly Avg Daily Sleep (Hours)' : 'Daily Sleep (Hours)'}
           </div>
           <MiniBarChart
-            data={trends.dailySeries.map(d => ({ label: d.label, value: d.sleepHours }))}
+            data={trends.dailySeries.map(d => ({ label: d.label, subLabel: d.subLabel, value: d.sleepHours }))}
             color="var(--color-slate)"
             unit="h"
           />
@@ -145,11 +146,14 @@ export function TrendsView() {
         {/* Daily Feed Chart: Adaptive for Nursing or Bottle */}
         <div style={{ marginTop: '0.5rem' }}>
           <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
-            {trends.feed.breastSessions > trends.feed.bottleCount ? 'Daily Nursing (Minutes)' : `Daily Bottle Volume (${isMetric ? 'mL' : 'oz'})`}
+            {trends.feed.breastSessions > trends.feed.bottleCount
+              ? (trends.seriesAggregation === 'weekly' ? 'Weekly Avg Daily Nursing (Minutes)' : 'Daily Nursing (Minutes)')
+              : (trends.seriesAggregation === 'weekly' ? `Weekly Avg Daily Bottle (${isMetric ? 'mL' : 'oz'})` : `Daily Bottle Volume (${isMetric ? 'mL' : 'oz'})`)}
           </div>
           <MiniBarChart
             data={trends.dailySeries.map(d => ({
               label: d.label,
+              subLabel: d.subLabel,
               value: trends.feed.breastSessions > trends.feed.bottleCount
                 ? d.nursingMinutes
                 : (isMetric ? Math.round(d.bottleFloz * 29.5735) : d.bottleFloz),
@@ -194,10 +198,10 @@ export function TrendsView() {
         {/* Daily Diapers Bar Chart */}
         <div style={{ marginTop: '0.5rem' }}>
           <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
-            Daily Diapers
+            {trends.seriesAggregation === 'weekly' ? 'Weekly Avg Daily Diapers' : 'Daily Diapers'}
           </div>
           <MiniBarChart
-            data={trends.dailySeries.map(d => ({ label: d.label, value: d.diapers }))}
+            data={trends.dailySeries.map(d => ({ label: d.label, subLabel: d.subLabel, value: d.diapers }))}
             color="var(--color-caramel)"
             unit=""
           />
@@ -284,64 +288,93 @@ export function TrendsView() {
 /**
  * Responsive Pure SVG Mini Bar Chart
  */
+/**
+ * Responsive Pure SVG Mini Bar Chart with horizontal scroll for longer periods
+ */
 function MiniBarChart({ data, color, unit }) {
   if (!data || data.length === 0) return null;
 
   const maxVal = Math.max(1, ...data.map(d => d.value));
   const chartHeight = 80;
+  // If more than 7 bars, ensure each bar has at least 32px so bars never get squashed
+  const needsScroll = data.length > 7;
+  const itemMinWidth = needsScroll ? (data.length > 14 ? 32 : 36) : 'auto';
 
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.4rem', height: chartHeight + 25, paddingTop: 10 }}>
-      {data.map((item, idx) => {
-        const heightPct = Math.round((item.value / maxVal) * 100);
-        const barHeight = Math.max(4, Math.round((heightPct / 100) * chartHeight));
+    <div className="chart-scroll-wrapper">
+      <div
+        className="mini-bar-chart-track"
+        style={{
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: data.length > 14 ? '0.3rem' : '0.45rem',
+          height: chartHeight + 30,
+          paddingTop: 10,
+          paddingBottom: 4,
+          minWidth: needsScroll ? `${data.length * (data.length > 14 ? 34 : 38)}px` : '100%',
+        }}
+      >
+        {data.map((item, idx) => {
+          const heightPct = Math.round((item.value / maxVal) * 100);
+          const barHeight = Math.max(4, Math.round((heightPct / 100) * chartHeight));
 
-        return (
-          <div
-            key={idx}
-            style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              height: '100%',
-              justifyContent: 'flex-end',
-              gap: '0.25rem',
-            }}
-          >
-            <div style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-              {item.value > 0 ? `${item.value}` : ''}
-            </div>
-
+          return (
             <div
+              key={idx}
               style={{
-                width: '100%',
-                maxWidth: 24,
-                height: barHeight,
-                backgroundColor: color,
-                borderRadius: '4px 4px 0 0',
-                opacity: item.value > 0 ? 0.9 : 0.2,
-                transition: 'height 0.3s ease',
+                flex: needsScroll ? '0 0 auto' : 1,
+                width: needsScroll ? itemMinWidth : 'auto',
+                minWidth: itemMinWidth,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                height: '100%',
+                justifyContent: 'flex-end',
+                gap: '0.2rem',
               }}
-              title={`${item.label}: ${item.value} ${unit}`}
-            />
-
-            <div
-              style={{
-                fontSize: '0.65rem',
-                color: 'var(--text-tertiary)',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                width: '100%',
-                textAlign: 'center',
-              }}
+              title={`${item.label}${item.subLabel ? ` (${item.subLabel})` : ''}: ${item.value} ${unit}`}
             >
-              {item.label}
+              <div style={{ fontSize: '0.66rem', fontWeight: 700, color: 'var(--text-secondary)', lineHeight: 1 }}>
+                {item.value > 0 ? `${item.value}` : ''}
+              </div>
+
+              <div
+                style={{
+                  width: '100%',
+                  maxWidth: needsScroll ? 22 : 26,
+                  height: barHeight,
+                  backgroundColor: color,
+                  borderRadius: '4px 4px 0 0',
+                  opacity: item.value > 0 ? 0.9 : 0.2,
+                  transition: 'height 0.3s ease',
+                }}
+              />
+
+              <div
+                style={{
+                  fontSize: '0.66rem',
+                  color: 'var(--text-tertiary)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  width: '100%',
+                  textAlign: 'center',
+                  fontWeight: 600,
+                  lineHeight: 1.1,
+                  marginTop: '0.1rem',
+                }}
+              >
+                {item.label}
+              </div>
+              {item.subLabel && (
+                <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', lineHeight: 1, opacity: 0.8 }}>
+                  {item.subLabel}
+                </div>
+              )}
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }

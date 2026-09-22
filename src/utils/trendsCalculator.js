@@ -4,22 +4,39 @@
  */
 
 export function calculateTrends(events, days = 7, childKey = null) {
-  const numDays = typeof days === 'number' ? days : (parseInt(String(days).replace(/[^0-9]/g, ''), 10) || 7);
+  const isLifetime = days === 'all' || days === 'lifetime';
   const nowMs = Date.now();
   const dayMs = 24 * 60 * 60 * 1000;
-  const windowStartMs = nowMs - numDays * dayMs;
 
-  // Filter events by child and timeframe
-  const filtered = events.filter(ev => {
+  // Filter events by child first
+  const childEvents = events.filter(ev => {
     if (childKey && ev.childKey && ev.childKey !== childKey) return false;
-    return ev.beginDt >= windowStartMs;
+    return true;
   });
+
+  let numDays = 7;
+  let windowStartMs = nowMs - 7 * dayMs;
+
+  if (isLifetime) {
+    if (childEvents.length > 0) {
+      const earliestMs = Math.min(...childEvents.map(e => e.beginDt));
+      numDays = Math.max(1, Math.ceil((nowMs - earliestMs) / dayMs));
+      windowStartMs = earliestMs;
+    }
+  } else {
+    numDays = typeof days === 'number' ? days : (parseInt(String(days).replace(/[^0-9]/g, ''), 10) || 7);
+    windowStartMs = nowMs - numDays * dayMs;
+  }
+
+  // Filter by timeframe
+  const filtered = childEvents.filter(ev => ev.beginDt >= windowStartMs);
 
   // Sort chronologically ascending to calculate intervals and gaps
   const sorted = [...filtered].sort((a, b) => a.beginDt - b.beginDt);
 
   const stats = {
     timeframeDays: numDays,
+    isLifetime,
     eventCount: filtered.length,
     feed: {
       totalCount: 0,
@@ -180,43 +197,108 @@ export function calculateTrends(events, days = 7, childKey = null) {
     stats.sleep.avgWakeWindowMs = Math.round(sum / stats.sleep.wakeWindows.length);
   }
 
-  stats.diaper.avgPerDay = Math.round((stats.diaper.total / Math.max(1, days)) * 10) / 10;
+  stats.diaper.avgPerDay = Math.round((stats.diaper.total / Math.max(1, numDays)) * 10) / 10;
 
-  // Build daily series for the last `days` days
-  const dayBuckets = {};
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(nowMs - i * dayMs);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const label = d.toLocaleDateString([], { weekday: 'narrow', month: 'numeric', day: 'numeric' });
-    dayBuckets[key] = {
-      dateKey: key,
-      label,
-      sleepHours: 0,
-      bottleFloz: 0,
-      nursingMinutes: 0,
-      diapers: 0,
-    };
-  }
+  // Build chart series: weekly aggregation if lifetime > 21 days, otherwise daily
+  if (isLifetime && numDays > 21) {
+    const numWeeks = Math.ceil(numDays / 7);
+    const weeklyBuckets = [];
 
-  sorted.forEach(ev => {
-    const d = new Date(ev.beginDt);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    if (!dayBuckets[key]) return;
+    for (let w = 0; w < numWeeks; w++) {
+      const wStart = windowStartMs + w * 7 * dayMs;
+      const wEnd = Math.min(nowMs, wStart + 7 * dayMs);
+      const daysInBucket = Math.max(1, Math.round((wEnd - wStart) / dayMs));
+      const startDate = new Date(wStart);
+      const startLabel = `${startDate.getMonth() + 1}/${startDate.getDate()}`;
 
-    if (ev.type === 'SLEEP') {
-      const hours = (ev.durationMs || 0) / 3600000;
-      dayBuckets[key].sleepHours = Math.round((dayBuckets[key].sleepHours + hours) * 10) / 10;
-    } else if (ev.type === 'BOTTLE' || ev.type === 'COMBO') {
-      dayBuckets[key].bottleFloz = Math.round((dayBuckets[key].bottleFloz + (ev.details?.volumeFloz || 0)) * 10) / 10;
-    } else if (ev.type === 'BREAST') {
-      const mins = ((ev.details?.leftDurationMs || 0) + (ev.details?.rightDurationMs || 0) || ev.durationMs || 0) / 60000;
-      dayBuckets[key].nursingMinutes += Math.round(mins);
-    } else if (ev.type === 'DIAPER') {
-      dayBuckets[key].diapers++;
+      weeklyBuckets.push({
+        bucketKey: `w_${w}`,
+        wStart,
+        wEnd,
+        daysCount: daysInBucket,
+        label: `W${w + 1}`,
+        subLabel: startLabel,
+        totalSleepHours: 0,
+        totalBottleFloz: 0,
+        totalNursingMinutes: 0,
+        totalDiapers: 0,
+        sleepHours: 0,
+        bottleFloz: 0,
+        nursingMinutes: 0,
+        diapers: 0,
+      });
     }
-  });
 
-  stats.dailySeries = Object.values(dayBuckets);
+    sorted.forEach(ev => {
+      const t = ev.beginDt;
+      const bucket = weeklyBuckets.find(b => t >= b.wStart && t < b.wEnd);
+      if (!bucket) return;
+
+      if (ev.type === 'SLEEP') {
+        bucket.totalSleepHours += (ev.durationMs || 0) / 3600000;
+      } else if (ev.type === 'BOTTLE' || ev.type === 'COMBO') {
+        bucket.totalBottleFloz += ev.details?.volumeFloz || 0;
+      } else if (ev.type === 'BREAST') {
+        const mins = ((ev.details?.leftDurationMs || 0) + (ev.details?.rightDurationMs || 0) || ev.durationMs || 0) / 60000;
+        bucket.totalNursingMinutes += mins;
+      } else if (ev.type === 'DIAPER') {
+        bucket.totalDiapers++;
+      }
+    });
+
+    // Compute daily averages for each week
+    weeklyBuckets.forEach(b => {
+      const dCount = Math.max(1, b.daysCount);
+      b.sleepHours = Math.round((b.totalSleepHours / dCount) * 10) / 10;
+      b.bottleFloz = Math.round((b.totalBottleFloz / dCount) * 10) / 10;
+      b.nursingMinutes = Math.round(b.totalNursingMinutes / dCount);
+      b.diapers = Math.round((b.totalDiapers / dCount) * 10) / 10;
+    });
+
+    stats.dailySeries = weeklyBuckets;
+    stats.seriesAggregation = 'weekly';
+  } else {
+    const dayBuckets = {};
+    const effectiveDays = Math.min(numDays, 30);
+
+    for (let i = effectiveDays - 1; i >= 0; i--) {
+      const d = new Date(nowMs - i * dayMs);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const label = effectiveDays <= 7
+        ? d.toLocaleDateString([], { weekday: 'narrow', month: 'numeric', day: 'numeric' })
+        : `${d.getMonth() + 1}/${d.getDate()}`;
+
+      dayBuckets[key] = {
+        dateKey: key,
+        label,
+        sleepHours: 0,
+        bottleFloz: 0,
+        nursingMinutes: 0,
+        diapers: 0,
+      };
+    }
+
+    sorted.forEach(ev => {
+      const d = new Date(ev.beginDt);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      if (!dayBuckets[key]) return;
+
+      if (ev.type === 'SLEEP') {
+        const hours = (ev.durationMs || 0) / 3600000;
+        dayBuckets[key].sleepHours = Math.round((dayBuckets[key].sleepHours + hours) * 10) / 10;
+      } else if (ev.type === 'BOTTLE' || ev.type === 'COMBO') {
+        dayBuckets[key].bottleFloz = Math.round((dayBuckets[key].bottleFloz + (ev.details?.volumeFloz || 0)) * 10) / 10;
+      } else if (ev.type === 'BREAST') {
+        const mins = ((ev.details?.leftDurationMs || 0) + (ev.details?.rightDurationMs || 0) || ev.durationMs || 0) / 60000;
+        dayBuckets[key].nursingMinutes += Math.round(mins);
+      } else if (ev.type === 'DIAPER') {
+        dayBuckets[key].diapers++;
+      }
+    });
+
+    stats.dailySeries = Object.values(dayBuckets);
+    stats.seriesAggregation = 'daily';
+  }
 
   return stats;
 }
