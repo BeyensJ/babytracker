@@ -1,0 +1,169 @@
+import React, { useState } from 'react';
+import { Clock, Play } from 'lucide-react';
+
+/**
+ * Reusable component for starting a live timer with custom start time options:
+ * - "Now" (default 0m offset)
+ * - Quick presets: 5m ago, 10m ago, 15m ago, 30m ago
+ * - Exact time input (HH:MM)
+ */
+export function TimerStartCard({
+  title = 'Start Live Timer',
+  subtitle = 'Track in real time',
+  icon: Icon,
+  iconColor = 'var(--color-terracotta)',
+  iconBg = 'var(--color-terracotta-light)',
+  actions = [], // e.g. [{ id, label, side, className, style }]
+  onStart, // (startTs, action) => void
+}) {
+  const [offsetMinutes, setOffsetMinutes] = useState(0);
+  const [timeStr, setTimeStr] = useState(() => {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  });
+
+  const handleSelectOffset = (mins) => {
+    setOffsetMinutes(mins);
+    const target = new Date(Date.now() - mins * 60000);
+    const h = String(target.getHours()).padStart(2, '0');
+    const m = String(target.getMinutes()).padStart(2, '0');
+    setTimeStr(`${h}:${m}`);
+  };
+
+  const handleManualTimeChange = (e) => {
+    const val = e.target.value;
+    setTimeStr(val);
+    if (!val) return;
+    const [h, m] = val.split(':').map(Number);
+    const d = new Date();
+    d.setHours(h, m, 0, 0);
+    if (d.getTime() > Date.now() + 60000) {
+      d.setDate(d.getDate() - 1);
+    }
+    const diffMins = Math.round((Date.now() - d.getTime()) / 60000);
+    setOffsetMinutes(diffMins >= 0 ? diffMins : 0);
+  };
+
+  const getComputedStartTs = () => {
+    if (!timeStr) return Date.now();
+    const [h, m] = timeStr.split(':').map(Number);
+    const d = new Date();
+    d.setHours(h, m, 0, 0);
+    if (d.getTime() > Date.now() + 60000) {
+      d.setDate(d.getDate() - 1);
+    }
+    return d.getTime();
+  };
+
+  const handleTrigger = (action) => {
+    const startTs = getComputedStartTs();
+    if (onStart) {
+      onStart(startTs, action);
+    }
+  };
+
+  const elapsedPreviewMinutes = Math.max(0, Math.round((Date.now() - getComputedStartTs()) / 60000));
+
+  return (
+    <div className="timer-start-card">
+      {/* Card Header */}
+      <div className="timer-start-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {Icon && (
+            <div className="timer-start-icon" style={{ backgroundColor: iconBg, color: iconColor }}>
+              <Icon size={16} />
+            </div>
+          )}
+          <div>
+            <div className="timer-start-title">{title}</div>
+            <div className="timer-start-subtitle">{subtitle}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Starting Time Selection Controls */}
+      <div className="timer-start-controls">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+            <Clock size={13} />
+            <span>Started at:</span>
+            <input
+              type="time"
+              className="timer-time-input"
+              value={timeStr}
+              onChange={handleManualTimeChange}
+              title="Set exact start time"
+              id="timer-start-time-input"
+            />
+          </div>
+
+          {elapsedPreviewMinutes > 0 ? (
+            <span className="timer-start-preview-pill active">
+              Starts with {elapsedPreviewMinutes}m elapsed
+            </span>
+          ) : (
+            <span className="timer-start-preview-pill">
+              Starts now (00:00)
+            </span>
+          )}
+        </div>
+
+        {/* Quick Offset Presets */}
+        <div className="timer-quick-pills">
+          <button
+            type="button"
+            className={`timer-quick-pill ${offsetMinutes === 0 ? 'active' : ''}`}
+            onClick={() => handleSelectOffset(0)}
+          >
+            Now
+          </button>
+          <button
+            type="button"
+            className={`timer-quick-pill ${offsetMinutes === 5 ? 'active' : ''}`}
+            onClick={() => handleSelectOffset(5)}
+          >
+            5m ago
+          </button>
+          <button
+            type="button"
+            className={`timer-quick-pill ${offsetMinutes === 10 ? 'active' : ''}`}
+            onClick={() => handleSelectOffset(10)}
+          >
+            10m ago
+          </button>
+          <button
+            type="button"
+            className={`timer-quick-pill ${offsetMinutes === 15 ? 'active' : ''}`}
+            onClick={() => handleSelectOffset(15)}
+          >
+            15m ago
+          </button>
+          <button
+            type="button"
+            className={`timer-quick-pill ${offsetMinutes === 30 ? 'active' : ''}`}
+            onClick={() => handleSelectOffset(30)}
+          >
+            30m ago
+          </button>
+        </div>
+      </div>
+
+      {/* Trigger Action Buttons */}
+      <div className="timer-start-actions">
+        {actions.map((act, i) => (
+          <button
+            key={i}
+            type="button"
+            className={act.className || 'btn-primary'}
+            style={act.style}
+            onClick={() => handleTrigger(act)}
+            id={act.id}
+          >
+            <Play size={13} style={{ marginRight: 4 }} />
+            {act.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}

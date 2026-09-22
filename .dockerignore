@@ -1,0 +1,11 @@
+node_modules
+dist
+data/*.json
+data/*_backup*
+.git
+.gitignore
+.gemini
+.agents
+*.log
+npm-debug.log*
+.DS_Store

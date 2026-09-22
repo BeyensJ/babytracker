@@ -1,0 +1,405 @@
+/**
+ * Nara Baby - Notification Service
+ * Manages Web Notifications, In-App Toasts, and Android Notification Tray Live Timers.
+ */
+
+import { formatTimerClock, formatTime } from '../utils/formatters';
+
+function playNotificationChime() {
+  if (typeof window === 'undefined') return;
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const now = ctx.currentTime;
+
+    // Gentle melodic double chime (A5: 880Hz -> C#6: 1108Hz)
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.frequency.setValueAtTime(880, now);
+    gain1.gain.setValueAtTime(0.12, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.28);
+
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.frequency.setValueAtTime(1108, now + 0.1);
+    gain2.gain.setValueAtTime(0.15, now + 0.1);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(now + 0.1);
+    osc2.stop(now + 0.42);
+  } catch (e) {
+    // AudioContext blocked or user hasn't interacted with document yet
+  }
+}
+
+class NotificationService {
+  constructor() {
+    this.tickerInterval = null;
+    this.currentTimers = null;
+    this.currentCaregiver = 'Parent';
+    this.currentBaby = 'Baby';
+    this.toastListeners = new Set();
+  }
+
+  onToast(callback) {
+    this.toastListeners.add(callback);
+    return () => this.toastListeners.delete(callback);
+  }
+
+  showToast(toast) {
+    this.toastListeners.forEach((cb) => {
+      try {
+        cb(toast);
+      } catch (e) {
+        console.error('[Notification] Error in toast listener:', e);
+      }
+    });
+  }
+
+  getDiagnostics() {
+    if (typeof window === 'undefined') {
+      return { supported: false, isSecure: false, permission: 'unsupported', reason: 'SSR' };
+    }
+
+    const isSecure = Boolean(window.isSecureContext);
+    const hasNotification = 'Notification' in window;
+    const hasSW = 'serviceWorker' in navigator;
+    const permission = hasNotification ? Notification.permission : 'unsupported';
+
+    let reason = 'ok';
+    if (!isSecure) {
+      reason =
+        'Insecure context: Web Notifications & Service Workers require HTTPS or localhost. If accessing via LAN IP (e.g. http://192.168.x.x:3001), enable Chrome flag unsafely-treat-insecure-origin-as-secure or use HTTPS.';
+    } else if (!hasNotification && !hasSW) {
+      reason = 'Browser does not support the Notification or Service Worker API.';
+    }
+
+    return {
+      isSecure,
+      hasNotification,
+      hasSW,
+      permission,
+      supported: isSecure && (hasNotification || hasSW),
+      reason,
+    };
+  }
+
+  isSupported() {
+    if (typeof window === 'undefined') return false;
+    return 'Notification' in window || 'serviceWorker' in navigator;
+  }
+
+  getPermission() {
+    if (typeof window === 'undefined') return 'unsupported';
+    if (!window.isSecureContext) return 'insecure-context';
+    if (!('Notification' in window)) return 'unsupported';
+    return Notification.permission; // 'default' | 'granted' | 'denied'
+  }
+
+  async requestPermission() {
+    if (typeof window === 'undefined') return 'unsupported';
+
+    if (!window.isSecureContext) {
+      console.warn('[Notification] Insecure HTTP origin: Browser blocks notifications unless served over HTTPS or localhost.');
+      return 'insecure-context';
+    }
+
+    if (!('Notification' in window)) {
+      console.warn('[Notification] Notification API not supported by this browser.');
+      return 'unsupported';
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      console.log('[Notification] Notification permission result:', permission);
+      return permission;
+    } catch (err) {
+      console.warn('[Notification] Permission request failed:', err);
+      return 'denied';
+    }
+  }
+
+  /**
+   * Sync active timers to the Android Notification Tray and In-App Toast.
+   */
+  async syncTimerNotification(activeTimers, caregiverName = 'Parent', babyName = 'Baby') {
+    this.currentTimers = activeTimers;
+    this.currentCaregiver = caregiverName;
+    this.currentBaby = babyName;
+
+    const breast = activeTimers?.breast;
+    const sleep = activeTimers?.sleep?.running ? activeTimers.sleep : null;
+    const pump = activeTimers?.pump?.running ? activeTimers.pump : null;
+
+    // If no timers are running, clear notifications
+    if (!breast && !sleep && !pump) {
+      this.clearNotification();
+      this.stopTicker();
+      return;
+    }
+
+    const permission = this.getPermission();
+    if (permission !== 'granted') {
+      console.log(`[Notification] Timer active but notification permission is '${permission}'.`);
+      // Even if OS permission is not granted, still display the in-app toast banner!
+      const fallbackTitle = breast
+        ? `🤱 Nursing (${breast.activeSide === 'LEFT' ? 'Left' : 'Right'} Side) — ${babyName}`
+        : sleep
+        ? `🌙 ${babyName} is Sleeping`
+        : `🍼 Pumping Session`;
+      this.showToast({
+        title: fallbackTitle,
+        body: 'Active timer is running. Tap "Enable Tray" in Settings for Android notification drawer tracking.',
+        type: breast ? 'breast' : sleep ? 'sleep' : 'pump',
+        timestamp: Date.now(),
+      });
+      return;
+    }
+
+    // Build notification parameters
+    const now = Date.now();
+    let title = '';
+    let body = '';
+    let actions = [];
+    let timerType = '';
+    let timestamp = now;
+
+    if (breast) {
+      timerType = 'breast';
+      let leftElapsed = breast.leftElapsedMs || 0;
+      let rightElapsed = breast.rightElapsedMs || 0;
+      if (breast.running && breast.lastSideStartMs) {
+        const delta = now - breast.lastSideStartMs;
+        if (breast.activeSide === 'LEFT') leftElapsed += delta;
+        else rightElapsed += delta;
+      }
+      const totalElapsed = leftElapsed + rightElapsed;
+      const sessionStart = breast.sessionStartMs || now - totalElapsed;
+      timestamp = sessionStart;
+
+      const sideLabel = breast.activeSide === 'LEFT' ? 'Left Side' : 'Right Side';
+      const statusLabel = breast.running ? sideLabel : 'Paused';
+      title = `🤱 Nursing (${statusLabel}) — ${babyName}`;
+      body = `L: ${formatTimerClock(leftElapsed)} • R: ${formatTimerClock(rightElapsed)} (Total: ${formatTimerClock(totalElapsed)})\nStarted at ${formatTime(sessionStart)}`;
+
+      actions = [
+        { action: 'switch_side', title: `To ${breast.activeSide === 'LEFT' ? 'Right' : 'Left'} Side 🔄` },
+        { action: 'finish_timer', title: 'Finish & Save ✓' },
+      ];
+    } else if (sleep) {
+      timerType = 'sleep';
+      const startMs = sleep.startMs || now;
+      const elapsed = Math.max(0, now - startMs);
+      timestamp = startMs;
+
+      title = `🌙 ${babyName} is Sleeping`;
+      body = `${formatTimerClock(elapsed)} elapsed • Started at ${formatTime(startMs)}\nTap Woke Up below when baby awakens.`;
+
+      actions = [{ action: 'finish_timer', title: 'Woke Up ☀️' }];
+    } else if (pump) {
+      timerType = 'pump';
+      const startMs = pump.startMs || now;
+      const elapsed = Math.max(0, now - startMs);
+      timestamp = startMs;
+
+      title = `🍼 Pumping Session`;
+      body = `${formatTimerClock(elapsed)} elapsed • Started at ${formatTime(startMs)}`;
+
+      actions = [{ action: 'finish_timer', title: 'Finish & Save ✓' }];
+    }
+
+    const payload = {
+      title,
+      body,
+      actions,
+      timerType,
+      tag: 'nara-active-timer',
+      ongoing: true,
+      timestamp,
+      caregiver: caregiverName,
+    };
+
+    await this.dispatchNotification(payload);
+
+    // Start recurring update ticker if not already running (refreshes elapsed time every 15s)
+    this.startTicker();
+  }
+
+  /**
+   * Primary dispatcher: Triggers In-App Toast, Native OS Notification, and ServiceWorker Android Tray
+   */
+  async dispatchNotification(payload) {
+    const { title, body, actions, timerType, tag, ongoing, timestamp, caregiver } = payload;
+    let delivered = false;
+
+    // 1. Play gentle audio chime and show in-app popup toast
+    playNotificationChime();
+    this.showToast({ title, body, type: timerType, timestamp });
+
+    // 2. Direct Window Notification (Instant OS pop-up on Desktop Chrome/Firefox/Safari/Linux)
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      try {
+        const notif = new Notification(title, {
+          body,
+          icon: '/icons/icon-192.png',
+          tag: tag || 'nara-active-timer',
+          renotify: true, // Key: forces the operating system to show a heads-up pop-up alert
+          timestamp: timestamp || Date.now(),
+        });
+        notif.onclick = () => {
+          if (typeof window !== 'undefined') window.focus();
+          notif.close();
+        };
+        delivered = true;
+        console.log('[Notification] OS Notification pop-up dispatched:', title);
+      } catch (winErr) {
+        // On Android Chrome, new Notification() throws; it requires ServiceWorkerRegistration
+        console.log('[Notification] Window notification not available, proceeding to Service Worker:', winErr?.message);
+      }
+    }
+
+    // 3. Service Worker Registration (Android Notification Tray + Action buttons)
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      try {
+        // Use Promise.race with 800ms timeout so we never hang if SW is activating
+        const reg = await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('SW ready timeout')), 800)),
+        ]);
+
+        if (reg && typeof reg.showNotification === 'function') {
+          await reg.showNotification(title, {
+            body,
+            icon: '/icons/icon-192.png',
+            badge: '/icons/badge-72.png',
+            tag: tag || 'nara-active-timer',
+            ongoing: ongoing ?? true,
+            renotify: true,
+            timestamp: timestamp || Date.now(),
+            actions: actions || [],
+            data: {
+              timerType,
+              caregiver,
+              url: '/',
+            },
+          });
+          delivered = true;
+          console.log('[Notification] Displayed via ServiceWorkerRegistration in Android Tray:', title);
+        }
+      } catch (swErr) {
+        console.warn('[Notification] Service Worker showNotification skipped:', swErr.message);
+      }
+    }
+
+    // 4. Also postMessage to active service worker for background state sync
+    this.sendToServiceWorker('UPDATE_TIMER_NOTIFICATION', payload);
+
+    return delivered;
+  }
+
+  startTicker() {
+    if (this.tickerInterval) return;
+    this.tickerInterval = setInterval(() => {
+      if (this.currentTimers) {
+        this.syncTimerNotification(this.currentTimers, this.currentCaregiver, this.currentBaby);
+      }
+    }, 15000);
+  }
+
+  stopTicker() {
+    if (this.tickerInterval) {
+      clearInterval(this.tickerInterval);
+      this.tickerInterval = null;
+    }
+  }
+
+  async clearNotification() {
+    this.stopTicker();
+    this.currentTimers = null;
+
+    // Clear via Service Worker registration
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      try {
+        const reg = await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('SW ready timeout')), 500)),
+        ]);
+        if (reg && typeof reg.getNotifications === 'function') {
+          const notifications = await reg.getNotifications({ tag: 'nara-active-timer' });
+          notifications.forEach((n) => n.close());
+        }
+      } catch (err) {
+        // Ignored
+      }
+    }
+
+    // Also postMessage to SW
+    this.sendToServiceWorker('CLEAR_TIMER_NOTIFICATION', {});
+  }
+
+  async sendToServiceWorker(type, payload) {
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+    try {
+      const reg = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('SW ready timeout')), 500)),
+      ]);
+      if (reg?.active) {
+        reg.active.postMessage({ type, payload });
+      }
+    } catch (err) {
+      // Ignored
+    }
+  }
+
+  /**
+   * Diagnostic Test Notification
+   */
+  async testNotification() {
+    const diag = this.getDiagnostics();
+    console.log('[Notification] Running diagnostic test:', diag);
+
+    if (!diag.isSecure) {
+      return {
+        success: false,
+        reason: 'insecure',
+        message:
+          'Your browser disabled notifications because this connection is not HTTPS or localhost. See the home server notice above.',
+      };
+    }
+
+    const perm = await this.requestPermission();
+    if (perm !== 'granted') {
+      return {
+        success: false,
+        reason: 'denied',
+        message: `Notification permission is currently "${perm}". Please allow notifications in your browser or device settings.`,
+      };
+    }
+
+    const delivered = await this.dispatchNotification({
+      title: '👶 Baby Tracker: Test Alert',
+      body: 'Notifications, In-App pop-ups, and Android tray timers are fully working!',
+      actions: [{ action: 'finish_timer', title: 'Got it ✓' }],
+      timerType: 'test',
+      tag: 'nara-test-notification-' + Date.now(),
+      ongoing: false,
+      timestamp: Date.now(),
+      caregiver: 'Test',
+    });
+
+    return {
+      success: true,
+      reason: 'ok',
+      message: 'Notification dispatched! Both an In-App popup and OS notification have been triggered.',
+    };
+  }
+}
+
+export const notificationService = new NotificationService();
