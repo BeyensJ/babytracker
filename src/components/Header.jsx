@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { calculateBabyAge, getWakeWindowStatus } from '../utils/formatters';
-import { ChevronDown, Plus, Moon, Sun, Baby, Download, Bell, BellRing } from 'lucide-react';
+import { ChevronDown, Plus, Moon, Sun, Baby, Download, Bell, BellRing, Sparkles } from 'lucide-react';
+import { triggerHaptic } from '../utils/haptics';
 
 export function Header({ onOpenSettings }) {
   const {
@@ -18,6 +19,8 @@ export function Header({ onOpenSettings }) {
     installPWA,
     notificationPermission,
     requestNotificationPermission,
+    preferences,
+    setPreferences,
   } = useApp();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [now, setNow] = useState(Date.now());
@@ -179,6 +182,36 @@ export function Header({ onOpenSettings }) {
 
       {/* Right Controls: Streamlined Caregiver & Sync Status */}
       <div className="header-right-controls">
+        <button
+          className="header-theme-toggle-btn"
+          onClick={() => {
+            const current = preferences?.theme || 'light';
+            let next = 'dark';
+            if (current === 'light') next = 'dark';
+            else if (current === 'dark') next = 'oled';
+            else next = 'light';
+            setPreferences(p => ({ ...p, theme: next }));
+            triggerHaptic('light', preferences?.haptics);
+          }}
+          title={
+            (preferences?.theme === 'oled')
+              ? 'Current: Midnight OLED (Tap for Warm Linen)'
+              : (preferences?.theme === 'dark')
+              ? 'Current: Cozy Mocha (Tap for Midnight OLED)'
+              : 'Current: Warm Linen (Tap for Cozy Mocha)'
+          }
+          aria-label="Toggle theme appearance"
+          id="quick-theme-btn"
+        >
+          {preferences?.theme === 'oled' ? (
+            <Sparkles size={16} color="var(--color-caramel)" />
+          ) : preferences?.theme === 'dark' ? (
+            <Moon size={16} color="var(--color-slate)" />
+          ) : (
+            <Sun size={16} color="var(--color-terracotta)" />
+          )}
+        </button>
+
         <button
           className="header-caregiver-btn"
           onClick={() => openModal('CAREGIVER')}

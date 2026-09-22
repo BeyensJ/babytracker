@@ -108,6 +108,44 @@
   --shadow-dock: 0 -4px 20px rgba(0, 0, 0, 0.5);
 }
 
+/* Midnight OLED Night Mode (Pitch Black #000000 for Nighttime Nurseries) */
+[data-theme='oled'] {
+  --bg-canvas: #000000;
+  --bg-card: #0A0A0A;
+  --bg-card-subtle: #121212;
+  --bg-card-hover: #181818;
+  --bg-input: #111111;
+  --border-subtle: #1C1C1C;
+  --border-strong: #2E2E2E;
+
+  --text-primary: #F0ECE6;
+  --text-secondary: #9E978F;
+  --text-tertiary: #6E6862;
+
+  --color-terracotta: #E88365;
+  --color-terracotta-light: #241410;
+
+  --color-sage: #81A285;
+  --color-sage-light: #121E14;
+
+  --color-caramel: #E2A35C;
+  --color-caramel-light: #251B10;
+
+  --color-slate: #7B99B0;
+  --color-slate-light: #121C24;
+
+  --color-berry: #B28DA4;
+  --color-berry-light: #231420;
+
+  --color-mustard: #DEC75B;
+  --color-mustard-light: #231E0C;
+
+  --shadow-sm: none;
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.9);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.95);
+  --shadow-dock: 0 -1px 0 #1C1C1C;
+}
+
 /* Reset & Base */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -220,6 +258,14 @@ input, select, textarea {
   backdrop-filter: blur(12px);
 }
 
+[data-theme='dark'] .nara-header.scrolled {
+  background-color: rgba(30, 27, 24, 0.94);
+}
+
+[data-theme='oled'] .nara-header.scrolled {
+  background-color: rgba(0, 0, 0, 0.94);
+}
+
 .baby-profile-btn {
   display: flex;
   align-items: center;
@@ -326,6 +372,29 @@ input, select, textarea {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.header-theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.header-theme-toggle-btn:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+
+.header-theme-toggle-btn:active {
+  transform: scale(0.92);
 }
 
 .header-caregiver-btn {
@@ -794,6 +863,12 @@ input, select, textarea {
   box-shadow: var(--shadow-lg);
   border: 1px solid rgba(255, 255, 255, 0.1);
   animation: slideInDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme='oled'] .active-timers-dock {
+  background: #0D0D0D;
+  border-color: #262626;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.9);
 }
 
 @keyframes slideInDown {
@@ -1901,6 +1976,15 @@ input, select, textarea {
   box-shadow: var(--shadow-dock);
 }
 
+[data-theme='dark'] .bottom-nav {
+  background-color: rgba(30, 27, 24, 0.94);
+}
+
+[data-theme='oled'] .bottom-nav {
+  background-color: rgba(0, 0, 0, 0.94);
+  border-top-color: #1C1C1C;
+}
+
 .bottom-nav-inner {
   max-width: 540px;
   width: 100%;
@@ -2939,6 +3023,19 @@ input, select, textarea {
   );
 }
 
+[data-theme="oled"] .day-rhythm-track {
+  background: linear-gradient(
+    90deg,
+    rgba(14, 14, 14, 0.95) 0%,
+    rgba(14, 14, 14, 0.95) 25%,
+    rgba(28, 28, 28, 0.7) 25%,
+    rgba(28, 28, 28, 0.7) 75%,
+    rgba(14, 14, 14, 0.95) 75%,
+    rgba(14, 14, 14, 0.95) 100%
+  );
+  border-color: #1F1F1F;
+}
+
 .day-rhythm-sleep-block {
   position: absolute;
   top: 6px;
@@ -3225,6 +3322,19 @@ input, select, textarea {
     rgba(30, 27, 24, 0.9) 75%,
     rgba(30, 27, 24, 0.9) 100%
   );
+}
+
+[data-theme="oled"] .week-day-track {
+  background: linear-gradient(
+    90deg,
+    rgba(14, 14, 14, 0.95) 0%,
+    rgba(14, 14, 14, 0.95) 25%,
+    rgba(28, 28, 28, 0.7) 25%,
+    rgba(28, 28, 28, 0.7) 75%,
+    rgba(14, 14, 14, 0.95) 75%,
+    rgba(14, 14, 14, 0.95) 100%
+  );
+  border-color: #1F1F1F;
 }
 
 .week-sleep-block {

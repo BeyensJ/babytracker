@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { parseCSVToRows, convertNaraRowsToEvents, convertNaraJsonToEvents } from '../../utils/csvParser';
 import { Upload, Download, FileSpreadsheet, Sparkles, Trash2, Baby, Sliders, Moon, Sun, Plus, Edit2, Heart, Lock, Key, LogOut, ShieldCheck, Bell, Send, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
+import { triggerHaptic } from '../../utils/haptics';
 import confetti from 'canvas-confetti';
 
 export function SettingsView() {
@@ -433,22 +434,68 @@ export function SettingsView() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Appearance</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Nara daytime vs night mode</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Linen daytime, Mocha, or Midnight OLED</div>
           </div>
-          <div className="segmented-control" style={{ width: 140 }}>
+          <div className="segmented-control" style={{ width: 220 }}>
             <button
               type="button"
               className={`segmented-btn ${preferences.theme === 'light' ? 'active' : ''}`}
-              onClick={() => setPreferences(p => ({ ...p, theme: 'light' }))}
+              onClick={() => {
+                setPreferences(p => ({ ...p, theme: 'light' }));
+                triggerHaptic('light', preferences?.haptics);
+              }}
+              title="Warm Linen Daytime"
             >
               <Sun size={13} style={{ marginRight: 4 }} /> Light
             </button>
             <button
               type="button"
               className={`segmented-btn ${preferences.theme === 'dark' ? 'active' : ''}`}
-              onClick={() => setPreferences(p => ({ ...p, theme: 'dark' }))}
+              onClick={() => {
+                setPreferences(p => ({ ...p, theme: 'dark' }));
+                triggerHaptic('light', preferences?.haptics);
+              }}
+              title="Cozy Mocha Night"
             >
               <Moon size={13} style={{ marginRight: 4 }} /> Dark
+            </button>
+            <button
+              type="button"
+              className={`segmented-btn ${preferences.theme === 'oled' ? 'active' : ''}`}
+              onClick={() => {
+                setPreferences(p => ({ ...p, theme: 'oled' }));
+                triggerHaptic('light', preferences?.haptics);
+              }}
+              title="Pitch-Black OLED Mode (#000000) for nighttime feedings"
+            >
+              <Sparkles size={13} style={{ marginRight: 4 }} /> OLED
+            </button>
+          </div>
+        </div>
+
+        {/* Haptic Vibration */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Haptic Vibration</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Tactile feedback on taps, timers & quick logs</div>
+          </div>
+          <div className="segmented-control" style={{ width: 140 }}>
+            <button
+              type="button"
+              className={`segmented-btn ${preferences.haptics !== false ? 'active' : ''}`}
+              onClick={() => {
+                setPreferences(p => ({ ...p, haptics: true }));
+                triggerHaptic('success', true);
+              }}
+            >
+              On
+            </button>
+            <button
+              type="button"
+              className={`segmented-btn ${preferences.haptics === false ? 'active' : ''}`}
+              onClick={() => setPreferences(p => ({ ...p, haptics: false }))}
+            >
+              Off
             </button>
           </div>
         </div>

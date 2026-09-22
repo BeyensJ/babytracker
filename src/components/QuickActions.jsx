@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { triggerHaptic } from '../utils/haptics';
 import {
   Heart,
   Milk,
@@ -16,7 +17,7 @@ import {
 } from 'lucide-react';
 
 export function QuickActions() {
-  const { openModal } = useApp();
+  const { openModal, preferences } = useApp();
   const [showMoreModal, setShowMoreModal] = useState(false);
 
   const primaryActions = [
@@ -63,7 +64,10 @@ export function QuickActions() {
         <button
           type="button"
           className="dock-action-btn more"
-          onClick={() => setShowMoreModal(true)}
+          onClick={() => {
+            triggerHaptic('light', preferences?.haptics);
+            setShowMoreModal(true);
+          }}
           id="log-btn-more"
           aria-label="More tracking categories"
         >
@@ -76,14 +80,23 @@ export function QuickActions() {
 
       {/* Clean Bottom Sheet / Popover for Additional Logging */}
       {showMoreModal && (
-        <div className="modal-overlay" onClick={() => setShowMoreModal(false)}>
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            triggerHaptic('light', preferences?.haptics);
+            setShowMoreModal(false);
+          }}
+        >
           <div className="more-sheet-card" onClick={(e) => e.stopPropagation()}>
             <div className="more-sheet-header">
               <div className="more-sheet-title">More Activities</div>
               <button
                 type="button"
                 className="more-sheet-close"
-                onClick={() => setShowMoreModal(false)}
+                onClick={() => {
+                  triggerHaptic('light', preferences?.haptics);
+                  setShowMoreModal(false);
+                }}
                 aria-label="Close"
               >
                 <X size={20} />

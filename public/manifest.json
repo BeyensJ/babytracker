@@ -51,6 +51,13 @@
       "description": "Record a diaper change",
       "url": "/#diaper",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Bottle Feed",
+      "short_name": "Bottle",
+      "description": "Log bottle feeding",
+      "url": "/#bottle",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

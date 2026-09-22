@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/Header';
 import { Navigation } from './components/Navigation';
@@ -12,8 +12,37 @@ import { LoginScreen } from './components/LoginScreen';
 import { NotificationToast } from './components/NotificationToast';
 
 function AppContent() {
-  const { isAuthenticated, isLoadingAuth } = useApp();
+  const { isAuthenticated, isLoadingAuth, openModal } = useApp();
   const [activeTab, setActiveTab] = useState('today');
+
+  // Handle PWA Home Screen Shortcuts (/#nurse, /#bottle, /#sleep, /#diaper)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const handleShortcut = () => {
+      const hash = (window.location.hash || '').toLowerCase();
+      if (!hash) return;
+
+      if (hash === '#nurse' || hash === '#breast') {
+        openModal('BREAST');
+      } else if (hash === '#bottle') {
+        openModal('BOTTLE');
+      } else if (hash === '#sleep') {
+        openModal('SLEEP');
+      } else if (hash === '#diaper') {
+        openModal('DIAPER');
+      }
+
+      // Smoothly clean up hash from address bar
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+    };
+
+    handleShortcut();
+    window.addEventListener('hashchange', handleShortcut);
+    return () => window.removeEventListener('hashchange', handleShortcut);
+  }, [isAuthenticated, openModal]);
 
   if (isLoadingAuth) {
     return (

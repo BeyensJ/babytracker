@@ -1,7 +1,10 @@
 import React from 'react';
 import { Home, Calendar, BarChart2, Clock, Settings } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { triggerHaptic } from '../utils/haptics';
 
 export function Navigation({ activeTab, onTabChange }) {
+  const { preferences } = useApp();
   const tabs = [
     { id: 'today', label: 'Today', icon: Home },
     { id: 'calendar', label: 'Calendar', icon: Calendar },
@@ -21,7 +24,10 @@ export function Navigation({ activeTab, onTabChange }) {
             <button
               key={tab.id}
               className={`nav-item ${isActive ? 'active' : ''}`}
-              onClick={() => onTabChange(tab.id)}
+              onClick={() => {
+                if (!isActive) triggerHaptic('light', preferences?.haptics);
+                onTabChange(tab.id);
+              }}
               id={`nav-tab-${tab.id}`}
             >
               <Icon size={20} strokeWidth={isActive ? 2.3 : 1.8} />

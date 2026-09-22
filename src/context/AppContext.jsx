@@ -4,6 +4,7 @@ import { exportEventsToNaraCSV } from '../utils/csvParser';
 import { syncService } from '../services/syncService';
 import { pwaService } from '../services/pwaService';
 import { notificationService } from '../services/notificationService';
+import { triggerHaptic } from '../utils/haptics';
 
 const AppContext = createContext();
 
@@ -37,7 +38,8 @@ const DEFAULT_PREFERENCES = {
   weightUnit: 'kg', // 'lb' or 'kg'
   lengthUnit: 'cm', // 'in' or 'cm'
   tempUnit: 'C',    // 'F' or 'C'
-  theme: 'light',   // 'light' or 'dark'
+  theme: 'light',   // 'light', 'dark', or 'oled'
+  haptics: true,    // subtle vibration feedback
 };
 
 export function AppProvider({ children }) {
@@ -283,10 +285,27 @@ export function AppProvider({ children }) {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEYS.PREFERENCES, JSON.stringify(preferences));
-      if (preferences.theme === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
+      const currentTheme = preferences.theme || 'light';
+      if (currentTheme === 'dark' || currentTheme === 'oled') {
+        document.documentElement.setAttribute('data-theme', currentTheme);
       } else {
         document.documentElement.removeAttribute('data-theme');
+      }
+
+      // Dynamically update mobile browser address bar / notch theme color
+      let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+      if (!metaThemeColor) {
+        metaThemeColor = document.createElement('meta');
+        metaThemeColor.name = 'theme-color';
+        document.head.appendChild(metaThemeColor);
+      }
+
+      if (currentTheme === 'oled') {
+        metaThemeColor.setAttribute('content', '#000000');
+      } else if (currentTheme === 'dark') {
+        metaThemeColor.setAttribute('content', '#1E1B18');
+      } else {
+        metaThemeColor.setAttribute('content', '#FAF7F2');
       }
     } catch {}
   }, [preferences]);
@@ -302,6 +321,7 @@ export function AppProvider({ children }) {
 
   // Modal helpers
   const openModal = (modalType, initialData = null) => {
+    triggerHaptic('light', preferences?.haptics);
     setModalInitialData(initialData);
     setActiveModal(modalType);
   };
@@ -343,6 +363,7 @@ export function AppProvider({ children }) {
 
     setEvents(prev => [newEvent, ...prev].sort((a, b) => b.beginDt - a.beginDt));
     syncService.addEvent(newEvent).catch(err => console.warn('[Sync] Offline: addEvent saved locally', err));
+    triggerHaptic('success', preferences?.haptics);
     return newEvent;
   };
 
@@ -351,11 +372,13 @@ export function AppProvider({ children }) {
       prev.map(ev => (ev.id === eventId ? { ...ev, ...updates } : ev)).sort((a, b) => b.beginDt - a.beginDt)
     );
     syncService.updateEvent(eventId, updates).catch(err => console.warn('[Sync] Offline: updateEvent saved locally', err));
+    triggerHaptic('light', preferences?.haptics);
   };
 
   const deleteEvent = (eventId) => {
     setEvents(prev => prev.filter(ev => ev.id !== eventId));
     syncService.deleteEvent(eventId).catch(err => console.warn('[Sync] Offline: deleteEvent saved locally', err));
+    triggerHaptic('warning', preferences?.haptics);
   };
 
   const importEvents = (newEvents, mode = 'merge') => {
@@ -439,6 +462,7 @@ export function AppProvider({ children }) {
     const now = Date.now();
     const startMs = customStartTimeMs ? Number(customStartTimeMs) : now;
     const initialElapsed = Math.max(0, now - startMs);
+    triggerHaptic('medium', preferences?.haptics);
 
     broadcastTimers(prev => ({
       ...prev,
@@ -455,6 +479,7 @@ export function AppProvider({ children }) {
 
   const switchBreastSide = () => {
     const now = Date.now();
+    triggerHaptic('medium', preferences?.haptics);
     broadcastTimers(prev => {
       const b = prev.breast;
       if (!b || !b.running) return prev;
@@ -475,6 +500,7 @@ export function AppProvider({ children }) {
 
   const pauseBreastTimer = () => {
     const now = Date.now();
+    triggerHaptic('light', preferences?.haptics);
     broadcastTimers(prev => {
       const b = prev.breast;
       if (!b || !b.running) return prev;
@@ -495,6 +521,7 @@ export function AppProvider({ children }) {
 
   const resumeBreastTimer = () => {
     const now = Date.now();
+    triggerHaptic('light', preferences?.haptics);
     broadcastTimers(prev => {
       const b = prev.breast;
       if (!b) return prev;
@@ -549,6 +576,7 @@ export function AppProvider({ children }) {
     }
     const now = Date.now();
     const startMs = customStartTimeMs ? Number(customStartTimeMs) : now;
+    triggerHaptic('medium', preferences?.haptics);
     broadcastTimers(prev => ({
       ...prev,
       sleep: {
@@ -584,6 +612,7 @@ export function AppProvider({ children }) {
     }
     const now = Date.now();
     const startMs = customStartTimeMs ? Number(customStartTimeMs) : now;
+    triggerHaptic('medium', preferences?.haptics);
     broadcastTimers(prev => ({
       ...prev,
       pump: {
