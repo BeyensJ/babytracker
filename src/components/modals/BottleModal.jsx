@@ -4,7 +4,7 @@ import { triggerHaptic } from '../../utils/haptics';
 import { Milk, X, Plus, Minus, Calculator, Sparkles, Check } from 'lucide-react';
 
 export function BottleModal() {
-  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences } = useApp();
+  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, t } = useApp();
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
   const defaultUnit = preferences.volumeUnit === 'ml' ? 'ml' : 'oz';
@@ -156,9 +156,9 @@ export function BottleModal() {
             >
               <Milk size={18} />
             </div>
-            <h2>{isEditing ? 'Edit Bottle' : 'Log Bottle Feed'}</h2>
+            <h2>{isEditing ? t('bottleModal.titleEdit') : t('bottleModal.titleAdd')}</h2>
           </div>
-          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label="Close modal">
+          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label={t('common.close')}>
             <X size={20} />
           </button>
         </div>
@@ -167,7 +167,7 @@ export function BottleModal() {
           <div className="modal-body">
             {/* Milk Type Selection */}
             <div className="form-group">
-              <label className="form-label">Milk Type</label>
+              <label className="form-label">{t('bottleModal.milkType')}</label>
               <div className="segmented-control">
                 <button
                   type="button"
@@ -177,7 +177,7 @@ export function BottleModal() {
                     triggerHaptic('light', preferences?.haptics);
                   }}
                 >
-                  Breast Milk
+                  {t('bottleModal.breastMilk')}
                 </button>
                 <button
                   type="button"
@@ -187,7 +187,7 @@ export function BottleModal() {
                     triggerHaptic('light', preferences?.haptics);
                   }}
                 >
-                  Formula
+                  {t('bottleModal.formula')}
                 </button>
               </div>
             </div>
@@ -195,11 +195,11 @@ export function BottleModal() {
             {/* Formula Brand Name (if formula) */}
             {milkType === 'FORMULA' && (
               <div className="form-group">
-                <label className="form-label">Formula Brand / Type</label>
+                <label className="form-label">{t('bottleModal.formulaBrand')}</label>
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="e.g. Kendamil, Enfamil, Similac"
+                  placeholder="bv. Nutrilon, Kendamil, Nan Optipro"
                   value={formulaName}
                   onChange={(e) => setFormulaName(e.target.value)}
                 />
@@ -218,7 +218,7 @@ export function BottleModal() {
                     triggerHaptic('light', preferences?.haptics);
                   }}
                 >
-                  Exact Amount
+                  {t('bottleModal.calcModeExact')}
                 </button>
                 <button
                   type="button"
@@ -229,7 +229,7 @@ export function BottleModal() {
                   }}
                 >
                   <Calculator size={13} style={{ marginRight: 4 }} />
-                  Offered & Left
+                  {t('bottleModal.calcModeOffered')}
                 </button>
               </div>
 
@@ -238,7 +238,7 @@ export function BottleModal() {
                 <div className="bottle-calc-box">
                   <div className="bottle-calc-row">
                     <div className="bottle-calc-field">
-                      <label className="bottle-calc-label">Prepared / Offered ({unit})</label>
+                      <label className="bottle-calc-label">{t('bottleModal.offeredLabel', { unit })}</label>
                       <input
                         type="number"
                         className="bottle-calc-input"
@@ -250,7 +250,7 @@ export function BottleModal() {
                       />
                     </div>
                     <div className="bottle-calc-field">
-                      <label className="bottle-calc-label">Left in Bottle ({unit})</label>
+                      <label className="bottle-calc-label">{t('bottleModal.leftoverLabel', { unit })}</label>
                       <input
                         type="number"
                         className="bottle-calc-input"
@@ -263,7 +263,7 @@ export function BottleModal() {
                     </div>
                   </div>
                   <div className="bottle-calc-result">
-                    <span>Amount Baby Drank:</span>
+                    <span>{t('bottleModal.drankLabel')}</span>
                     <strong style={{ fontSize: '1rem' }}>
                       {amount} {unit}
                     </strong>
@@ -459,7 +459,7 @@ export function BottleModal() {
               {/* Quick Presets Chips */}
               <div>
                 <label className="form-label" style={{ marginBottom: '0.4rem' }}>
-                  Quick Presets
+                  {t('common.quickPresets')}
                 </label>
                 <div className="chip-grid">
                   {(isMl ? mlPresets : ozPresets).map((preset) => {
@@ -483,7 +483,7 @@ export function BottleModal() {
 
             {/* Time of Feed */}
             <div className="form-group">
-              <label className="form-label">Time</label>
+              <label className="form-label">{t('common.time')}</label>
               <input
                 type="time"
                 className="form-input"
@@ -494,11 +494,11 @@ export function BottleModal() {
 
             {/* Notes */}
             <div className="form-group">
-              <label className="form-label">Notes (optional)</label>
+              <label className="form-label">{t('common.notes')}</label>
               <textarea
                 className="form-textarea"
                 rows="2"
-                placeholder="Drank smoothly, warm bottle, burped well..."
+                placeholder={t('common.notes')}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
               />
@@ -507,14 +507,14 @@ export function BottleModal() {
 
           <div className="modal-footer">
             <button type="button" className="btn-secondary" onClick={closeModal}>
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               className="btn-primary"
               style={{ backgroundColor: 'var(--color-caramel)' }}
             >
-              {isEditing ? 'Save Changes' : 'Log Bottle'}
+              {isEditing ? t('bottleModal.submitEdit') : t('bottleModal.submitAdd')}
             </button>
           </div>
         </form>

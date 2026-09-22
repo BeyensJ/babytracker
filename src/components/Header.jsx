@@ -21,6 +21,8 @@ export function Header({ onOpenSettings }) {
     requestNotificationPermission,
     preferences,
     setPreferences,
+    language,
+    t,
   } = useApp();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [now, setNow] = useState(Date.now());
@@ -55,10 +57,10 @@ export function Header({ onOpenSettings }) {
   }
 
   const wakeStatus = (isSleeping || awakeMs === -1)
-    ? { label: 'Sleeping', status: 'neutral' }
-    : getWakeWindowStatus(awakeMs);
+    ? { label: language === 'nl' ? 'Slaapt nu' : 'Sleeping', status: 'neutral' }
+    : getWakeWindowStatus(awakeMs, language);
 
-  const babyAge = calculateBabyAge(activeChild?.birthdate);
+  const babyAge = calculateBabyAge(activeChild?.birthdate, language);
 
   return (
     <header className="nara-header">

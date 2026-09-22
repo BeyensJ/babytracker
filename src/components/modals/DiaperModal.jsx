@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { Sparkles, X, AlertTriangle } from 'lucide-react';
 
 export function DiaperModal() {
-  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent } = useApp();
+  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, t, language } = useApp();
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
 
@@ -45,19 +45,19 @@ export function DiaperModal() {
   if (activeModal !== 'DIAPER') return null;
 
   const poopColors = [
-    { id: 'YELLOW', label: 'Yellow', hex: '#E5B83B' },
-    { id: 'MUSTARD', label: 'Mustard', hex: '#CE9E28' },
-    { id: 'BROWN', label: 'Brown', hex: '#7A5034' },
-    { id: 'GREEN', label: 'Green', hex: '#587A4C' },
-    { id: 'BLACK', label: 'Black / Dark', hex: '#2C2B29' },
+    { id: 'YELLOW', label: language === 'nl' ? 'Geel' : 'Yellow', hex: '#E5B83B' },
+    { id: 'MUSTARD', label: language === 'nl' ? 'Mosterd' : 'Mustard', hex: '#CE9E28' },
+    { id: 'BROWN', label: language === 'nl' ? 'Bruin' : 'Brown', hex: '#7A5034' },
+    { id: 'GREEN', label: language === 'nl' ? 'Groen' : 'Green', hex: '#587A4C' },
+    { id: 'BLACK', label: language === 'nl' ? 'Zwart / Donker' : 'Black / Dark', hex: '#2C2B29' },
   ];
 
   const poopTextures = [
-    { id: 'SEEDY', label: 'Seedy' },
-    { id: 'MUSH', label: 'Mushy' },
-    { id: 'RUN', label: 'Liquid / Runny' },
-    { id: 'PEBBLE', label: 'Pebble' },
-    { id: 'SOLID', label: 'Solid' },
+    { id: 'SEEDY', label: language === 'nl' ? 'Korrelig' : 'Seedy' },
+    { id: 'MUSH', label: language === 'nl' ? 'Papperig' : 'Mushy' },
+    { id: 'RUN', label: language === 'nl' ? 'Vloeibaar / Waterig' : 'Liquid / Runny' },
+    { id: 'PEBBLE', label: language === 'nl' ? 'Keuteltjes' : 'Pebble' },
+    { id: 'SOLID', label: language === 'nl' ? 'Vast' : 'Solid' },
   ];
 
   const handleSave = (e) => {
@@ -101,9 +101,9 @@ export function DiaperModal() {
             <div className="modal-title-icon" style={{ backgroundColor: 'var(--color-sage-light)', color: 'var(--color-sage)' }}>
               <Sparkles size={18} />
             </div>
-            <h2>{isEditing ? 'Edit Diaper' : 'Log Diaper Change'}</h2>
+            <h2>{isEditing ? t('diaperModal.titleEdit') : t('diaperModal.titleAdd')}</h2>
           </div>
-          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label="Close modal">
+          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label={t('common.close')}>
             <X size={20} />
           </button>
         </div>
@@ -112,7 +112,7 @@ export function DiaperModal() {
           <div className="modal-body">
             {/* Contents Selector (Wet, Dirty, Dry) */}
             <div className="form-group">
-              <label className="form-label">Diaper Contents</label>
+              <label className="form-label">{t('diaperModal.contents')}</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
                 <button
                   type="button"
@@ -123,7 +123,7 @@ export function DiaperModal() {
                     setPee(!pee);
                   }}
                 >
-                  💧 Wet
+                  💧 {t('diaperModal.wet')}
                 </button>
                 <button
                   type="button"
@@ -134,7 +134,7 @@ export function DiaperModal() {
                     setPoop(!poop);
                   }}
                 >
-                  💩 Dirty
+                  💩 {t('diaperModal.dirty')}
                 </button>
                 <button
                   type="button"
@@ -146,7 +146,7 @@ export function DiaperModal() {
                     setPoop(false);
                   }}
                 >
-                  ✨ Dry
+                  ✨ {t('diaperModal.dry')}
                 </button>
               </div>
             </div>
@@ -156,7 +156,7 @@ export function DiaperModal() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem', backgroundColor: 'var(--bg-card-subtle)', borderRadius: 'var(--radius-md)' }}>
                 {/* Poop Color */}
                 <div className="form-group">
-                  <label className="form-label">Color</label>
+                  <label className="form-label">{t('diaperModal.poopColor')}</label>
                   <div className="chip-grid">
                     {poopColors.map(c => (
                       <button
@@ -174,16 +174,16 @@ export function DiaperModal() {
 
                 {/* Poop Texture */}
                 <div className="form-group">
-                  <label className="form-label">Texture</label>
+                  <label className="form-label">{t('diaperModal.consistency')}</label>
                   <div className="chip-grid">
-                    {poopTextures.map(t => (
+                    {poopTextures.map(tOption => (
                       <button
-                        key={t.id}
+                        key={tOption.id}
                         type="button"
-                        className={`chip-btn ${texture === t.id ? 'selected' : ''}`}
-                        onClick={() => setTexture(t.id)}
+                        className={`chip-btn ${texture === tOption.id ? 'selected' : ''}`}
+                        onClick={() => setTexture(tOption.id)}
                       >
-                        {t.label}
+                        {tOption.label}
                       </button>
                     ))}
                   </div>
@@ -197,7 +197,7 @@ export function DiaperModal() {
                     onChange={e => setBlowout(e.target.checked)}
                     style={{ width: 18, height: 18, accentColor: 'var(--status-red)' }}
                   />
-                  <span>⚠️ Diaper Blowout (leaked onto clothes)</span>
+                  <span>⚠️ {t('diaperModal.blowout')}</span>
                 </label>
               </div>
             )}
@@ -210,12 +210,12 @@ export function DiaperModal() {
                 onChange={e => setRash(e.target.checked)}
                 style={{ width: 18, height: 18, accentColor: 'var(--color-sage)' }}
               />
-              <span>Diaper Rash observed</span>
+              <span>{t('diaperModal.rash')}</span>
             </label>
 
             {/* Time of Change */}
             <div className="form-group">
-              <label className="form-label">Time</label>
+              <label className="form-label">{t('common.time')}</label>
               <input
                 type="time"
                 className="form-input"
@@ -226,11 +226,11 @@ export function DiaperModal() {
 
             {/* Notes */}
             <div className="form-group">
-              <label className="form-label">Notes (optional)</label>
+              <label className="form-label">{t('common.notes')}</label>
               <textarea
                 className="form-textarea"
                 rows="2"
-                placeholder="Applied diaper balm, changed outfit..."
+                placeholder={t('common.notes')}
                 value={note}
                 onChange={e => setNote(e.target.value)}
               />
@@ -239,10 +239,10 @@ export function DiaperModal() {
 
           <div className="modal-footer">
             <button type="button" className="btn-secondary" onClick={closeModal}>
-              Cancel
+              {t('common.cancel')}
             </button>
             <button type="submit" className="btn-primary" style={{ backgroundColor: 'var(--color-sage)' }}>
-              {isEditing ? 'Save Changes' : 'Log Diaper'}
+              {isEditing ? t('diaperModal.submitEdit') : t('diaperModal.submitAdd')}
             </button>
           </div>
         </form>

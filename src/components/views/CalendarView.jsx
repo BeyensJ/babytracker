@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 export function CalendarView() {
-  const { events, activeChild, activeChildId, preferences, openModal } = useApp();
+  const { events, activeChild, activeChildId, preferences, openModal, t, language } = useApp();
 
   // Mode: 'week' (multi-day rhythm schedule) or 'month' (month calendar grid)
   const [viewMode, setViewMode] = useState('week');
@@ -141,7 +141,7 @@ export function CalendarView() {
   // --- 7-Day Week Data with Cross-Midnight Sleep Slices ---
   const weekDaysData = useMemo(() => {
     const days = [];
-    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const weekdays = language === 'nl' ? ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     for (let i = 0; i < 7; i++) {
       const curDate = new Date(weekMonday);
@@ -187,7 +187,7 @@ export function CalendarView() {
               totalDurMs,
               continuesFromPrev,
               continuesToNext,
-              fullTimeStr: `${formatTime(begin)} – ${formatTime(end)}`,
+              fullTimeStr: `${formatTime(begin, language)} – ${formatTime(end, language)}`,
               caregiver: ev.details?.caregiver,
               isNight: ev.details?.sleepType === 'NIGHT' || continuesFromPrev || continuesToNext,
             });
@@ -212,7 +212,7 @@ export function CalendarView() {
               leftPct,
               type: pinType,
               evType: ev.type,
-              timeStr: formatTime(begin),
+              timeStr: formatTime(begin, language),
               note: ev.note,
             });
           }
@@ -233,25 +233,26 @@ export function CalendarView() {
     }
 
     return days;
-  }, [weekMonday, childEvents]);
+  }, [weekMonday, childEvents, language]);
 
   // Week header range string (e.g. "Sep 15 – Sep 21, 2026")
   const weekRangeTitle = useMemo(() => {
     const sunday = new Date(weekMonday);
     sunday.setDate(weekMonday.getDate() + 6);
 
-    const m1 = weekMonday.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    const m2 = sunday.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    const loc = language === 'nl' ? 'nl-BE' : 'en-US';
+    const m1 = weekMonday.toLocaleDateString(loc, { month: 'short', day: 'numeric' });
+    const m2 = sunday.toLocaleDateString(loc, { month: 'short', day: 'numeric', year: 'numeric' });
     return `${m1} – ${m2}`;
-  }, [weekMonday]);
+  }, [weekMonday, language]);
 
   // Aggregate stats for the 7-day week
   const weekTotals = useMemo(() => {
     let totalSleepMs = 0;
     let totalFeeds = 0;
     let totalDiapers = 0;
-    let nightSleepCount = 0;
     let nightSleepTotalMs = 0;
+    let nightSleepCount = 0;
 
     weekDaysData.forEach(day => {
       totalSleepMs += day.totalSleepSliceMs;
@@ -260,8 +261,8 @@ export function CalendarView() {
 
       day.sleepSlices.forEach(s => {
         if (s.isNight) {
-          nightSleepCount++;
           nightSleepTotalMs += s.sliceDurMs;
+          nightSleepCount++;
         }
       });
     });
@@ -271,17 +272,17 @@ export function CalendarView() {
 
     return {
       totalSleepFormatted: `${(totalSleepMs / 3600000).toFixed(1)}h`,
-      avgSleepFormatted: `${(avgSleepPerDayMs / 3600000).toFixed(1)}h / day`,
-      avgNightFormatted: `${(avgNightSleepMs / 3600000).toFixed(1)}h / night`,
+      avgSleepFormatted: `${(avgSleepPerDayMs / 3600000).toFixed(1)}h ${language === 'nl' ? '/ dag' : '/ day'}`,
+      avgNightFormatted: `${(avgNightSleepMs / 3600000).toFixed(1)}h ${language === 'nl' ? '/ nacht' : '/ night'}`,
       totalFeeds,
       totalDiapers,
     };
-  }, [weekDaysData]);
+  }, [weekDaysData, language]);
 
   // --- Month Calendar Days (Mon - Sun) ---
   const monthYear = activeMonth.getFullYear();
   const monthIdx = activeMonth.getMonth();
-  const monthName = activeMonth.toLocaleDateString([], { month: 'long', year: 'numeric' });
+  const monthName = activeMonth.toLocaleDateString(language === 'nl' ? 'nl-BE' : 'en-US', { month: 'long', year: 'numeric' });
 
   const monthCalendarDays = useMemo(() => {
     const daysInCurrentMonth = new Date(monthYear, monthIdx + 1, 0).getDate();
@@ -445,16 +446,16 @@ export function CalendarView() {
     return { sleepBlocks, eventPins };
   }, [childEvents, selectedDateKey]);
 
-  const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const weekdays = language === 'nl' ? ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   return (
     <div className="calendar-view-container">
       {/* Top Header & View Mode Switcher */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
-          <h2>Calendar & Rhythm</h2>
+          <h2>{language === 'nl' ? 'Kalender & Slaapritme' : 'Calendar & Rhythm'}</h2>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            Schedule & multi-day sleep rhythm for {activeChild?.name || 'Baby'}
+            {language === 'nl' ? `Schema & meerdaags slaapritme voor ${activeChild?.name || 'baby'}` : `Schedule & multi-day sleep rhythm for ${activeChild?.name || 'Baby'}`}
           </span>
         </div>
 
@@ -466,7 +467,7 @@ export function CalendarView() {
             id="view-toggle-day"
           >
             <Clock size={14} style={{ display: 'inline', marginRight: 5, verticalAlign: -1 }} />
-            Day
+            {t('calendar.viewDay')}
           </button>
           <button
             className={`calendar-toggle-btn ${viewMode === 'week' ? 'active' : ''}`}
@@ -474,7 +475,7 @@ export function CalendarView() {
             id="view-toggle-week"
           >
             <Layers size={14} style={{ display: 'inline', marginRight: 5, verticalAlign: -1 }} />
-            Week Rhythm
+            {language === 'nl' ? 'Weekritme' : 'Week Rhythm'}
           </button>
           <button
             className={`calendar-toggle-btn ${viewMode === 'month' ? 'active' : ''}`}
@@ -482,7 +483,7 @@ export function CalendarView() {
             id="view-toggle-month"
           >
             <CalendarDays size={14} style={{ display: 'inline', marginRight: 5, verticalAlign: -1 }} />
-            Month Grid
+            {language === 'nl' ? 'Maandoverzicht' : 'Month Grid'}
           </button>
         </div>
       </div>
@@ -495,12 +496,12 @@ export function CalendarView() {
           <div className="calendar-nav-bar">
             <div className="calendar-month-title">
               <Clock size={18} color="var(--color-slate)" />
-              <span>{formatDateHeading(selectedDateKey)}</span>
+              <span>{formatDateHeading(selectedDateKey, language)}</span>
             </div>
 
             <div className="calendar-nav-controls">
               <button className="calendar-today-btn" onClick={handleJumpToTodayMonth}>
-                Today
+                {t('summary.today')}
               </button>
               <button className="calendar-icon-btn" onClick={handlePrevDay} aria-label="Previous day">
                 <ChevronLeft size={18} />
@@ -527,7 +528,7 @@ export function CalendarView() {
 
             <div className="calendar-nav-controls">
               <button className="calendar-today-btn" onClick={handleJumpToCurrentWeek}>
-                This Week
+                {language === 'nl' ? 'Deze week' : 'This Week'}
               </button>
               <button className="calendar-icon-btn" onClick={handlePrevWeek} aria-label="Previous week">
                 <ChevronLeft size={18} />
@@ -541,19 +542,19 @@ export function CalendarView() {
           {/* Week Aggregate Stats Strip */}
           <div className="week-summary-strip">
             <div className="week-summary-box">
-              <span className="week-summary-label">Total Sleep</span>
+              <span className="week-summary-label">{t('summary.totalSleep')}</span>
               <span className="week-summary-val" style={{ color: 'var(--color-slate)' }}>{weekTotals.totalSleepFormatted}</span>
             </div>
             <div className="week-summary-box">
-              <span className="week-summary-label">Daily Avg</span>
+              <span className="week-summary-label">{language === 'nl' ? 'Dagelijks gem.' : 'Daily Avg'}</span>
               <span className="week-summary-val">{weekTotals.avgSleepFormatted}</span>
             </div>
             <div className="week-summary-box">
-              <span className="week-summary-label">Night Sleep Avg</span>
+              <span className="week-summary-label">{language === 'nl' ? 'Gem. nachtslaap' : 'Night Sleep Avg'}</span>
               <span className="week-summary-val">{weekTotals.avgNightFormatted}</span>
             </div>
             <div className="week-summary-box">
-              <span className="week-summary-label">Feeds Tracked</span>
+              <span className="week-summary-label">{language === 'nl' ? 'Voedingen gelogd' : 'Feeds Tracked'}</span>
               <span className="week-summary-val" style={{ color: 'var(--color-terracotta)' }}>{weekTotals.totalFeeds}</span>
             </div>
           </div>
@@ -642,20 +643,20 @@ export function CalendarView() {
           <div className="day-rhythm-legend" style={{ justifyContent: 'center', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.65rem' }}>
             <div className="legend-item">
               <div className="legend-swatch" style={{ backgroundColor: 'var(--color-slate)', width: 14, height: 8 }} />
-              <span>Sleep Stretches</span>
+              <span>{language === 'nl' ? 'Slaapblokken' : 'Sleep Stretches'}</span>
             </div>
             <div className="legend-item">
               <span className="spanning-overnight-indicator">
-                ◀ ── ▶ Spans Across Midnight
+                {language === 'nl' ? '◀ ── ▶ Loopt over middernacht' : '◀ ── ▶ Spans Across Midnight'}
               </span>
             </div>
             <div className="legend-item">
               <div className="legend-swatch" style={{ backgroundColor: 'var(--color-terracotta)', width: 4, height: 12 }} />
-              <span>Feeds</span>
+              <span>{language === 'nl' ? 'Voedingen' : 'Feeds'}</span>
             </div>
             <div className="legend-item">
               <div className="legend-swatch" style={{ backgroundColor: 'var(--color-caramel)', width: 4, height: 12 }} />
-              <span>Diapers</span>
+              <span>{language === 'nl' ? 'Pampers' : 'Diapers'}</span>
             </div>
           </div>
         </div>
@@ -675,7 +676,7 @@ export function CalendarView() {
 
             <div className="calendar-nav-controls">
               <button className="calendar-today-btn" onClick={handleJumpToTodayMonth}>
-                Today
+                {t('summary.today')}
               </button>
               <button className="calendar-icon-btn" onClick={handlePrevMonth} aria-label="Previous month">
                 <ChevronLeft size={18} />
@@ -709,10 +710,10 @@ export function CalendarView() {
 
                   {day.isCurrentMonth && (
                     <div className="calendar-dot-row">
-                      {day.hasFeed && <div className="calendar-dot dot-feed" title="Feeds" />}
-                      {day.hasSleep && <div className="calendar-dot dot-sleep" title="Sleep" />}
-                      {day.hasDiaper && <div className="calendar-dot dot-diaper" title="Diaper" />}
-                      {day.hasOther && <div className="calendar-dot dot-other" title="Health/Growth/Milestone" />}
+                      {day.hasFeed && <div className="calendar-dot dot-feed" title={language === 'nl' ? 'Voedingen' : 'Feeds'} />}
+                      {day.hasSleep && <div className="calendar-dot dot-sleep" title={language === 'nl' ? 'Slaap' : 'Sleep'} />}
+                      {day.hasDiaper && <div className="calendar-dot dot-diaper" title={language === 'nl' ? 'Pampers' : 'Diaper'} />}
+                      {day.hasOther && <div className="calendar-dot dot-other" title={language === 'nl' ? 'Metingen / Eerste keren' : 'Health/Growth/Milestone'} />}
                     </div>
                   )}
                 </div>
@@ -724,19 +725,19 @@ export function CalendarView() {
           <div className="day-rhythm-legend" style={{ justifyContent: 'center', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.65rem' }}>
             <div className="legend-item">
               <div className="legend-swatch" style={{ backgroundColor: 'var(--color-terracotta)' }} />
-              <span>Feeds</span>
+              <span>{language === 'nl' ? 'Voedingen' : 'Feeds'}</span>
             </div>
             <div className="legend-item">
               <div className="legend-swatch" style={{ backgroundColor: 'var(--color-slate)' }} />
-              <span>Sleep</span>
+              <span>{language === 'nl' ? 'Slaap' : 'Sleep'}</span>
             </div>
             <div className="legend-item">
               <div className="legend-swatch" style={{ backgroundColor: 'var(--color-caramel)' }} />
-              <span>Diapers</span>
+              <span>{language === 'nl' ? 'Pampers' : 'Diapers'}</span>
             </div>
             <div className="legend-item">
               <div className="legend-swatch" style={{ backgroundColor: 'var(--color-sage)' }} />
-              <span>Growth / Firsts</span>
+              <span>{language === 'nl' ? 'Metingen / Mijlpalen' : 'Growth / Firsts'}</span>
             </div>
           </div>
         </div>
@@ -755,10 +756,10 @@ export function CalendarView() {
               </div>
               <div>
                 <div style={{ fontWeight: 600, fontSize: '0.92rem', color: 'var(--text-primary)' }}>
-                  Day Rhythm Schedule
+                  {language === 'nl' ? 'Dagschema & Slaapritme' : 'Day Rhythm Schedule'}
                 </div>
                 <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
-                  24-hour visual timeline for {formatDateHeading(selectedDateKey)}
+                  {language === 'nl' ? `24-uurs visueel verloop voor ${formatDateHeading(selectedDateKey, language)}` : `24-hour visual timeline for ${formatDateHeading(selectedDateKey)}`}
                 </div>
               </div>
             </div>
@@ -767,17 +768,17 @@ export function CalendarView() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', flexWrap: 'wrap' }}>
               {dayStats.totalSleepMs > 0 && (
                 <span style={{ padding: '0.2rem 0.55rem', borderRadius: '12px', background: 'rgba(84, 108, 126, 0.12)', color: 'var(--color-slate)', fontWeight: 600 }}>
-                  🌙 {formatDurationMs(dayStats.totalSleepMs)}
+                  🌙 {formatDurationMs(dayStats.totalSleepMs, language)}
                 </span>
               )}
               {dayStats.feedCount > 0 && (
                 <span style={{ padding: '0.2rem 0.55rem', borderRadius: '12px', background: 'rgba(206, 107, 76, 0.12)', color: 'var(--color-terracotta)', fontWeight: 600 }}>
-                  🍼 {dayStats.feedCount} {dayStats.feedCount === 1 ? 'feed' : 'feeds'}
+                  🍼 {dayStats.feedCount} {language === 'nl' ? (dayStats.feedCount === 1 ? 'voeding' : 'voedingen') : (dayStats.feedCount === 1 ? 'feed' : 'feeds')}
                 </span>
               )}
               {dayStats.diaperTotal > 0 && (
                 <span style={{ padding: '0.2rem 0.55rem', borderRadius: '12px', background: 'rgba(196, 135, 68, 0.12)', color: 'var(--color-caramel)', fontWeight: 600 }}>
-                  ✨ {dayStats.diaperTotal} {dayStats.diaperTotal === 1 ? 'diaper' : 'diapers'}
+                  ✨ {dayStats.diaperTotal} {language === 'nl' ? (dayStats.diaperTotal === 1 ? 'pamper' : 'pampers') : (dayStats.diaperTotal === 1 ? 'diaper' : 'diapers')}
                 </span>
               )}
             </div>
@@ -789,7 +790,7 @@ export function CalendarView() {
               {/* Empty state notice if no activities */}
               {selectedDayRhythm.sleepBlocks.length === 0 && selectedDayRhythm.eventPins.length === 0 && (
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '0.75rem', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>
-                  No activity rhythm recorded for this day
+                  {language === 'nl' ? 'Geen activiteitenritme geregistreerd voor deze dag' : 'No activity rhythm recorded for this day'}
                 </div>
               )}
 
@@ -802,9 +803,9 @@ export function CalendarView() {
                     left: `${block.leftPct}%`,
                     width: `${block.widthPct}%`,
                   }}
-                  title={`${block.isNight ? 'Night Sleep' : 'Nap'}: ${block.fullTimeStr || block.timeStr} (${(block.sliceDurMs / 3600000).toFixed(1)}h)${
-                    block.continuesToNext ? ' • Continues overnight into next day' : ''
-                  }${block.continuesFromPrev ? ' • Continued from previous day' : ''}`}
+                  title={`${block.isNight ? (language === 'nl' ? 'Nachtslaap' : 'Night Sleep') : (language === 'nl' ? 'Dutje' : 'Nap')}: ${block.fullTimeStr || block.timeStr} (${(block.sliceDurMs / 3600000).toFixed(1)}h)${
+                    block.continuesToNext ? (language === 'nl' ? ' • Loopt door in de nacht' : ' • Continues overnight into next day') : ''
+                  }${block.continuesFromPrev ? (language === 'nl' ? ' • Begon de vorige nacht' : ' • Continued from previous day') : ''}`}
                 >
                   {block.widthPct > 7 && (
                     <span
@@ -857,22 +858,22 @@ export function CalendarView() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
               <div className="legend-item">
                 <div className="legend-swatch" style={{ backgroundColor: 'var(--color-slate)' }} />
-                <span>Sleep Stretch</span>
+                <span>{language === 'nl' ? 'Slaapblok' : 'Sleep Stretch'}</span>
               </div>
               <div className="legend-item">
                 <div className="legend-swatch" style={{ backgroundColor: 'var(--color-terracotta)' }} />
-                <span>Feeding Pin</span>
+                <span>{language === 'nl' ? 'Voeding' : 'Feeding Pin'}</span>
               </div>
               <div className="legend-item">
                 <div className="legend-swatch" style={{ backgroundColor: 'var(--color-caramel)' }} />
-                <span>Diaper Pin</span>
+                <span>{language === 'nl' ? 'Pamper' : 'Diaper Pin'}</span>
               </div>
             </div>
 
             {selectedDayRhythm.sleepBlocks.some(b => b.continuesFromPrev || b.continuesToNext) && (
               <span style={{ fontSize: '0.72rem', color: 'var(--color-slate)', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <Info size={12} />
-                Dashed borders indicate overnight sleep spanning across midnight
+                {language === 'nl' ? 'Onderbroken randen duiden op nachtslaap over middernacht' : 'Dashed borders indicate overnight sleep spanning across midnight'}
               </span>
             )}
           </div>
@@ -888,13 +889,13 @@ export function CalendarView() {
         <div className="trend-card" style={{ padding: '0.85rem 1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-slate)', fontSize: '0.78rem', fontWeight: 600 }}>
             <Moon size={15} />
-            <span>Sleep on {formatDateHeading(selectedDateKey)}</span>
+            <span>{language === 'nl' ? `Slaap op ${formatDateHeading(selectedDateKey, language)}` : `Sleep on ${formatDateHeading(selectedDateKey)}`}</span>
           </div>
           <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: '0.25rem', color: 'var(--text-primary)' }}>
-            {dayStats.totalSleepMs > 0 ? formatDurationMs(dayStats.totalSleepMs) : '0m'}
+            {dayStats.totalSleepMs > 0 ? formatDurationMs(dayStats.totalSleepMs, language) : '0m'}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-            {dayStats.napCount} sleep {dayStats.napCount === 1 ? 'stretch' : 'stretches'}
+            {dayStats.napCount} {language === 'nl' ? (dayStats.napCount === 1 ? 'slaapblok' : 'slaapblokken') : (dayStats.napCount === 1 ? 'sleep stretch' : 'sleep stretches')}
           </div>
         </div>
 
@@ -902,17 +903,17 @@ export function CalendarView() {
         <div className="trend-card" style={{ padding: '0.85rem 1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-terracotta)', fontSize: '0.78rem', fontWeight: 600 }}>
             <Utensils size={15} />
-            <span>Feeding</span>
+            <span>{t('categories.feeding')}</span>
           </div>
           <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: '0.25rem', color: 'var(--text-primary)' }}>
             {dayStats.totalNursingMs > 0
-              ? formatDurationMs(dayStats.totalNursingMs)
+              ? formatDurationMs(dayStats.totalNursingMs, language)
               : dayStats.totalBottleFloz > 0
               ? formatVolume(dayStats.totalBottleFloz, preferences.volumeUnit)
               : '0m'}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-            {dayStats.feedCount} feeding {dayStats.feedCount === 1 ? 'session' : 'sessions'}
+            {dayStats.feedCount} {language === 'nl' ? (dayStats.feedCount === 1 ? 'voeding' : 'voedingen') : (dayStats.feedCount === 1 ? 'session' : 'sessions')}
           </div>
         </div>
 
@@ -920,13 +921,13 @@ export function CalendarView() {
         <div className="trend-card" style={{ padding: '0.85rem 1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-caramel)', fontSize: '0.78rem', fontWeight: 600 }}>
             <Sparkles size={15} />
-            <span>Diapers</span>
+            <span>{t('categories.diaper')}</span>
           </div>
           <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: '0.25rem', color: 'var(--text-primary)' }}>
             {dayStats.diaperTotal}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-            {dayStats.wetDiapers} wet • {dayStats.dirtyDiapers} dirty
+            {dayStats.wetDiapers} {language === 'nl' ? 'nat' : 'wet'} • {dayStats.dirtyDiapers} {language === 'nl' ? 'kaka' : 'dirty'}
           </div>
         </div>
       </div>
@@ -935,7 +936,7 @@ export function CalendarView() {
       <section className="timeline-section" style={{ marginTop: '0.5rem' }}>
         <div className="timeline-header">
           <div className="section-label" style={{ margin: 0 }}>
-            <span>{formatDateHeading(selectedDateKey)} ({selectedEvents.length} activities)</span>
+            <span>{formatDateHeading(selectedDateKey, language)} ({selectedEvents.length} {language === 'nl' ? 'activiteiten' : 'activities'})</span>
           </div>
 
           <button
@@ -948,7 +949,7 @@ export function CalendarView() {
             }}
           >
             <Plus size={14} style={{ marginRight: 4 }} />
-            Log on this Date
+            {language === 'nl' ? 'Op deze datum loggen' : 'Log on this Date'}
           </button>
         </div>
 
@@ -957,9 +958,11 @@ export function CalendarView() {
             <div className="empty-icon-wrap" style={{ width: 44, height: 44 }}>
               <CalendarIcon size={20} />
             </div>
-            <h3 style={{ fontSize: '0.95rem' }}>No activities logged on this date</h3>
+            <h3 style={{ fontSize: '0.95rem' }}>{language === 'nl' ? 'Geen activiteiten geregistreerd op deze datum' : 'No activities logged on this date'}</h3>
             <p style={{ fontSize: '0.8rem' }}>
-              Select another day on the schedule or tap "Log on this Date" to add an entry.
+              {language === 'nl'
+                ? 'Kies een andere dag op het schema of tik op "Op deze datum loggen" om te beginnen.'
+                : 'Select another day on the schedule or tap "Log on this Date" to add an entry.'}
             </p>
           </div>
         ) : (

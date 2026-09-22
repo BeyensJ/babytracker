@@ -8,7 +8,7 @@ import {
 import { Scale, Ruler, Info, Calendar, User, TrendingUp } from 'lucide-react';
 
 export function WHOGrowthChart({ allEvents }) {
-  const { activeChild, preferences, openModal } = useApp();
+  const { activeChild, preferences, openModal, t, language } = useApp();
   const [metricType, setMetricType] = useState('weight'); // 'weight' | 'length'
   const [maxMonths, setMaxMonths] = useState(6); // 6, 12, 24
   const [activePoint, setActivePoint] = useState(null);
@@ -98,34 +98,32 @@ export function WHOGrowthChart({ allEvents }) {
   const buildArea = (topPts, bottomPts) => {
     if (!topPts || !bottomPts || topPts.length === 0) return '';
     const topPath = topPts.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${scaleX(pt.x)} ${scaleY(pt.y)}`).join(' ');
-    const bottomRev = [...bottomPts].reverse().map(pt => `L ${scaleX(pt.x)} ${scaleY(pt.y)}`).join(' ');
-    return `${topPath} ${bottomRev} Z`;
+    const bottomPath = [...bottomPts].reverse().map(pt => `L ${scaleX(pt.x)} ${scaleY(pt.y)}`).join(' ');
+    return `${topPath} ${bottomPath} Z`;
   };
 
-  // Grid tick marks
+  // Generate ticks
   const xTicks = useMemo(() => {
     if (maxMonths === 6) return [0, 1, 2, 3, 4, 5, 6];
     if (maxMonths === 12) return [0, 2, 4, 6, 8, 10, 12];
-    return [0, 3, 6, 9, 12, 15, 18, 21, 24];
+    return [0, 3, 6, 9, 12, 18, 24];
   }, [maxMonths]);
 
   const yTicks = useMemo(() => {
-    const count = 5;
-    const step = (yMax - yMin) / (count - 1);
     const ticks = [];
-    for (let i = 0; i < count; i++) {
-      ticks.push(Math.round((yMin + step * i) * 10) / 10);
+    const step = metricType === 'weight'
+      ? (isMetric ? 1 : 2)
+      : (isMetric ? 5 : 2);
+    const start = Math.ceil(yMin / step) * step;
+    for (let v = start; v <= yMax; v += step) {
+      ticks.push(Math.round(v * 10) / 10);
     }
     return ticks;
-  }, [yMin, yMax]);
+  }, [yMin, yMax, metricType, isMetric]);
 
-  // Active child's curve points within current window
-  const visibleChildPoints = points.filter(p => p.ageMonths <= maxMonths + 0.1);
-  const childPath = visibleChildPoints.reduce((acc, pt, i) => {
-    const x = scaleX(pt.ageMonths);
-    const y = scaleY(pt.value);
-    return i === 0 ? `M ${x} ${y}` : `${acc} L ${x} ${y}`;
-  }, '');
+  // Points within visible range
+  const visibleChildPoints = points.filter(p => p.ageMonths <= maxMonths);
+  const childPath = buildPath(visibleChildPoints.map(p => ({ x: p.ageMonths, y: p.value })));
 
   return (
     <div className="who-growth-card">
@@ -138,12 +136,16 @@ export function WHOGrowthChart({ allEvents }) {
           <div>
             <div className="who-header-title-row">
               <h3 className="who-card-title">
-                {metricType === 'weight' ? 'Weight-for-Age' : 'Length-for-Age'}
+                {metricType === 'weight'
+                  ? (language === 'nl' ? 'Gewicht naar leeftijd' : 'Weight-for-Age')
+                  : (language === 'nl' ? 'Lengte naar leeftijd' : 'Length-for-Age')}
               </h3>
-              <span className="who-standard-badge">WHO Standard</span>
+              <span className="who-standard-badge">{language === 'nl' ? 'WHO Richtlijn' : 'WHO Standard'}</span>
             </div>
             <p className="who-card-sub">
-              {activeChild?.name || 'Baby'} compared to World Health Organization growth curves
+              {language === 'nl'
+                ? `${activeChild?.name || 'Baby'} vergeleken met de officiële WHO-groeicurve`
+                : `${activeChild?.name || 'Baby'} compared to World Health Organization growth curves`}
             </p>
           </div>
         </div>
@@ -158,7 +160,7 @@ export function WHOGrowthChart({ allEvents }) {
                 setActivePoint(null);
               }}
             >
-              Weight
+              {language === 'nl' ? 'Gewicht' : 'Weight'}
             </button>
             <button
               className={`who-toggle-btn ${metricType === 'length' ? 'active' : ''}`}
@@ -167,7 +169,7 @@ export function WHOGrowthChart({ allEvents }) {
                 setActivePoint(null);
               }}
             >
-              Length
+              {language === 'nl' ? 'Lengte' : 'Length'}
             </button>
           </div>
 
@@ -201,7 +203,11 @@ export function WHOGrowthChart({ allEvents }) {
       {currentSummary.latest ? (
         <div className="who-summary-row">
           <div className="who-summary-pill highlight">
-            <span className="who-pill-label">Latest {metricType === 'weight' ? 'Weight' : 'Length'}</span>
+            <span className="who-pill-label">
+              {language === 'nl'
+                ? (metricType === 'weight' ? 'Laatste gewicht' : 'Laatste lengte')
+                : `Latest ${metricType === 'weight' ? 'Weight' : 'Length'}`}
+            </span>
             <div className="who-pill-val-row">
               <span className="who-pill-val">
                 {currentSummary.latest.value} {currentSummary.latest.unit}
@@ -213,13 +219,14 @@ export function WHOGrowthChart({ allEvents }) {
               )}
             </div>
             <span className="who-pill-meta">
-              Measured at {currentSummary.latest.ageLabel} ({new Date(currentSummary.latest.date).toLocaleDateString([], { month: 'short', day: 'numeric' })})
+              {language === 'nl' ? 'Gemeten op ' : 'Measured at '}
+              {currentSummary.latest.ageLabel} ({new Date(currentSummary.latest.date).toLocaleDateString(language === 'nl' ? 'nl-BE' : 'en-US', { month: 'short', day: 'numeric' })})
             </span>
           </div>
 
           {currentSummary.gain && (
             <div className="who-summary-pill">
-              <span className="who-pill-label">Gain Since Birth</span>
+              <span className="who-pill-label">{language === 'nl' ? 'Gewonnen sinds geboorte' : 'Gain Since Birth'}</span>
               <div className="who-pill-val-row">
                 <span className="who-pill-val">
                   +{currentSummary.gain.value} {currentSummary.gain.unit}
@@ -227,33 +234,40 @@ export function WHOGrowthChart({ allEvents }) {
                 <TrendingUp size={15} color="var(--status-green)" />
               </div>
               <span className="who-pill-meta">
-                From {points[0]?.value} {points[0]?.unit} at birth
+                {language === 'nl'
+                  ? `Vanaf ${points[0]?.value} ${points[0]?.unit} bij geboorte`
+                  : `From ${points[0]?.value} ${points[0]?.unit} at birth`}
               </span>
             </div>
           )}
 
           <div className="who-summary-pill subtle">
-            <span className="who-pill-label">Standard Reference</span>
+            <span className="who-pill-label">{language === 'nl' ? 'Standaard referentie' : 'Standard Reference'}</span>
             <div className="who-pill-val-row">
               <span className="who-pill-val-sub">
-                WHO {sex.toLowerCase() === 'female' ? 'Girls' : 'Boys'} 0–24m
+                WHO {sex.toLowerCase() === 'female' ? (language === 'nl' ? 'Meisjes' : 'Girls') : (language === 'nl' ? 'Jongens' : 'Boys')} 0–24m
               </span>
             </div>
             <span className="who-pill-meta">
-              Median at {currentSummary.latest.ageLabel}: ~{interpolateWHOMedian(currentSummary.latest.ageMonths, metricType, sex, isMetric)} {currentSummary.latest.unit}
+              {language === 'nl' ? 'Mediaan op ' : 'Median at '}
+              {currentSummary.latest.ageLabel}: ~{interpolateWHOMedian(currentSummary.latest.ageMonths, metricType, sex, isMetric)} {currentSummary.latest.unit}
             </span>
           </div>
         </div>
       ) : (
         <div className="who-summary-empty">
           <Info size={16} />
-          <span>No {metricType} records logged yet for {activeChild?.name}. Tap below to log!</span>
+          <span>
+            {language === 'nl'
+              ? `Nog geen ${metricType === 'weight' ? 'gewichtsmetingen' : 'lengtemetingen'} geregistreerd voor ${activeChild?.name || 'baby'}. Tik hieronder om te loggen!`
+              : `No ${metricType} records logged yet for ${activeChild?.name}. Tap below to log!`}
+          </span>
           <button
             className="btn-secondary"
             style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
             onClick={() => openModal('GROWTH')}
           >
-            Log Measurement
+            {language === 'nl' ? 'Meting toevoegen' : 'Log Measurement'}
           </button>
         </div>
       )}
@@ -333,7 +347,7 @@ export function WHOGrowthChart({ allEvents }) {
                   fill="var(--text-tertiary)"
                   fontWeight="600"
                 >
-                  {month === 0 ? 'Birth' : `${month}m`}
+                  {month === 0 ? (language === 'nl' ? 'Geboorte' : 'Birth') : `${month}m`}
                 </text>
               </g>
             );
@@ -515,19 +529,19 @@ export function WHOGrowthChart({ allEvents }) {
             <div className="tooltip-header">
               <span className="tooltip-age">{activePoint.ageLabel}</span>
               <span className="tooltip-date">
-                {new Date(activePoint.date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                {new Date(activePoint.date).toLocaleDateString(language === 'nl' ? 'nl-BE' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
             </div>
             <div className="tooltip-main-val">
               <strong>{activePoint.value} {activePoint.unit}</strong>
               {activePoint.percentile != null && (
-                <span className="tooltip-pct">~{activePoint.percentile}th %ile</span>
+                <span className="tooltip-pct">~{activePoint.percentile}e %ile</span>
               )}
             </div>
             {activePoint.caregiver && (
               <div className="tooltip-footer">
                 <User size={10} />
-                <span>Logged by {activePoint.caregiver}</span>
+                <span>{language === 'nl' ? `Geregistreerd door ${activePoint.caregiver}` : `Logged by ${activePoint.caregiver}`}</span>
               </div>
             )}
             <button
@@ -546,19 +560,27 @@ export function WHOGrowthChart({ allEvents }) {
         <div className="who-legend">
           <div className="legend-item">
             <span className="legend-line baby" />
-            <span className="legend-text">{activeChild?.name || 'Baby'}'s Growth</span>
+            <span className="legend-text">
+              {language === 'nl' ? `Groei van ${activeChild?.name || 'Baby'}` : `${activeChild?.name || 'Baby'}'s Growth`}
+            </span>
           </div>
           <div className="legend-item">
             <span className="legend-line p50" />
-            <span className="legend-text">WHO 50th %ile (Median)</span>
+            <span className="legend-text">
+              {language === 'nl' ? 'WHO Mediaan (P50)' : 'WHO 50th %ile (Median)'}
+            </span>
           </div>
           <div className="legend-item">
             <span className="legend-swatch middle" />
-            <span className="legend-text">15th–85th %ile</span>
+            <span className="legend-text">
+              {language === 'nl' ? 'Normale zone (P15–P85)' : '15th–85th %ile'}
+            </span>
           </div>
           <div className="legend-item">
             <span className="legend-swatch outer" />
-            <span className="legend-text">3rd–97th %ile (Normal)</span>
+            <span className="legend-text">
+              {language === 'nl' ? 'P3–P97 (Gezond bereik)' : '3rd–97th %ile (Normal)'}
+            </span>
           </div>
         </div>
 
@@ -568,8 +590,9 @@ export function WHOGrowthChart({ allEvents }) {
           onClick={() => setUnitOverride(isMetric ? 'imperial' : 'metric')}
           title="Toggle Metric and Imperial units"
         >
-          Units: {isMetric ? (metricType === 'weight' ? 'kg' : 'cm') : (metricType === 'weight' ? 'lb' : 'in')}
-          {' '}(Tap to switch)
+          {language === 'nl'
+            ? `Eenheden: ${isMetric ? (metricType === 'weight' ? 'kg' : 'cm') : (metricType === 'weight' ? 'lb' : 'in')} (Tik om te wisselen)`
+            : `Units: ${isMetric ? (metricType === 'weight' ? 'kg' : 'cm') : (metricType === 'weight' ? 'lb' : 'in')} (Tap to switch)`}
         </button>
       </div>
     </div>

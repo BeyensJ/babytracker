@@ -18,6 +18,8 @@ const STORAGE_KEYS = {
   ACTIVE_CAREGIVER: 'nara_device_caregiver_id_v1',
 };
 
+import { getTranslation } from '../i18n/translations';
+
 const DEFAULT_CHILDREN = [
   {
     id: 'child_1',
@@ -29,8 +31,8 @@ const DEFAULT_CHILDREN = [
 ];
 
 const DEFAULT_CAREGIVERS = [
-  { id: 'cg_mom', name: 'Mom', role: 'Mom', color: '#CE6B4C' },
-  { id: 'cg_dad', name: 'Dad', role: 'Dad', color: '#546C7E' },
+  { id: 'cg_mom', name: 'Mom', role: 'Mama', color: '#CE6B4C' },
+  { id: 'cg_dad', name: 'Dad', role: 'Papa', color: '#546C7E' },
 ];
 
 const DEFAULT_PREFERENCES = {
@@ -40,6 +42,7 @@ const DEFAULT_PREFERENCES = {
   tempUnit: 'C',    // 'F' or 'C'
   theme: 'light',   // 'light', 'dark', or 'oled'
   haptics: true,    // subtle vibration feedback
+  language: 'nl',   // 'nl' (Nederlands / Vlaams) or 'en' (English)
 };
 
 export function AppProvider({ children }) {
@@ -106,6 +109,9 @@ export function AppProvider({ children }) {
       return DEFAULT_PREFERENCES;
     }
   });
+
+  const language = preferences?.language || 'nl';
+  const t = (key, params) => getTranslation(key, language, params);
 
   // 5. Live Active Timers
   const [activeTimers, setActiveTimers] = useState(() => {
@@ -699,10 +705,11 @@ export function AppProvider({ children }) {
   useEffect(() => {
     notificationService.syncTimerNotification(
       activeTimers,
-      activeCaregiver?.name || 'Parent',
-      activeChild?.name || 'Baby'
+      activeCaregiver?.name || (language === 'nl' ? 'Verzorger' : 'Parent'),
+      activeChild?.name || 'Baby',
+      language
     );
-  }, [activeTimers, activeCaregiver?.name, activeChild?.name, notificationPermission]);
+  }, [activeTimers, activeCaregiver?.name, activeChild?.name, notificationPermission, language]);
 
   // 6. Listen for Service Worker Notification Actions (e.g. from Android Notification Shade)
   useEffect(() => {
@@ -737,8 +744,9 @@ export function AppProvider({ children }) {
     if (perm === 'granted') {
       await notificationService.syncTimerNotification(
         activeTimers,
-        activeCaregiver?.name || 'Parent',
-        activeChild?.name || 'Baby'
+        activeCaregiver?.name || (language === 'nl' ? 'Verzorger' : 'Parent'),
+        activeChild?.name || 'Baby',
+        language
       );
     }
     return perm;
@@ -837,6 +845,8 @@ export function AppProvider({ children }) {
     resetToSample,
     clearAllData,
     preferences,
+    language,
+    t,
     setPreferences: (prefsOrUpdater) => {
       setPreferences(prev => {
         const next = typeof prefsOrUpdater === 'function' ? prefsOrUpdater(prev) : prefsOrUpdater;

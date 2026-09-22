@@ -5,7 +5,7 @@ import { Pipette, X, Plus, Minus, ArrowRightLeft, Clock } from 'lucide-react';
 import { TimerStartCard } from '../TimerStartCard';
 
 export function PumpModal() {
-  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, startPumpTimer } = useApp();
+  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, startPumpTimer, t, language } = useApp();
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
   const defaultUnit = preferences.volumeUnit === 'ml' ? 'ml' : 'oz';
@@ -178,9 +178,9 @@ export function PumpModal() {
             >
               <Pipette size={18} />
             </div>
-            <h2>{isEditing ? 'Edit Pump Session' : 'Log Pumping'}</h2>
+            <h2>{isEditing ? t('pumpModal.titleEdit') : t('pumpModal.titleAdd')}</h2>
           </div>
-          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label="Close modal">
+          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label={t('common.close')}>
             <X size={20} />
           </button>
         </div>
@@ -189,15 +189,15 @@ export function PumpModal() {
           <div className="modal-body">
             {!isEditing && (
               <TimerStartCard
-                title="Active Pumping Session"
-                subtitle="Track live pumping with custom start time"
+                title={t('timers.activePump')}
+                subtitle={language === 'nl' ? 'Houd live de afkolfsessie bij met timer' : 'Track live pumping with custom start time'}
                 icon={Pipette}
                 iconColor="var(--color-berry)"
                 iconBg="var(--color-berry-light)"
                 actions={[
                   {
                     id: 'start-timer-pump',
-                    label: 'Start Pump Timer',
+                    label: language === 'nl' ? 'Kolftimer starten' : 'Start Pump Timer',
                     className: 'btn-primary',
                     style: { padding: '0.45rem 1rem', fontSize: '0.8rem', backgroundColor: 'var(--color-berry)' },
                   },
@@ -211,28 +211,28 @@ export function PumpModal() {
 
             {/* Pumping Side Toggle */}
             <div className="form-group">
-              <label className="form-label">Pumping Side</label>
+              <label className="form-label">{t('pumpModal.sideSelection')}</label>
               <div className="segmented-control">
                 <button
                   type="button"
                   className={`segmented-btn ${side === 'BOTH' ? 'active' : ''}`}
                   onClick={() => handleSideChange('BOTH')}
                 >
-                  Both Sides
+                  {t('pumpModal.bothSides')}
                 </button>
                 <button
                   type="button"
                   className={`segmented-btn ${side === 'LEFT' ? 'active' : ''}`}
                   onClick={() => handleSideChange('LEFT')}
                 >
-                  Left Only
+                  {t('pumpModal.leftOnly')}
                 </button>
                 <button
                   type="button"
                   className={`segmented-btn ${side === 'RIGHT' ? 'active' : ''}`}
                   onClick={() => handleSideChange('RIGHT')}
                 >
-                  Right Only
+                  {t('pumpModal.rightOnly')}
                 </button>
               </div>
             </div>
@@ -240,7 +240,7 @@ export function PumpModal() {
             {/* Total Expressed Banner & Unit Switcher */}
             <div className="pump-total-banner">
               <div>
-                <div className="pump-total-label">Total Expressed</div>
+                <div className="pump-total-label">{t('pumpModal.totalExpressed')}</div>
                 <div className="pump-total-value">
                   {totalAmount} <span style={{ fontSize: '1.2rem', fontWeight: 600 }}>{unit}</span>
                 </div>
@@ -270,15 +270,15 @@ export function PumpModal() {
               {/* Left Side */}
               <div className={`pump-side-card ${side === 'RIGHT' ? 'disabled' : ''}`}>
                 <div className="pump-side-header">
-                  <span className="pump-side-title">Left Side</span>
+                  <span className="pump-side-title">{t('pumpModal.leftSide')}</span>
                   {side === 'BOTH' && (
                     <button
                       type="button"
                       className="pump-chip-btn"
                       onClick={copyLeftToRight}
-                      title="Copy Left amount to Right"
+                      title={t('pumpModal.copyToRight')}
                     >
-                      Copy to Right ➔
+                      {t('pumpModal.copyToRight')} ➔
                     </button>
                   )}
                 </div>
@@ -339,15 +339,15 @@ export function PumpModal() {
               {/* Right Side */}
               <div className={`pump-side-card ${side === 'LEFT' ? 'disabled' : ''}`}>
                 <div className="pump-side-header">
-                  <span className="pump-side-title">Right Side</span>
+                  <span className="pump-side-title">{t('pumpModal.rightSide')}</span>
                   {side === 'BOTH' && (
                     <button
                       type="button"
                       className="pump-chip-btn"
                       onClick={copyRightToLeft}
-                      title="Copy Right amount to Left"
+                      title={t('pumpModal.copyToLeft')}
                     >
-                      Copy to Left ➔
+                      {t('pumpModal.copyToLeft')} ➔
                     </button>
                   )}
                 </div>
@@ -409,7 +409,7 @@ export function PumpModal() {
             {/* Duration */}
             <div className="form-group">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label className="form-label">Duration (minutes)</label>
+                <label className="form-label">{t('pumpModal.sessionDuration')} ({t('common.duration')})</label>
                 <div style={{ display: 'flex', gap: '0.3rem' }}>
                   {[10, 15, 20, 30].map((m) => (
                     <button
@@ -439,7 +439,7 @@ export function PumpModal() {
 
             {/* Time of Pump */}
             <div className="form-group">
-              <label className="form-label">Time</label>
+              <label className="form-label">{t('common.time')}</label>
               <input
                 type="time"
                 className="form-input"
@@ -450,11 +450,11 @@ export function PumpModal() {
 
             {/* Notes */}
             <div className="form-group">
-              <label className="form-label">Notes (optional)</label>
+              <label className="form-label">{t('common.notes')}</label>
               <textarea
                 className="form-textarea"
                 rows="2"
-                placeholder="Stored in fridge bag, morning pump, electric pump..."
+                placeholder={language === 'nl' ? 'In koelkast bewaard, ochtendsessie, elektrisch afgekolfd...' : 'Stored in fridge bag, morning pump, electric pump...'}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
               />
@@ -463,14 +463,14 @@ export function PumpModal() {
 
           <div className="modal-footer">
             <button type="button" className="btn-secondary" onClick={closeModal}>
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               className="btn-primary"
               style={{ backgroundColor: 'var(--color-berry)' }}
             >
-              {isEditing ? 'Save Changes' : 'Log Pump'}
+              {isEditing ? t('pumpModal.submitEdit') : t('pumpModal.submitAdd')}
             </button>
           </div>
         </form>

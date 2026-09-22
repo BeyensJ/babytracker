@@ -4,7 +4,7 @@ import { Heart, X, Clock } from 'lucide-react';
 import { TimerStartCard } from '../TimerStartCard';
 
 export function BreastfeedModal() {
-  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, startBreastTimer } = useApp();
+  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, startBreastTimer, t, language } = useApp();
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
 
@@ -66,9 +66,9 @@ export function BreastfeedModal() {
             <div className="modal-title-icon" style={{ backgroundColor: 'var(--color-terracotta-light)', color: 'var(--color-terracotta)' }}>
               <Heart size={18} />
             </div>
-            <h2>{isEditing ? 'Edit Nursing' : 'Log Breastfeed'}</h2>
+            <h2>{isEditing ? t('breastModal.titleEdit') : t('breastModal.titleAdd')}</h2>
           </div>
-          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label="Close modal">
+          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label={t('common.close')}>
             <X size={20} />
           </button>
         </div>
@@ -78,22 +78,22 @@ export function BreastfeedModal() {
             {/* Start Live Timer with Starting Time Option (if not editing) */}
             {!isEditing && (
               <TimerStartCard
-                title="Start Nursing Timer"
-                subtitle="Track live nursing with custom start time"
+                title={t('breastModal.startTimer')}
+                subtitle={language === 'nl' ? 'Live borstvoeding bijhouden met starttijd' : 'Track live nursing with custom start time'}
                 icon={Heart}
                 iconColor="var(--color-terracotta)"
                 iconBg="var(--color-terracotta-light)"
                 actions={[
                   {
                     id: 'start-timer-left',
-                    label: 'Left',
+                    label: t('timeline.leftSide'),
                     side: 'LEFT',
                     className: 'btn-primary',
                     style: { padding: '0.4rem 0.85rem', fontSize: '0.78rem' },
                   },
                   {
                     id: 'start-timer-right',
-                    label: 'Right',
+                    label: t('timeline.rightSide'),
                     side: 'RIGHT',
                     className: 'btn-primary',
                     style: { padding: '0.4rem 0.85rem', fontSize: '0.78rem', backgroundColor: 'var(--color-caramel)' },
@@ -108,7 +108,7 @@ export function BreastfeedModal() {
 
             {/* Side Selector */}
             <div className="form-group">
-              <label className="form-label">Breast Side</label>
+              <label className="form-label">{t('breastModal.side')}</label>
               <div className="segmented-control">
                 {['LEFT', 'BOTH', 'RIGHT'].map(s => (
                   <button
@@ -121,7 +121,7 @@ export function BreastfeedModal() {
                       if (s === 'RIGHT' && leftMinutes > 0) setLeftMinutes(0);
                     }}
                   >
-                    {s === 'LEFT' ? 'Left Breast' : s === 'RIGHT' ? 'Right Breast' : 'Both Sides'}
+                    {s === 'LEFT' ? t('breastModal.left') : s === 'RIGHT' ? t('breastModal.right') : t('breastModal.both')}
                   </button>
                 ))}
               </div>
@@ -131,7 +131,7 @@ export function BreastfeedModal() {
             <div style={{ display: 'grid', gridTemplateColumns: side === 'BOTH' ? '1fr 1fr' : '1fr', gap: '0.75rem' }}>
               {(side === 'LEFT' || side === 'BOTH') && (
                 <div className="form-group">
-                  <label className="form-label">Left Side (minutes)</label>
+                  <label className="form-label">{t('breastModal.left')} (min)</label>
                   <input
                     type="number"
                     min="0"
@@ -145,7 +145,7 @@ export function BreastfeedModal() {
 
               {(side === 'RIGHT' || side === 'BOTH') && (
                 <div className="form-group">
-                  <label className="form-label">Right Side (minutes)</label>
+                  <label className="form-label">{t('breastModal.right')} (min)</label>
                   <input
                     type="number"
                     min="0"
@@ -160,7 +160,7 @@ export function BreastfeedModal() {
 
             {/* Time of Feed */}
             <div className="form-group">
-              <label className="form-label">Time</label>
+              <label className="form-label">{t('common.time')}</label>
               <input
                 type="time"
                 className="form-input"
@@ -171,11 +171,11 @@ export function BreastfeedModal() {
 
             {/* Note */}
             <div className="form-group">
-              <label className="form-label">Notes (optional)</label>
+              <label className="form-label">{t('common.notes')}</label>
               <textarea
                 className="form-textarea"
                 rows="2"
-                placeholder="Good latch, sleepy, etc."
+                placeholder={t('common.notes')}
                 value={note}
                 onChange={e => setNote(e.target.value)}
               />
@@ -184,10 +184,10 @@ export function BreastfeedModal() {
 
           <div className="modal-footer">
             <button type="button" className="btn-secondary" onClick={closeModal}>
-              Cancel
+              {t('common.cancel')}
             </button>
             <button type="submit" className="btn-primary">
-              {isEditing ? 'Save Changes' : 'Log Feed'}
+              {isEditing ? t('breastModal.submitEdit') : t('breastModal.submitAdd')}
             </button>
           </div>
         </form>

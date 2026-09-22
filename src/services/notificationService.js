@@ -44,6 +44,7 @@ class NotificationService {
     this.currentTimers = null;
     this.currentCaregiver = 'Parent';
     this.currentBaby = 'Baby';
+    this.currentLang = 'nl';
     this.toastListeners = new Set();
   }
 
@@ -128,10 +129,11 @@ class NotificationService {
   /**
    * Sync active timers to the Android Notification Tray and In-App Toast.
    */
-  async syncTimerNotification(activeTimers, caregiverName = 'Parent', babyName = 'Baby') {
+  async syncTimerNotification(activeTimers, caregiverName = 'Parent', babyName = 'Baby', lang = 'nl') {
     this.currentTimers = activeTimers;
     this.currentCaregiver = caregiverName;
     this.currentBaby = babyName;
+    this.currentLang = lang;
 
     const breast = activeTimers?.breast;
     const sleep = activeTimers?.sleep?.running ? activeTimers.sleep : null;
@@ -149,13 +151,15 @@ class NotificationService {
       console.log(`[Notification] Timer active but notification permission is '${permission}'.`);
       // Even if OS permission is not granted, still display the in-app toast banner!
       const fallbackTitle = breast
-        ? `🤱 Nursing (${breast.activeSide === 'LEFT' ? 'Left' : 'Right'} Side) — ${babyName}`
+        ? `🤱 ${lang === 'nl' ? 'Borstvoeding' : 'Nursing'} (${breast.activeSide === 'LEFT' ? (lang === 'nl' ? 'Links' : 'Left') : (lang === 'nl' ? 'Rechts' : 'Right')}) — ${babyName}`
         : sleep
-        ? `🌙 ${babyName} is Sleeping`
-        : `🍼 Pumping Session`;
+        ? `🌙 ${babyName} ${lang === 'nl' ? 'slaapt' : 'is Sleeping'}`
+        : `🍼 ${lang === 'nl' ? 'Kolfsessie' : 'Pumping Session'}`;
       this.showToast({
         title: fallbackTitle,
-        body: 'Active timer is running. Tap "Enable Tray" in Settings for Android notification drawer tracking.',
+        body: lang === 'nl'
+          ? 'Timer loopt actief. Schakel meldingen in bij Instellingen voor live weergave in het meldingenpaneel.'
+          : 'Active timer is running. Tap "Enable Tray" in Settings for Android notification drawer tracking.',
         type: breast ? 'breast' : sleep ? 'sleep' : 'pump',
         timestamp: Date.now(),
       });
@@ -183,14 +187,14 @@ class NotificationService {
       const sessionStart = breast.sessionStartMs || now - totalElapsed;
       timestamp = sessionStart;
 
-      const sideLabel = breast.activeSide === 'LEFT' ? 'Left Side' : 'Right Side';
-      const statusLabel = breast.running ? sideLabel : 'Paused';
-      title = `🤱 Nursing (${statusLabel}) — ${babyName}`;
-      body = `L: ${formatTimerClock(leftElapsed)} • R: ${formatTimerClock(rightElapsed)} (Total: ${formatTimerClock(totalElapsed)})\nStarted at ${formatTime(sessionStart)}`;
+      const sideLabel = breast.activeSide === 'LEFT' ? (lang === 'nl' ? 'Linkerkant' : 'Left Side') : (lang === 'nl' ? 'Rechterkant' : 'Right Side');
+      const statusLabel = breast.running ? sideLabel : (lang === 'nl' ? 'Gepauzeerd' : 'Paused');
+      title = `🤱 ${lang === 'nl' ? 'Borstvoeding' : 'Nursing'} (${statusLabel}) — ${babyName}`;
+      body = `L: ${formatTimerClock(leftElapsed)} • R: ${formatTimerClock(rightElapsed)} (${lang === 'nl' ? 'Totaal' : 'Total'}: ${formatTimerClock(totalElapsed)})\n${lang === 'nl' ? 'Gestart om' : 'Started at'} ${formatTime(sessionStart, lang)}`;
 
       actions = [
-        { action: 'switch_side', title: `To ${breast.activeSide === 'LEFT' ? 'Right' : 'Left'} Side 🔄` },
-        { action: 'finish_timer', title: 'Finish & Save ✓' },
+        { action: 'switch_side', title: lang === 'nl' ? `Naar ${breast.activeSide === 'LEFT' ? 'Rechts' : 'Links'} 🔄` : `To ${breast.activeSide === 'LEFT' ? 'Right' : 'Left'} Side 🔄` },
+        { action: 'finish_timer', title: lang === 'nl' ? 'Klaar & Opslaan ✓' : 'Finish & Save ✓' },
       ];
     } else if (sleep) {
       timerType = 'sleep';
@@ -198,20 +202,20 @@ class NotificationService {
       const elapsed = Math.max(0, now - startMs);
       timestamp = startMs;
 
-      title = `🌙 ${babyName} is Sleeping`;
-      body = `${formatTimerClock(elapsed)} elapsed • Started at ${formatTime(startMs)}\nTap Woke Up below when baby awakens.`;
+      title = `🌙 ${babyName} ${lang === 'nl' ? 'slaapt' : 'is Sleeping'}`;
+      body = `${formatTimerClock(elapsed)} ${lang === 'nl' ? 'verstreken' : 'elapsed'} • ${lang === 'nl' ? 'Gestart om' : 'Started at'} ${formatTime(startMs, lang)}\n${lang === 'nl' ? 'Tik op Wakker zodra de baby opstaat.' : 'Tap Woke Up below when baby awakens.'}`;
 
-      actions = [{ action: 'finish_timer', title: 'Woke Up ☀️' }];
+      actions = [{ action: 'finish_timer', title: lang === 'nl' ? 'Wakker geworden ☀️' : 'Woke Up ☀️' }];
     } else if (pump) {
       timerType = 'pump';
       const startMs = pump.startMs || now;
       const elapsed = Math.max(0, now - startMs);
       timestamp = startMs;
 
-      title = `🍼 Pumping Session`;
-      body = `${formatTimerClock(elapsed)} elapsed • Started at ${formatTime(startMs)}`;
+      title = `🍼 ${lang === 'nl' ? 'Afkolfsessie' : 'Pumping Session'}`;
+      body = `${formatTimerClock(elapsed)} ${lang === 'nl' ? 'verstreken' : 'elapsed'} • ${lang === 'nl' ? 'Gestart om' : 'Started at'} ${formatTime(startMs, lang)}`;
 
-      actions = [{ action: 'finish_timer', title: 'Finish & Save ✓' }];
+      actions = [{ action: 'finish_timer', title: lang === 'nl' ? 'Klaar & Opslaan ✓' : 'Finish & Save ✓' }];
     }
 
     const payload = {
@@ -307,7 +311,7 @@ class NotificationService {
     if (this.tickerInterval) return;
     this.tickerInterval = setInterval(() => {
       if (this.currentTimers) {
-        this.syncTimerNotification(this.currentTimers, this.currentCaregiver, this.currentBaby);
+        this.syncTimerNotification(this.currentTimers, this.currentCaregiver, this.currentBaby, this.currentLang);
       }
     }, 15000);
   }

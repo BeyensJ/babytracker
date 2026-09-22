@@ -4,8 +4,9 @@ import { formatRelative, formatDurationMs, formatVolume, getWakeWindowStatus } f
 import { Utensils, Moon, Sparkles, Sun, Clock, ChevronRight } from 'lucide-react';
 
 export function QuickStatusBanner() {
-  const { events, activeChild, activeChildId, activeTimers, preferences, openModal } = useApp();
+  const { events, activeChild, activeChildId, activeTimers, preferences, openModal, language, t } = useApp();
   const [now, setNow] = useState(Date.now());
+  const isDutch = language === 'nl';
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 15000);
@@ -38,64 +39,66 @@ export function QuickStatusBanner() {
   }
 
   const wakeStatus = (isSleeping || awakeMs === -1)
-    ? { label: 'Sleeping', status: 'neutral' }
-    : getWakeWindowStatus(awakeMs);
+    ? { label: isDutch ? 'Slaapt nu' : 'Sleeping', status: 'neutral' }
+    : getWakeWindowStatus(awakeMs, language);
 
   const getAwakeDurationText = () => {
-    if (awakeMs <= 0) return 'Just woke up';
+    if (awakeMs <= 0) return isDutch ? 'Net wakker' : 'Just woke up';
     const mins = Math.floor(awakeMs / 60000);
     const hrs = Math.floor(mins / 60);
     const remMins = mins % 60;
-    if (hrs === 0) return `${remMins}m awake`;
-    return `${hrs}h ${remMins}m awake`;
+    const hUnit = isDutch ? 'u' : 'h';
+    if (hrs === 0) return isDutch ? `${remMins} min wakker` : `${remMins}m awake`;
+    return isDutch ? `${hrs}${hUnit} ${remMins}m wakker` : `${hrs}h ${remMins}m awake`;
   };
 
   // Format feed detail
   const getFeedDetail = (ev) => {
-    if (!ev) return 'No feeds yet';
+    if (!ev) return isDutch ? 'Nog geen voeding' : 'No feeds yet';
     const det = ev.details || {};
     if (ev.type === 'BREAST') {
-      const dur = formatDurationMs((det.leftDurationMs || 0) + (det.rightDurationMs || 0) || ev.durationMs);
-      return dur ? `Nurse · ${dur}` : `Nurse · ${det.side || 'Both'}`;
+      const dur = formatDurationMs((det.leftDurationMs || 0) + (det.rightDurationMs || 0) || ev.durationMs, language);
+      const sideText = det.side === 'LEFT' ? (isDutch ? 'Links' : 'Left') : det.side === 'RIGHT' ? (isDutch ? 'Rechts' : 'Right') : (isDutch ? 'Beide' : 'Both');
+      return isDutch ? `Borst · ${dur || sideText}` : `Nurse · ${dur || sideText}`;
     }
     if (ev.type === 'BOTTLE') {
       const vol = formatVolume(det.volumeFloz, preferences.volumeUnit);
-      return `Bottle · ${vol}`;
+      return isDutch ? `Flesje · ${vol}` : `Bottle · ${vol}`;
     }
     if (ev.type === 'SOLIDS') {
-      return det.food ? `Solids · ${det.food}` : 'Solid meal';
+      return det.food ? (isDutch ? `Hapjes · ${det.food}` : `Solids · ${det.food}`) : (isDutch ? 'Vaste voeding' : 'Solid meal');
     }
     if (ev.type === 'COMBO') {
       const vol = formatVolume(det.volumeFloz, preferences.volumeUnit);
       return `Combo · ${vol}`;
     }
-    return 'Feed';
+    return isDutch ? 'Voeding' : 'Feed';
   };
 
   // Format diaper detail
   const getDiaperDetail = (ev) => {
-    if (!ev) return 'No diapers yet';
+    if (!ev) return isDutch ? 'Nog geen pampers' : 'No diapers yet';
     const det = ev.details || {};
     const parts = [];
-    if (det.pee) parts.push('Wet');
-    if (det.poop) parts.push('Dirty');
-    if (det.dry) parts.push('Dry');
-    return parts.length > 0 ? parts.join(' & ') : 'Diaper change';
+    if (det.pee) parts.push(isDutch ? 'Nat' : 'Wet');
+    if (det.poop) parts.push(isDutch ? 'Kaka' : 'Dirty');
+    if (det.dry) parts.push(isDutch ? 'Droog' : 'Dry');
+    return parts.length > 0 ? parts.join(' & ') : (isDutch ? 'Pamper ververst' : 'Diaper change');
   };
 
   // Format sleep detail
   const getSleepDetail = (ev) => {
-    if (!ev) return 'No sleep yet';
+    if (!ev) return isDutch ? 'Nog geen slaap' : 'No sleep yet';
     const det = ev.details || {};
-    const type = det.sleepType === 'NIGHT' ? 'Night' : 'Nap';
+    const type = det.sleepType === 'NIGHT' ? (isDutch ? 'Nacht' : 'Night') : (isDutch ? 'Dutje' : 'Nap');
     if (!ev.durationMs && !ev.endDt) {
-      return 'Sleeping now';
+      return isDutch ? 'Slaapt nu' : 'Sleeping now';
     }
-    const dur = formatDurationMs(ev.durationMs);
+    const dur = formatDurationMs(ev.durationMs, language);
     return dur ? `${type} · ${dur}` : type;
   };
 
-  const babyName = activeChild?.name || 'Baby';
+  const babyName = activeChild?.name || (isDutch ? 'Baby' : 'Baby');
 
   return (
     <div className="hero-glance-card">
@@ -104,14 +107,20 @@ export function QuickStatusBanner() {
         <div className="hero-state-wrap">
           <div className={`hero-state-badge ${isSleeping ? 'sleeping' : 'awake'}`}>
             {isSleeping ? <Moon size={14} /> : <Sun size={14} />}
-            <span>{isSleeping ? `${babyName} is Sleeping` : `${babyName} is Awake`}</span>
+            <span>
+              {isSleeping
+                ? (isDutch ? `${babyName} slaapt` : `${babyName} is Sleeping`)
+                : (isDutch ? `${babyName} is wakker` : `${babyName} is Awake`)}
+            </span>
           </div>
 
           <span className="hero-wake-duration">
             {isSleeping ? (
               activeTimers?.sleep?.startMs ? (
-                `Started ${formatRelative(activeTimers.sleep.startMs, now)}`
-              ) : 'Timer active'
+                isDutch
+                  ? `Begonnen ${formatRelative(activeTimers.sleep.startMs, now, language)}`
+                  : `Started ${formatRelative(activeTimers.sleep.startMs, now, language)}`
+              ) : (isDutch ? 'Timer actief' : 'Timer active')
             ) : (
               getAwakeDurationText()
             )}
@@ -140,9 +149,9 @@ export function QuickStatusBanner() {
             <Utensils size={15} />
           </div>
           <div className="glance-content">
-            <span className="glance-label">Last Fed</span>
+            <span className="glance-label">{isDutch ? 'Laatste voeding' : 'Last Fed'}</span>
             <span className="glance-time">
-              {latestFeed ? formatRelative(latestFeed.beginDt, now) : '—'}
+              {latestFeed ? formatRelative(latestFeed.beginDt, now, language) : '—'}
             </span>
             <span className="glance-sub">{getFeedDetail(latestFeed)}</span>
           </div>
@@ -159,9 +168,9 @@ export function QuickStatusBanner() {
             <Sparkles size={15} />
           </div>
           <div className="glance-content">
-            <span className="glance-label">Last Diaper</span>
+            <span className="glance-label">{isDutch ? 'Laatste pamper' : 'Last Diaper'}</span>
             <span className="glance-time">
-              {latestDiaper ? formatRelative(latestDiaper.beginDt, now) : '—'}
+              {latestDiaper ? formatRelative(latestDiaper.beginDt, now, language) : '—'}
             </span>
             <span className="glance-sub">{getDiaperDetail(latestDiaper)}</span>
           </div>
@@ -178,9 +187,9 @@ export function QuickStatusBanner() {
             <Moon size={15} />
           </div>
           <div className="glance-content">
-            <span className="glance-label">Last Sleep</span>
+            <span className="glance-label">{isDutch ? 'Laatste slaap' : 'Last Sleep'}</span>
             <span className="glance-time">
-              {latestSleep ? formatRelative(latestSleep.endDt || latestSleep.beginDt, now) : '—'}
+              {latestSleep ? formatRelative(latestSleep.endDt || latestSleep.beginDt, now, language) : '—'}
             </span>
             <span className="glance-sub">{getSleepDetail(latestSleep)}</span>
           </div>

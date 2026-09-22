@@ -18,6 +18,8 @@ export function ImportPreviewModal() {
     activeChildId,
     setActiveChildId,
     setPreferences,
+    t,
+    language,
   } = useApp();
 
   const [importMode, setImportMode] = useState('replace'); // default to 'replace' or 'merge'
@@ -94,17 +96,18 @@ export function ImportPreviewModal() {
         spread: 80,
         origin: { y: 0.6 },
       });
-    } catch {}
+    } catch { }
 
     closeModal();
   };
 
+  const locale = language === 'nl' ? 'nl-BE' : 'en-US';
   const getEarliestFormatted = summary.earliestDate
-    ? new Date(summary.earliestDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
-    : 'Unknown';
+    ? new Date(summary.earliestDate).toLocaleDateString([locale], { month: 'short', day: 'numeric', year: 'numeric' })
+    : (language === 'nl' ? 'Onbekend' : 'Unknown');
   const getLatestFormatted = summary.latestDate
-    ? new Date(summary.latestDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
-    : 'Unknown';
+    ? new Date(summary.latestDate).toLocaleDateString([locale], { month: 'short', day: 'numeric', year: 'numeric' })
+    : (language === 'nl' ? 'Onbekend' : 'Unknown');
 
   return (
     <div className="modal-overlay" onClick={closeModal}>
@@ -115,11 +118,11 @@ export function ImportPreviewModal() {
               <Upload size={18} />
             </div>
             <div>
-              <h2 style={{ fontSize: '1.1rem' }}>Import Nara Baby Data</h2>
+              <h2 style={{ fontSize: '1.1rem' }}>{t('importModal.title')}</h2>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{fileName}</span>
             </div>
           </div>
-          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label="Close modal">
+          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label={t('common.close')}>
             <X size={20} />
           </button>
         </div>
@@ -132,10 +135,10 @@ export function ImportPreviewModal() {
             </div>
             <div>
               <div style={{ fontWeight: 600, color: 'var(--status-green)', fontSize: '0.92rem' }}>
-                Successfully Recognized {summary.total} Activities!
+                {t('importModal.recognized', { count: summary.total })}
               </div>
               <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
-                Timespan: {getEarliestFormatted} — {getLatestFormatted}
+                {language === 'nl' ? 'Periode:' : 'Timespan:'} {getEarliestFormatted} — {getLatestFormatted}
               </div>
             </div>
           </div>
@@ -152,10 +155,10 @@ export function ImportPreviewModal() {
                 />
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.88rem', fontWeight: 600 }}>
                   <Baby size={16} color="var(--color-terracotta)" />
-                  Import Baby Profile: <strong>{detectedProfile.name}</strong>
+                  {language === 'nl' ? 'Babyprofiel importeren:' : 'Import Baby Profile:'} <strong>{detectedProfile.name}</strong>
                   {detectedProfile.birthdate && (
                     <span style={{ fontSize: '0.75rem', fontWeight: 400, color: 'var(--text-secondary)' }}>
-                      (Born: {detectedProfile.birthdate})
+                      ({language === 'nl' ? 'Geboren:' : 'Born:'} {detectedProfile.birthdate})
                     </span>
                   )}
                 </div>
@@ -170,14 +173,14 @@ export function ImportPreviewModal() {
                     style={{ width: 16, height: 16, accentColor: 'var(--color-sage)' }}
                   />
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                    Set preferred units to <strong>Metric ({detectedUnits.weightUnit}, {detectedUnits.lengthUnit || 'cm'}, {detectedUnits.tempUnit || '°C'})</strong>
+                    {language === 'nl' ? 'Standaard eenheden instellen op Metrisch (kg, cm, °C, mL)' : `Set preferred units to Metric (${detectedUnits.weightUnit}, ${detectedUnits.lengthUnit || 'cm'}, ${detectedUnits.tempUnit || '°C'})`}
                   </span>
                 </label>
               )}
 
               {detectedCaregivers.length > 0 && (
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginLeft: '1.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <span>Caregivers tracked:</span>
+                  <span>{language === 'nl' ? 'Herkende verzorgers:' : 'Caregivers tracked:'}</span>
                   <strong style={{ color: 'var(--text-primary)' }}>{detectedCaregivers.join(', ')}</strong>
                 </div>
               )}
@@ -186,23 +189,25 @@ export function ImportPreviewModal() {
 
           {/* Activity Breakdown Grid */}
           <div className="form-group">
-            <label className="form-label">Activity Breakdown</label>
+            <label className="form-label">{language === 'nl' ? 'Overzicht van activiteiten' : 'Activity Breakdown'}</label>
             <div className="preview-summary-grid">
               <div className="preview-stat-card">
                 <div className="preview-stat-number">
                   {(summary.byType.BREAST || 0) + (summary.byType.BOTTLE || 0) + (summary.byType.SOLIDS || 0)}
                 </div>
-                <div className="preview-stat-label">Feeds ({summary.byType.BREAST || 0} BF)</div>
+                <div className="preview-stat-label">
+                  {language === 'nl' ? `Voedingen (${summary.byType.BREAST || 0} borst)` : `Feeds (${summary.byType.BREAST || 0} BF)`}
+                </div>
               </div>
 
               <div className="preview-stat-card">
                 <div className="preview-stat-number">{summary.byType.SLEEP || 0}</div>
-                <div className="preview-stat-label">Sleeps</div>
+                <div className="preview-stat-label">{language === 'nl' ? 'Slaapjes' : 'Sleeps'}</div>
               </div>
 
               <div className="preview-stat-card">
                 <div className="preview-stat-number">{summary.byType.DIAPER || 0}</div>
-                <div className="preview-stat-label">Diapers</div>
+                <div className="preview-stat-label">{language === 'nl' ? 'Pampers' : 'Diapers'}</div>
               </div>
 
               <div className="preview-stat-card">
@@ -210,7 +215,7 @@ export function ImportPreviewModal() {
                   {(summary.byType.GROWTH || 0) + (summary.byType.MILESTONE || 0) + (summary.byType.HEALTH || 0)}
                 </div>
                 <div className="preview-stat-label">
-                  Growth & Firsts
+                  {language === 'nl' ? 'Groei & Eerste keren' : 'Growth & Firsts'}
                 </div>
               </div>
             </div>
@@ -218,35 +223,35 @@ export function ImportPreviewModal() {
 
           {/* Sample Rows Table */}
           <div className="form-group">
-            <label className="form-label">Data Preview (Latest 5 Events)</label>
+            <label className="form-label">{language === 'nl' ? 'Gegevensvoorbeeld (laatste 5 activiteiten)' : 'Data Preview (Latest 5 Events)'}</label>
             <div className="preview-table-container">
               <table className="preview-table">
                 <thead>
                   <tr>
-                    <th>Date & Time</th>
-                    <th>Type</th>
-                    <th>Details</th>
-                    <th>Caregiver</th>
+                    <th>{language === 'nl' ? 'Datum & Tijd' : 'Date & Time'}</th>
+                    <th>{language === 'nl' ? 'Type' : 'Type'}</th>
+                    <th>{language === 'nl' ? 'Details' : 'Details'}</th>
+                    <th>{language === 'nl' ? 'Verzorger' : 'Caregiver'}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {summary.sampleEvents.map((ev, idx) => (
                     <tr key={idx}>
                       <td style={{ whiteSpace: 'nowrap' }}>
-                        {formatDateHeading(new Date(ev.beginDt).toISOString().split('T')[0])} {formatTime(ev.beginDt)}
+                        {formatDateHeading(new Date(ev.beginDt).toISOString().split('T')[0], language)} {formatTime(ev.beginDt, language)}
                       </td>
-                      <td style={{ fontWeight: 600 }}>{ev.type}</td>
+                      <td style={{ fontWeight: 600 }}>{t(`categories.${ev.type}`) || ev.type}</td>
                       <td>
-                        {ev.type === 'BREAST' && `Side: ${ev.details.side || 'Left'} (${Math.round((ev.durationMs || 0) / 60000)}m)`}
+                        {ev.type === 'BREAST' && (language === 'nl' ? `Kant: ${ev.details.side === 'LEFT' ? 'Links' : ev.details.side === 'RIGHT' ? 'Rechts' : 'Beide'} (${Math.round((ev.durationMs || 0) / 60000)}m)` : `Side: ${ev.details.side || 'Left'} (${Math.round((ev.durationMs || 0) / 60000)}m)`)}
                         {ev.type === 'BOTTLE' && `${ev.details.volumeFloz || 0} oz (${ev.details.milkType})`}
-                        {ev.type === 'SLEEP' && `${Math.round((ev.durationMs || 0) / 60000)} min stretch`}
-                        {ev.type === 'DIAPER' && `${ev.details.pee ? 'Wet' : ''} ${ev.details.poop ? 'Dirty' : ''} ${ev.details.color ? `(${ev.details.color})` : ''}`}
+                        {ev.type === 'SLEEP' && `${Math.round((ev.durationMs || 0) / 60000)} ${language === 'nl' ? 'minuten geslapen' : 'min stretch'}`}
+                        {ev.type === 'DIAPER' && `${ev.details.pee ? (language === 'nl' ? 'Pipi ' : 'Wet ') : ''}${ev.details.poop ? (language === 'nl' ? 'Kaka' : 'Dirty') : ''} ${ev.details.color ? `(${ev.details.color})` : ''}`}
                         {ev.type === 'GROWTH' && (ev.details.weightKg ? `${ev.details.weightKg} kg` : `${ev.details.weightLb || 0} lbs`)}
                         {ev.type === 'MILESTONE' && ev.details.milestoneName}
                         {ev.type === 'HEALTH' && (ev.details.medicineName || (ev.details.temperatureC ? `${ev.details.temperatureC}°C` : ''))}
                       </td>
                       <td style={{ color: 'var(--text-secondary)' }}>
-                        {ev.details.caregiver ? `By ${ev.details.caregiver}` : '—'}
+                        {ev.details.caregiver ? (language === 'nl' ? `Door ${ev.details.caregiver}` : `By ${ev.details.caregiver}`) : '—'}
                       </td>
                     </tr>
                   ))}
@@ -257,7 +262,7 @@ export function ImportPreviewModal() {
 
           {/* Mode Selection */}
           <div className="form-group">
-            <label className="form-label">Import Mode</label>
+            <label className="form-label">{language === 'nl' ? 'Importeermodus' : 'Import Mode'}</label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', padding: '0.65rem', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', cursor: 'pointer', backgroundColor: importMode === 'replace' ? 'var(--bg-card-subtle)' : 'transparent' }}>
                 <input
@@ -270,10 +275,10 @@ export function ImportPreviewModal() {
                 />
                 <div>
                   <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>
-                    Load Entire Export (Replace current demo data)
+                    {language === 'nl' ? 'Volledige export laden (Vervang huidige demogegevens)' : 'Load Entire Export (Replace current demo data)'}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                    Recommended: Replace sample data with all your real Nara Baby history
+                    {language === 'nl' ? 'Aanbevolen: Vervang voorbeelddata door al je echte Nara Baby geschiedenis' : 'Recommended: Replace sample data with all your real Nara Baby history'}
                   </div>
                 </div>
               </label>
@@ -288,9 +293,9 @@ export function ImportPreviewModal() {
                   style={{ accentColor: 'var(--color-terracotta)' }}
                 />
                 <div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Merge with existing data</div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('importModal.mergeOption')}</div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                    Keep current entries and append new ones without duplicates
+                    {t('importModal.mergeDesc')}
                   </div>
                 </div>
               </label>
@@ -300,10 +305,10 @@ export function ImportPreviewModal() {
 
         <div className="modal-footer">
           <button type="button" className="btn-secondary" onClick={closeModal}>
-            Cancel
+            {t('common.cancel')}
           </button>
           <button type="button" className="btn-primary" onClick={handleConfirm} id="confirm-import-btn">
-            Import {summary.total} Records
+            {t('importModal.confirmBtn', { count: summary.total })}
           </button>
         </div>
       </div>

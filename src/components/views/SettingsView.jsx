@@ -24,6 +24,8 @@ export function SettingsView() {
     requestNotificationPermission,
     testNotification,
     notificationDiagnostics,
+    t,
+    language,
   } = useApp();
 
   const fileInputRef = useRef(null);
@@ -139,7 +141,7 @@ export function SettingsView() {
   };
 
   const handleLoadDemoData = () => {
-    if (events.length > 0 && !window.confirm('Replace current data with sample dataset?')) {
+    if (events.length > 0 && !window.confirm(t('settings.sampleConfirm'))) {
       return;
     }
     resetToSample();
@@ -150,22 +152,22 @@ export function SettingsView() {
         origin: { y: 0.6 },
       });
     } catch {}
-    alert('Loaded 14 days of realistic baby data! Check Today and Trends tabs.');
+    alert(t('settings.sampleSuccess'));
   };
 
   const handleClear = () => {
-    if (window.confirm('Are you sure you want to clear all logged activities? This cannot be undone.')) {
+    if (window.confirm(t('settings.clearAllConfirm'))) {
       clearAllData();
-      alert('All activity data cleared.');
+      alert(t('settings.clearAllAlert'));
     }
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div>
-        <h2>Data & Settings</h2>
+        <h2>{t('settings.title')}</h2>
         <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-          Import from Nara Baby, export backups, and configure preferences
+          {t('settings.subtitle')}
         </span>
       </div>
 
@@ -176,12 +178,12 @@ export function SettingsView() {
             <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: 'var(--color-terracotta-light)', color: 'var(--color-terracotta)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Upload size={16} />
             </div>
-            <h3>Import From Nara Baby</h3>
+            <h3>{t('settings.importTitle')}</h3>
           </div>
         </div>
 
         <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-          Upload your exported CSV or JSON file from the Nara Baby app. Our smart parser accurately detects all nursing sessions, sleep stretches, wake windows, diapers, growth checkups, and baby firsts!
+          {t('settings.importDesc')}
         </p>
 
         {/* Drag and Drop Zone */}
@@ -205,10 +207,10 @@ export function SettingsView() {
           </div>
           <div>
             <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>
-              Drag & Drop your Nara Baby CSV or JSON here
+              {t('settings.dragDropTitle')}
             </div>
             <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-              or click to browse your device files
+              {t('settings.dragDropSub')}
             </div>
           </div>
         </div>
@@ -223,10 +225,10 @@ export function SettingsView() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.85rem 1rem', backgroundColor: 'var(--color-terracotta-light)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(206, 107, 76, 0.2)' }}>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--color-terracotta)' }}>
-              Load Baby's Export (1,319 Events)
+              {t('settings.loadBabyTitle')}
             </span>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-              Found your provided export file: 696 feeds, 383 sleeps, 180 diapers, 16 firsts
+              {t('settings.loadBabySub')}
             </span>
           </div>
           <button
@@ -236,16 +238,16 @@ export function SettingsView() {
             id="load-baby-export-btn"
           >
             <Heart size={14} style={{ marginRight: 4 }} />
-            Load My Export
+            {t('settings.loadBabyBtn')}
           </button>
         </div>
 
         {/* Generic Demo Data Button */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', backgroundColor: 'var(--bg-card-subtle)', borderRadius: 'var(--radius-md)' }}>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>Need generic sample data?</span>
+            <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>{t('settings.needSampleTitle')}</span>
             <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-              Load a synthetic 14-day baby care dataset
+              {t('settings.needSampleSub')}
             </span>
           </div>
           <button
@@ -255,7 +257,7 @@ export function SettingsView() {
             id="load-sample-data-btn"
           >
             <Sparkles size={13} style={{ marginRight: 3 }} />
-            Load Sample Data
+            {t('settings.loadSampleBtn')}
           </button>
         </div>
       </div>
@@ -267,26 +269,26 @@ export function SettingsView() {
             <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: 'var(--color-sage-light)', color: 'var(--color-sage)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Download size={16} />
             </div>
-            <h3>Export & Backup</h3>
+            <h3>{t('settings.exportTitle')}</h3>
           </div>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>{events.length} records</span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>{t('settings.recordsCount', { count: events.length })}</span>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
           <button className="btn-secondary" onClick={exportCSV} style={{ padding: '0.85rem', flexDirection: 'column', gap: '0.2rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}>
               <FileSpreadsheet size={16} color="var(--color-sage)" />
-              Export CSV
+              {t('settings.exportCsvBtn')}
             </div>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Nara-compatible CSV format</span>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{t('settings.exportCsvSub')}</span>
           </button>
 
           <button className="btn-secondary" onClick={exportJSON} style={{ padding: '0.85rem', flexDirection: 'column', gap: '0.2rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}>
               <Download size={16} color="var(--color-slate)" />
-              JSON Archive
+              {t('settings.exportJsonBtn')}
             </div>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Complete backup file</span>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{t('settings.exportJsonSub')}</span>
           </button>
         </div>
 
@@ -297,7 +299,7 @@ export function SettingsView() {
               style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--status-red)', fontSize: '0.8rem', fontWeight: 600, padding: '0.4rem 0.6rem' }}
             >
               <Trash2 size={14} />
-              Clear All Logged Data
+              {t('settings.clearData')}
             </button>
           </div>
         )}
@@ -310,7 +312,7 @@ export function SettingsView() {
             <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: 'var(--color-caramel-light)', color: 'var(--color-caramel)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Baby size={16} />
             </div>
-            <h3>Baby Profiles</h3>
+            <h3>{t('settings.babyProfiles')}</h3>
           </div>
 
           <button
@@ -319,7 +321,7 @@ export function SettingsView() {
             onClick={() => openModal('CHILD_SETTINGS', null)}
           >
             <Plus size={14} style={{ marginRight: 3 }} />
-            Add Child
+            {t('settings.addChild')}
           </button>
         </div>
 
@@ -343,7 +345,7 @@ export function SettingsView() {
                 </div>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{c.name}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Born: {c.birthdate}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('settings.bornOn', { date: c.birthdate })}</div>
                 </div>
               </div>
 
@@ -354,7 +356,7 @@ export function SettingsView() {
                     style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
                     onClick={() => setActiveChildId(c.id)}
                   >
-                    Select
+                    {t('settings.selectBaby')}
                   </button>
                 )}
                 <button
@@ -378,15 +380,45 @@ export function SettingsView() {
             <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: 'var(--bg-card-subtle)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Sliders size={16} />
             </div>
-            <h3>Display & Units</h3>
+            <h3>{t('settings.displayUnits')}</h3>
+          </div>
+        </div>
+
+        {/* Language Selection */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.languageTitle')}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('settings.languageDesc')}</div>
+          </div>
+          <div className="segmented-control" style={{ width: 220 }}>
+            <button
+              type="button"
+              className={`segmented-btn ${language === 'nl' ? 'active' : ''}`}
+              onClick={() => {
+                setPreferences(p => ({ ...p, language: 'nl' }));
+                triggerHaptic('light', preferences?.haptics);
+              }}
+            >
+              🇳🇱 {t('settings.langDutch')}
+            </button>
+            <button
+              type="button"
+              className={`segmented-btn ${language === 'en' ? 'active' : ''}`}
+              onClick={() => {
+                setPreferences(p => ({ ...p, language: 'en' }));
+                triggerHaptic('light', preferences?.haptics);
+              }}
+            >
+              🇬🇧 {t('settings.langEnglish')}
+            </button>
           </div>
         </div>
 
         {/* Volume Units */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Volume Units</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>For bottles and pumping</div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.volumeUnit')}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('settings.volumeUnitDesc')}</div>
           </div>
           <div className="segmented-control" style={{ width: 140 }}>
             <button
@@ -409,8 +441,8 @@ export function SettingsView() {
         {/* Weight Units */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Weight Units</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>For baby growth</div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.weightUnit')}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('settings.weightUnitDesc')}</div>
           </div>
           <div className="segmented-control" style={{ width: 140 }}>
             <button
@@ -433,8 +465,8 @@ export function SettingsView() {
         {/* Theme Mode */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Appearance</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Linen daytime, Mocha, or Midnight OLED</div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.appearance')}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('settings.appearanceDesc')}</div>
           </div>
           <div className="segmented-control" style={{ width: 220 }}>
             <button
@@ -446,7 +478,7 @@ export function SettingsView() {
               }}
               title="Warm Linen Daytime"
             >
-              <Sun size={13} style={{ marginRight: 4 }} /> Light
+              <Sun size={13} style={{ marginRight: 4 }} /> {t('settings.themeLight')}
             </button>
             <button
               type="button"
@@ -457,7 +489,7 @@ export function SettingsView() {
               }}
               title="Cozy Mocha Night"
             >
-              <Moon size={13} style={{ marginRight: 4 }} /> Dark
+              <Moon size={13} style={{ marginRight: 4 }} /> {t('settings.themeDark')}
             </button>
             <button
               type="button"
@@ -466,9 +498,9 @@ export function SettingsView() {
                 setPreferences(p => ({ ...p, theme: 'oled' }));
                 triggerHaptic('light', preferences?.haptics);
               }}
-              title="Pitch-Black OLED Mode (#000000) for nighttime feedings"
+              title="Pitch-Black OLED Mode (#000000)"
             >
-              <Sparkles size={13} style={{ marginRight: 4 }} /> OLED
+              <Sparkles size={13} style={{ marginRight: 4 }} /> {t('settings.themeOled')}
             </button>
           </div>
         </div>
@@ -476,8 +508,8 @@ export function SettingsView() {
         {/* Haptic Vibration */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Haptic Vibration</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Tactile feedback on taps, timers & quick logs</div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.haptics')}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('settings.hapticsDesc')}</div>
           </div>
           <div className="segmented-control" style={{ width: 140 }}>
             <button
@@ -488,14 +520,14 @@ export function SettingsView() {
                 triggerHaptic('success', true);
               }}
             >
-              On
+              {t('settings.hapticsOn')}
             </button>
             <button
               type="button"
               className={`segmented-btn ${preferences.haptics === false ? 'active' : ''}`}
               onClick={() => setPreferences(p => ({ ...p, haptics: false }))}
             >
-              Off
+              {t('settings.hapticsOff')}
             </button>
           </div>
         </div>
@@ -520,9 +552,9 @@ export function SettingsView() {
               <Bell size={16} />
             </div>
             <div>
-              <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>Live Notifications & Tray</h3>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('settings.notificationsTitle')}</h3>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                Shows active timers pinned in your Android notification shade while locked
+                {t('settings.notificationsDesc')}
               </p>
             </div>
           </div>
@@ -548,12 +580,12 @@ export function SettingsView() {
             }}
           >
             {notificationPermission === 'granted'
-              ? '● Active & Allowed'
+              ? t('settings.notifActive')
               : notificationPermission === 'insecure-context'
-              ? '⚠️ Requires HTTPS'
+              ? t('settings.notifInsecure')
               : notificationPermission === 'denied'
-              ? '✕ Denied'
-              : '○ Not Enabled'}
+              ? t('settings.notifDenied')
+              : t('settings.notifDisabled')}
           </span>
         </div>
 
@@ -594,7 +626,7 @@ export function SettingsView() {
               style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
             >
               <Bell size={14} />
-              <span>Enable Live Tray</span>
+              <span>{t('settings.enableTray')}</span>
             </button>
           )}
 
@@ -606,7 +638,7 @@ export function SettingsView() {
             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
           >
             <Send size={14} />
-            <span>Send Test Alert</span>
+            <span>{t('settings.sendTestAlert')}</span>
           </button>
         </div>
 
@@ -648,9 +680,9 @@ export function SettingsView() {
             <Lock size={16} />
           </div>
           <div>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>Security & Family Password</h3>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('settings.securityTitle')}</h3>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-              Protected so only you and your wife can view and track baby data
+              {t('settings.securityDesc')}
             </p>
           </div>
         </div>
@@ -663,7 +695,7 @@ export function SettingsView() {
             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
           >
             <Key size={14} />
-            <span>Change Family Password</span>
+            <span>{t('settings.changeFamilyPassword')}</span>
           </button>
 
           <button
@@ -673,7 +705,7 @@ export function SettingsView() {
             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: 'var(--status-red)' }}
           >
             <LogOut size={14} />
-            <span>Lock Device / Sign Out</span>
+            <span>{t('settings.signOut')}</span>
           </button>
         </div>
       </div>

@@ -5,7 +5,7 @@ import { Moon, X } from 'lucide-react';
 import { TimerStartCard } from '../TimerStartCard';
 
 export function SleepModal() {
-  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, startSleepTimer } = useApp();
+  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, startSleepTimer, t, language } = useApp();
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
 
@@ -70,9 +70,9 @@ export function SleepModal() {
             <div className="modal-title-icon" style={{ backgroundColor: 'var(--color-slate-light)', color: 'var(--color-slate)' }}>
               <Moon size={18} />
             </div>
-            <h2>{isEditing ? 'Edit Sleep' : 'Log Sleep'}</h2>
+            <h2>{isEditing ? t('sleepModal.titleEdit') : t('sleepModal.titleAdd')}</h2>
           </div>
-          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label="Close modal">
+          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label={t('common.close')}>
             <X size={20} />
           </button>
         </div>
@@ -82,15 +82,15 @@ export function SleepModal() {
             {/* Live Sleep Timer with Starting Time Option */}
             {!isEditing && (
               <TimerStartCard
-                title="Baby Falling Asleep?"
-                subtitle="Start an active sleep timer with custom start time"
+                title={language === 'nl' ? 'Valt de baby in slaap?' : 'Baby Falling Asleep?'}
+                subtitle={language === 'nl' ? 'Start een actieve slaaptimer met instelbare begintijd' : 'Start an active sleep timer with custom start time'}
                 icon={Moon}
                 iconColor="var(--color-slate)"
                 iconBg="var(--color-slate-light)"
                 actions={[
                   {
                     id: 'start-timer-sleep',
-                    label: 'Start Sleep Timer',
+                    label: language === 'nl' ? 'Slaaptimer starten' : 'Start Sleep Timer',
                     className: 'btn-primary',
                     style: { padding: '0.45rem 1rem', fontSize: '0.8rem', backgroundColor: 'var(--color-slate)' },
                   },
@@ -104,37 +104,37 @@ export function SleepModal() {
 
             {/* Sleep Type (Nap vs Night) */}
             <div className="form-group">
-              <label className="form-label">Type of Sleep</label>
+              <label className="form-label">{language === 'nl' ? 'Type slaap' : 'Type of Sleep'}</label>
               <div className="segmented-control">
                 <button
                   type="button"
                   className={`segmented-btn ${sleepType === 'NAP' ? 'active' : ''}`}
                   onClick={() => setSleepType('NAP')}
                 >
-                  Nap
+                  {language === 'nl' ? 'Dutje' : 'Nap'}
                 </button>
                 <button
                   type="button"
                   className={`segmented-btn ${sleepType === 'NIGHT' ? 'active' : ''}`}
                   onClick={() => setSleepType('NIGHT')}
                 >
-                  Night Sleep
+                  {language === 'nl' ? 'Nachtslaap' : 'Night Sleep'}
                 </button>
               </div>
             </div>
 
             {/* Duration Summary Callout */}
             <div style={{ backgroundColor: 'var(--color-slate-light)', color: 'var(--color-slate)', borderRadius: 'var(--radius-md)', padding: '0.85rem 1rem', textAlign: 'center' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>Sleep Duration</div>
+              <div style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>{t('common.duration')}</div>
               <div style={{ fontSize: '1.4rem', fontWeight: 700, marginTop: '0.15rem' }}>
-                {formatDurationMs(durationMs)}
+                {formatDurationMs(durationMs, language)}
               </div>
             </div>
 
             {/* Start & End Times */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div className="form-group">
-                <label className="form-label">Fell Asleep</label>
+                <label className="form-label">{t('sleepModal.fellAsleep')}</label>
                 <input
                   type="time"
                   className="form-input"
@@ -144,7 +144,7 @@ export function SleepModal() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Woke Up</label>
+                <label className="form-label">{t('sleepModal.wokeUp')}</label>
                 <input
                   type="time"
                   className="form-input"
@@ -156,11 +156,11 @@ export function SleepModal() {
 
             {/* Notes */}
             <div className="form-group">
-              <label className="form-label">Notes (optional)</label>
+              <label className="form-label">{t('common.notes')}</label>
               <textarea
                 className="form-textarea"
                 rows="2"
-                placeholder="Crib transfer, white noise on, soothing routine..."
+                placeholder={language === 'nl' ? 'In bed gelegd, witte ruis aan, rustgevend ritueel...' : 'Crib transfer, white noise on, soothing routine...'}
                 value={note}
                 onChange={e => setNote(e.target.value)}
               />
@@ -169,10 +169,10 @@ export function SleepModal() {
 
           <div className="modal-footer">
             <button type="button" className="btn-secondary" onClick={closeModal}>
-              Cancel
+              {t('common.cancel')}
             </button>
             <button type="submit" className="btn-primary" style={{ backgroundColor: 'var(--color-slate)' }}>
-              {isEditing ? 'Save Changes' : 'Log Sleep'}
+              {isEditing ? t('sleepModal.submitEdit') : t('sleepModal.submitAdd')}
             </button>
           </div>
         </form>

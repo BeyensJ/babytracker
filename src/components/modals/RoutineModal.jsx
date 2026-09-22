@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { Clock, X } from 'lucide-react';
 
 export function RoutineModal() {
-  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent } = useApp();
+  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, t, language } = useApp();
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
 
@@ -20,7 +20,14 @@ export function RoutineModal() {
 
   if (activeModal !== 'ROUTINE') return null;
 
-  const routines = [
+  const routines = language === 'nl' ? [
+    { id: 'TUMMYTIME', label: '🐢 Buiktijd' },
+    { id: 'BATH', label: '🛁 In badje' },
+    { id: 'OUTDOOR', label: '🌳 Wandeling' },
+    { id: 'PLAY', label: '🧸 Spelen & ontdekken' },
+    { id: 'READ', label: '📖 Boekje voorlezen' },
+    { id: 'NAILTRIM', label: '✂️ Nageltjes knippen' },
+  ] : [
     { id: 'TUMMYTIME', label: '🐢 Tummy Time' },
     { id: 'BATH', label: '🛁 Bath Time' },
     { id: 'OUTDOOR', label: '🌳 Outdoor Walk' },
@@ -63,9 +70,9 @@ export function RoutineModal() {
             <div className="modal-title-icon" style={{ backgroundColor: 'var(--color-mustard-light)', color: 'var(--color-mustard)' }}>
               <Clock size={18} />
             </div>
-            <h2>{isEditing ? 'Edit Routine' : 'Log Routine'}</h2>
+            <h2>{isEditing ? t('routineModal.titleEdit') : t('routineModal.titleAdd')}</h2>
           </div>
-          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label="Close modal">
+          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label={t('common.close')}>
             <X size={20} />
           </button>
         </div>
@@ -74,7 +81,7 @@ export function RoutineModal() {
           <div className="modal-body">
             {/* Routine Selector */}
             <div className="form-group">
-              <label className="form-label">Activity</label>
+              <label className="form-label">{t('routineModal.activityType')}</label>
               <div className="chip-grid">
                 {routines.map(r => (
                   <button
@@ -91,7 +98,7 @@ export function RoutineModal() {
 
             {/* Duration */}
             <div className="form-group">
-              <label className="form-label">Duration (minutes)</label>
+              <label className="form-label">{t('common.duration')} ({language === 'nl' ? 'minuten' : 'minutes'})</label>
               <input
                 type="number"
                 min="1"
@@ -104,7 +111,7 @@ export function RoutineModal() {
 
             {/* Time */}
             <div className="form-group">
-              <label className="form-label">Time</label>
+              <label className="form-label">{t('common.time')}</label>
               <input
                 type="time"
                 className="form-input"
@@ -115,11 +122,11 @@ export function RoutineModal() {
 
             {/* Notes */}
             <div className="form-group">
-              <label className="form-label">Notes (optional)</label>
+              <label className="form-label">{t('common.notes')}</label>
               <textarea
                 className="form-textarea"
                 rows="2"
-                placeholder="High contrast cards, smiled, loved the warm water..."
+                placeholder={language === 'nl' ? 'Contrastkaarten gekeken, genoot van warm water...' : 'High contrast cards, smiled, loved the warm water...'}
                 value={note}
                 onChange={e => setNote(e.target.value)}
               />
@@ -128,10 +135,10 @@ export function RoutineModal() {
 
           <div className="modal-footer">
             <button type="button" className="btn-secondary" onClick={closeModal}>
-              Cancel
+              {t('common.cancel')}
             </button>
             <button type="submit" className="btn-primary" style={{ backgroundColor: 'var(--color-mustard)' }}>
-              {isEditing ? 'Save Changes' : 'Log Routine'}
+              {isEditing ? t('routineModal.submitEdit') : t('routineModal.submitAdd')}
             </button>
           </div>
         </form>

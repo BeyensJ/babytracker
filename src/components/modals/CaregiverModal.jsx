@@ -22,14 +22,28 @@ export function CaregiverModal() {
     addCaregiver,
     syncStatus,
     logout,
+    t,
+    language,
   } = useApp();
 
   const [isAdding, setIsAdding] = useState(false);
   const [name, setName] = useState('');
-  const [role, setRole] = useState('Mom');
+  const [role, setRole] = useState(language === 'nl' ? 'Mama' : 'Mom');
   const [color, setColor] = useState(AVATAR_COLORS[0]);
 
   if (activeModal !== 'CAREGIVER') return null;
+
+  const roleOptions = language === 'nl' ? [
+    { id: 'Mama', label: 'Mama' },
+    { id: 'Papa', label: 'Papa' },
+    { id: 'Grootouder', label: 'Grootouder' },
+    { id: 'Oppas', label: 'Oppas' },
+  ] : [
+    { id: 'Mom', label: 'Mom' },
+    { id: 'Dad', label: 'Dad' },
+    { id: 'Grandparent', label: 'Grandparent' },
+    { id: 'Nanny', label: 'Nanny' },
+  ];
 
   const handleSelect = (cg) => {
     setActiveCaregiverId(cg.id);
@@ -42,7 +56,7 @@ export function CaregiverModal() {
 
     await addCaregiver({
       name: name.trim(),
-      role: role.trim() || 'Caregiver',
+      role: role.trim() || (language === 'nl' ? 'Verzorger' : 'Caregiver'),
       color,
     });
 
@@ -59,13 +73,13 @@ export function CaregiverModal() {
               <Users size={18} />
             </div>
             <div>
-              <h2 style={{ fontSize: '1.15rem' }}>Switch Caregiver</h2>
+              <h2 style={{ fontSize: '1.15rem' }}>{t('caregiverModal.title')}</h2>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                Who is tracking on this device right now?
+                {t('caregiverModal.manageTitle')}
               </span>
             </div>
           </div>
-          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label="Close modal">
+          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label={t('common.close')}>
             <X size={20} />
           </button>
         </div>
@@ -91,11 +105,11 @@ export function CaregiverModal() {
                 boxShadow: syncStatus === 'connected' ? '0 0 6px #4CAF50' : 'none',
               }} />
               <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                {syncStatus === 'connected' ? 'Multi-Device Live Sync Active' : syncStatus === 'connecting' ? 'Connecting to Server...' : 'Offline (Local Mode)'}
+                {syncStatus === 'connected' ? (language === 'nl' ? 'Live synchronisatie actief' : 'Multi-Device Live Sync Active') : syncStatus === 'connecting' ? (language === 'nl' ? 'Verbinden met server...' : 'Connecting to Server...') : (language === 'nl' ? 'Offline (lokale modus)' : 'Offline (Local Mode)')}
               </span>
             </div>
             <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
-              Shared with family
+              {language === 'nl' ? 'Gedeeld met gezin' : 'Shared with family'}
             </span>
           </div>
 
@@ -121,14 +135,14 @@ export function CaregiverModal() {
                         {cg.name}
                       </div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                        {cg.role || 'Caregiver'}
+                        {cg.role || (language === 'nl' ? 'Verzorger' : 'Caregiver')}
                       </div>
                     </div>
                   </div>
 
                   {isActive ? (
                     <span className="caregiver-active-pill">
-                      <Check size={12} style={{ marginRight: 3 }} /> This Device
+                      <Check size={12} style={{ marginRight: 3 }} /> {language === 'nl' ? 'Dit apparaat' : 'This Device'}
                     </span>
                   ) : (
                     <button
@@ -140,7 +154,7 @@ export function CaregiverModal() {
                         handleSelect(cg);
                       }}
                     >
-                      Select
+                      {language === 'nl' ? 'Kiezen' : 'Select'}
                     </button>
                   )}
                 </div>
@@ -156,7 +170,7 @@ export function CaregiverModal() {
               style={{ width: '100%', marginTop: '0.5rem', justifyContent: 'center' }}
               onClick={() => setIsAdding(true)}
             >
-              <Plus size={15} style={{ marginRight: 6 }} /> Add Another Caregiver
+              <Plus size={15} style={{ marginRight: 6 }} /> {t('caregiverModal.addCaregiver')}
             </button>
           ) : (
             <form onSubmit={handleCreate} style={{
@@ -170,15 +184,15 @@ export function CaregiverModal() {
               gap: '0.65rem',
             }}>
               <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                Add New Caregiver
+                {t('caregiverModal.addCaregiver')}
               </div>
 
               <div>
-                <label className="form-label" style={{ fontSize: '0.75rem' }}>Name</label>
+                <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('caregiverModal.name')}</label>
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="e.g. Mom, Dad, Grandma"
+                  placeholder={language === 'nl' ? 'bv. Mom, Dad, Oma' : 'e.g. Mom, Dad, Grandma'}
                   value={name}
                   onChange={e => setName(e.target.value)}
                   required
@@ -187,24 +201,24 @@ export function CaregiverModal() {
               </div>
 
               <div>
-                <label className="form-label" style={{ fontSize: '0.75rem' }}>Role / Relation</label>
+                <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('caregiverModal.role')}</label>
                 <div className="segmented-control" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-                  {['Mom', 'Dad', 'Grandparent', 'Nanny'].map(r => (
+                  {roleOptions.map(r => (
                     <button
-                      key={r}
+                      key={r.id}
                       type="button"
-                      className={`segmented-btn ${role === r ? 'active' : ''}`}
-                      onClick={() => setRole(r)}
+                      className={`segmented-btn ${role === r.id ? 'active' : ''}`}
+                      onClick={() => setRole(r.id)}
                       style={{ fontSize: '0.72rem', padding: '0.35rem 0.2rem' }}
                     >
-                      {r}
+                      {r.label}
                     </button>
                   ))}
                 </div>
               </div>
 
               <div>
-                <label className="form-label" style={{ fontSize: '0.75rem' }}>Avatar Color</label>
+                <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('caregiverModal.avatarColor')}</label>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   {AVATAR_COLORS.map(c => (
                     <button
@@ -232,14 +246,14 @@ export function CaregiverModal() {
                   style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
                   onClick={() => setIsAdding(false)}
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="btn-primary"
                   style={{ padding: '0.35rem 0.85rem', fontSize: '0.78rem' }}
                 >
-                  Save Caregiver
+                  {t('caregiverModal.saveCaregiver')}
                 </button>
               </div>
             </form>
@@ -266,7 +280,7 @@ export function CaregiverModal() {
               }}
             >
               <Lock size={13} />
-              <span>Change Family Password</span>
+              <span>{t('caregiverModal.changePassword')}</span>
             </button>
 
             <button
@@ -289,14 +303,14 @@ export function CaregiverModal() {
               }}
             >
               <LogOut size={13} />
-              <span>Lock / Sign Out</span>
+              <span>{t('caregiverModal.signOut')}</span>
             </button>
           </div>
         </div>
 
         <div className="modal-footer">
           <button type="button" className="btn-primary" onClick={closeModal} style={{ width: '100%' }}>
-            Done
+            {t('caregiverModal.done')}
           </button>
         </div>
       </div>

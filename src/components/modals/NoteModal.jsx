@@ -4,7 +4,7 @@ import { BookOpen, X, Award } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export function NoteModal() {
-  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent } = useApp();
+  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, t, language } = useApp();
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
 
@@ -20,7 +20,14 @@ export function NoteModal() {
 
   if (activeModal !== 'NOTE' && activeModal !== 'MILESTONE') return null;
 
-  const milestoneSuggestions = [
+  const milestoneSuggestions = language === 'nl' ? [
+    'Eerste echte glimlach 😊',
+    'Omgerold van buik naar rug 🤸',
+    'Eerste schaterlachje 😂',
+    'Volgt voorwerpen met de oogjes 👀',
+    'Houdt hoofdje mooi stabiel omhoog 👶',
+    'Grijpt doelbewust naar speelgoed 🧸',
+  ] : [
     'First Real Social Smile 😊',
     'Rolled Over Belly to Back 🤸',
     'First Chuckle / Laugh 😂',
@@ -52,7 +59,7 @@ export function NoteModal() {
       endDt: null,
       durationMs: 0,
       details: {
-        milestoneName: isMilestone ? (milestoneName.trim() || 'Developmental Milestone') : '',
+        milestoneName: isMilestone ? (milestoneName.trim() || (language === 'nl' ? 'Mijlpaal in ontwikkeling' : 'Developmental Milestone')) : '',
       },
       note: note.trim(),
     };
@@ -74,9 +81,9 @@ export function NoteModal() {
             <div className="modal-title-icon" style={{ backgroundColor: 'var(--bg-card-subtle)', color: 'var(--text-secondary)' }}>
               {isMilestone ? <Award size={18} color="var(--color-terracotta)" /> : <BookOpen size={18} />}
             </div>
-            <h2>{isEditing ? 'Edit Entry' : isMilestone ? 'Celebrate Milestone' : 'Journal Note'}</h2>
+            <h2>{isEditing ? (language === 'nl' ? 'Notitie bewerken' : 'Edit Entry') : isMilestone ? (language === 'nl' ? 'Mijlpaal vieren 🎉' : 'Celebrate Milestone') : (language === 'nl' ? 'Notitie opslaan' : 'Journal Note')}</h2>
           </div>
-          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label="Close modal">
+          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label={t('common.close')}>
             <X size={20} />
           </button>
         </div>
@@ -87,7 +94,7 @@ export function NoteModal() {
             <div style={{ backgroundColor: 'var(--bg-card-subtle)', padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Award size={18} color="var(--color-terracotta)" />
-                <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>Mark as Developmental Milestone</span>
+                <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>{language === 'nl' ? 'Aanduiden als ontwikkelingsmijlpaal' : 'Mark as Developmental Milestone'}</span>
               </div>
               <input
                 type="checkbox"
@@ -101,11 +108,11 @@ export function NoteModal() {
             {isMilestone && (
               <>
                 <div className="form-group">
-                  <label className="form-label">Milestone Title</label>
+                  <label className="form-label">{language === 'nl' ? 'Titel van de mijlpaal' : 'Milestone Title'}</label>
                   <input
                     type="text"
                     className="form-input"
-                    placeholder="e.g. First time rolling over, first giggle"
+                    placeholder={language === 'nl' ? 'bv. Eerste keer omgerold, eerste schaterlach...' : 'e.g. First time rolling over, first giggle'}
                     value={milestoneName}
                     onChange={e => setMilestoneName(e.target.value)}
                     required
@@ -113,7 +120,7 @@ export function NoteModal() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Milestone Ideas</label>
+                  <label className="form-label">{language === 'nl' ? 'Ideeën voor mijlpalen' : 'Milestone Ideas'}</label>
                   <div className="chip-grid">
                     {milestoneSuggestions.map(s => (
                       <button
@@ -132,11 +139,11 @@ export function NoteModal() {
 
             {/* Note text */}
             <div className="form-group">
-              <label className="form-label">{isMilestone ? 'Memory & Details' : 'Journal Entry'}</label>
+              <label className="form-label">{isMilestone ? (language === 'nl' ? 'Herinnering & details' : 'Memory & Details') : (language === 'nl' ? 'Notitie / Dagboekbericht' : 'Journal Entry')}</label>
               <textarea
                 className="form-textarea"
                 rows="4"
-                placeholder="Write a heartwarming memory, symptom observation, or parenting thought..."
+                placeholder={language === 'nl' ? 'Schrijf een mooie herinnering, observatie of gedachte neer...' : 'Write a heartwarming memory, symptom observation, or parenting thought...'}
                 value={note}
                 onChange={e => setNote(e.target.value)}
                 required={!isMilestone}
@@ -145,7 +152,7 @@ export function NoteModal() {
 
             {/* Time */}
             <div className="form-group">
-              <label className="form-label">Time</label>
+              <label className="form-label">{t('common.time')}</label>
               <input
                 type="time"
                 className="form-input"
@@ -157,10 +164,10 @@ export function NoteModal() {
 
           <div className="modal-footer">
             <button type="button" className="btn-secondary" onClick={closeModal}>
-              Cancel
+              {t('common.cancel')}
             </button>
             <button type="submit" className="btn-primary">
-              {isEditing ? 'Save Changes' : isMilestone ? 'Save Milestone' : 'Save Note'}
+              {isEditing ? t('common.save') : isMilestone ? (language === 'nl' ? 'Mijlpaal opslaan' : 'Save Milestone') : t('noteModal.submitAdd')}
             </button>
           </div>
         </form>

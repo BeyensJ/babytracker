@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Lock, Eye, EyeOff, Check, X, ShieldAlert } from 'lucide-react';
+import { Lock, Eye, EyeOff, Check, X, AlertCircle } from 'lucide-react';
 
 export function ChangePasswordModal({ isOpen, onClose }) {
-  const { changePassword } = useApp();
+  const { changePassword, t, language } = useApp();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -21,27 +21,27 @@ export function ChangePasswordModal({ isOpen, onClose }) {
     setSuccessMessage('');
 
     if (!currentPassword) {
-      setErrorMessage('Please enter your current family password.');
+      setErrorMessage(language === 'nl' ? 'Voer het huidige gezinswachtwoord in.' : 'Please enter your current family password.');
       return;
     }
     if (!newPassword || newPassword.length < 4) {
-      setErrorMessage('New password must be at least 4 characters.');
+      setErrorMessage(language === 'nl' ? 'Het nieuwe wachtwoord moet minstens 4 tekens lang zijn.' : 'New password must be at least 4 characters.');
       return;
     }
     if (newPassword !== confirmPassword) {
-      setErrorMessage('New password and confirmation do not match.');
+      setErrorMessage(language === 'nl' ? 'Het nieuwe wachtwoord en de herhaling komen niet overeen.' : 'New password and confirmation do not match.');
       return;
     }
 
     setIsSubmitting(true);
     try {
       await changePassword(currentPassword, newPassword);
-      setSuccessMessage('Family password updated successfully!');
+      setSuccessMessage(language === 'nl' ? 'Gezinswachtwoord succesvol gewijzigd!' : 'Family password updated successfully!');
       setTimeout(() => {
         onClose();
       }, 1500);
     } catch (err) {
-      setErrorMessage(err.message || 'Failed to update password.');
+      setErrorMessage(err.message || (language === 'nl' ? 'Wachtwoord wijzigen mislukt.' : 'Failed to update password.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -68,11 +68,11 @@ export function ChangePasswordModal({ isOpen, onClose }) {
               <Lock size={16} />
             </div>
             <div>
-              <h2 className="modal-title">Change Family Password</h2>
-              <p className="modal-subtitle">Both Mom and Dad use this password</p>
+              <h2 className="modal-title">{t('passwordModal.title')}</h2>
+              <p className="modal-subtitle">{language === 'nl' ? 'Zowel mama als papa gebruiken dit wachtwoord' : 'Both Mom and Dad use this password'}</p>
             </div>
           </div>
-          <button className="modal-close-btn" onClick={onClose}>
+          <button className="modal-close-btn" onClick={onClose} aria-label={t('common.close')}>
             <X size={18} />
           </button>
         </div>
@@ -81,14 +81,14 @@ export function ChangePasswordModal({ isOpen, onClose }) {
           <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {/* Current Password */}
             <div>
-              <label className="form-label">Current Password</label>
+              <label className="form-label">{t('passwordModal.current')}</label>
               <div className="login-input-wrapper">
                 <input
                   type={showCurrent ? 'text' : 'password'}
                   className="form-input"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Enter current password"
+                  placeholder={language === 'nl' ? 'Huidig wachtwoord invoeren' : 'Enter current password'}
                   required
                 />
                 <button
@@ -104,14 +104,14 @@ export function ChangePasswordModal({ isOpen, onClose }) {
 
             {/* New Password */}
             <div>
-              <label className="form-label">New Password</label>
+              <label className="form-label">{t('passwordModal.newPass')}</label>
               <div className="login-input-wrapper">
                 <input
                   type={showNew ? 'text' : 'password'}
                   className="form-input"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="At least 4 characters"
+                  placeholder={language === 'nl' ? 'Minstens 4 tekens' : 'At least 4 characters'}
                   required
                 />
                 <button
@@ -127,13 +127,13 @@ export function ChangePasswordModal({ isOpen, onClose }) {
 
             {/* Confirm Password */}
             <div>
-              <label className="form-label">Confirm New Password</label>
+              <label className="form-label">{t('passwordModal.confirmPass')}</label>
               <input
                 type="password"
                 className="form-input"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Re-enter new password"
+                placeholder={language === 'nl' ? 'Herhaal nieuw wachtwoord' : 'Re-enter new password'}
                 required
               />
             </div>
@@ -186,14 +186,14 @@ export function ChangePasswordModal({ isOpen, onClose }) {
               onClick={onClose}
               disabled={isSubmitting}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               className="btn-primary"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Updating...' : 'Update Password'}
+              {isSubmitting ? t('passwordModal.updating') : t('passwordModal.submit')}
             </button>
           </div>
         </form>

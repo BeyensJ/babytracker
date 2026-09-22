@@ -6,8 +6,8 @@ import { Moon, Utensils, Sparkles, TrendingUp, Clock, Scale, Plus } from 'lucide
 import { WHOGrowthChart } from '../charts/WHOGrowthChart';
 
 export function TrendsView() {
-  const { events, activeChildId, preferences, openModal } = useApp();
-  const [timeframe, setTimeframe] = useState(7); // 1, 7, 14, 30
+  const { events, activeChildId, preferences, openModal, t, language } = useApp();
+  const [timeframe, setTimeframe] = useState(7); // 1, 7, 14, 30, 'all'
 
   const trends = useMemo(() => {
     return calculateTrends(events, timeframe, activeChildId);
@@ -19,9 +19,9 @@ export function TrendsView() {
     <div className="trends-view">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h2>Trends & Insights</h2>
+          <h2>{t('trends.title')}</h2>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            Nara patterns over time
+            {t('trends.subtitle')}
           </span>
         </div>
       </div>
@@ -29,18 +29,18 @@ export function TrendsView() {
       {/* Timeframe Selector */}
       <div className="timeframe-selector">
         {[
-          { days: 1, label: '1 Day' },
-          { days: 7, label: '7 Days' },
-          { days: 14, label: '14 Days' },
-          { days: 30, label: '30 Days' },
-          { days: 'all', label: 'Lifetime' },
-        ].map(t => (
+          { days: 1, label: t('trends.day1') },
+          { days: 7, label: t('trends.days7') },
+          { days: 14, label: t('trends.days14') },
+          { days: 30, label: t('trends.days30') },
+          { days: 'all', label: t('trends.lifetime') },
+        ].map(tf => (
           <button
-            key={String(t.days)}
-            className={`timeframe-btn ${timeframe === t.days ? 'active' : ''}`}
-            onClick={() => setTimeframe(t.days)}
+            key={String(tf.days)}
+            className={`timeframe-btn ${timeframe === tf.days ? 'active' : ''}`}
+            onClick={() => setTimeframe(tf.days)}
           >
-            {t.label}
+            {tf.label}
           </button>
         ))}
       </div>
@@ -52,34 +52,34 @@ export function TrendsView() {
             <div style={{ width: 30, height: 30, borderRadius: '50%', backgroundColor: 'var(--color-slate-light)', color: 'var(--color-slate)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Moon size={16} />
             </div>
-            <h3>Sleep Patterns</h3>
+            <h3>{t('trends.sleepPatterns')}</h3>
           </div>
           <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-slate)' }}>
-            Avg {formatDurationMs(Math.round(trends.sleep.totalSleepMs / Math.max(1, trends.timeframeDays)))} / day
+            {t('trends.avgPerDay', { value: formatDurationMs(Math.round(trends.sleep.totalSleepMs / Math.max(1, trends.timeframeDays)), language) })}
           </span>
         </div>
 
         <div className="trend-metrics-grid">
           <div className="metric-box">
-            <span className="metric-label">Avg Nap</span>
-            <span className="metric-value">{formatDurationMs(trends.sleep.avgNapMs)}</span>
+            <span className="metric-label">{t('trends.avgNap')}</span>
+            <span className="metric-value">{formatDurationMs(trends.sleep.avgNapMs, language)}</span>
           </div>
 
           <div className="metric-box">
-            <span className="metric-label">Avg Wake Window</span>
-            <span className="metric-value">{formatDurationMs(trends.sleep.avgWakeWindowMs)}</span>
+            <span className="metric-label">{t('trends.avgWakeWindow')}</span>
+            <span className="metric-value">{formatDurationMs(trends.sleep.avgWakeWindowMs, language)}</span>
           </div>
 
           <div className="metric-box">
-            <span className="metric-label">Longest Stretch</span>
-            <span className="metric-value">{formatDurationMs(trends.sleep.longestSleepMs)}</span>
+            <span className="metric-label">{t('trends.longestStretch')}</span>
+            <span className="metric-value">{formatDurationMs(trends.sleep.longestSleepMs, language)}</span>
           </div>
         </div>
 
         {/* Daily Sleep Bar Chart */}
         <div style={{ marginTop: '0.5rem' }}>
           <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
-            {trends.seriesAggregation === 'weekly' ? 'Weekly Avg Daily Sleep (Hours)' : 'Daily Sleep (Hours)'}
+            {trends.seriesAggregation === 'weekly' ? t('trends.weeklySleep') : t('trends.dailySleep')}
           </div>
           <MiniBarChart
             data={trends.dailySeries.map(d => ({ label: d.label, subLabel: d.subLabel, value: d.sleepHours }))}
@@ -96,10 +96,10 @@ export function TrendsView() {
             <div style={{ width: 30, height: 30, borderRadius: '50%', backgroundColor: 'var(--color-terracotta-light)', color: 'var(--color-terracotta)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Utensils size={16} />
             </div>
-            <h3>Feeding Breakdown</h3>
+            <h3>{t('trends.feedingBreakdown')}</h3>
           </div>
           <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-terracotta)' }}>
-            {trends.feed.totalCount} Sessions
+            {t('trends.sessionsCount', { count: trends.feed.totalCount })}
           </span>
         </div>
 
@@ -107,39 +107,39 @@ export function TrendsView() {
           {trends.feed.breastSessions > trends.feed.bottleCount ? (
             <>
               <div className="metric-box">
-                <span className="metric-label">Avg Nursing</span>
-                <span className="metric-value">{formatDurationMs(trends.feed.avgBreastSessionMs)}</span>
+                <span className="metric-label">{t('trends.avgNursing')}</span>
+                <span className="metric-value">{formatDurationMs(trends.feed.avgBreastSessionMs, language)}</span>
               </div>
 
               <div className="metric-box">
-                <span className="metric-label">Total Nursing</span>
-                <span className="metric-value">{formatDurationMs(trends.feed.totalBreastMs)}</span>
+                <span className="metric-label">{t('trends.totalNursing')}</span>
+                <span className="metric-value">{formatDurationMs(trends.feed.totalBreastMs, language)}</span>
               </div>
             </>
           ) : (
             <>
               <div className="metric-box">
-                <span className="metric-label">Avg Bottle</span>
+                <span className="metric-label">{t('trends.avgBottle')}</span>
                 <span className="metric-value">{formatVolume(trends.feed.avgBottleFloz, preferences.volumeUnit)}</span>
               </div>
 
               <div className="metric-box">
-                <span className="metric-label">Total Bottle Milk</span>
+                <span className="metric-label">{t('trends.totalBottle')}</span>
                 <span className="metric-value">{formatVolume(trends.feed.totalBottleFloz, preferences.volumeUnit)}</span>
               </div>
             </>
           )}
 
           <div className="metric-box">
-            <span className="metric-label">Time Btwn Feeds</span>
-            <span className="metric-value">{formatDurationMs(trends.feed.avgIntervalMs)}</span>
+            <span className="metric-label">{t('trends.timeBtwnFeeds')}</span>
+            <span className="metric-value">{formatDurationMs(trends.feed.avgIntervalMs, language)}</span>
           </div>
         </div>
 
         {trends.feed.breastSessions > 0 && (
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.65rem 0.85rem', backgroundColor: 'var(--bg-card-subtle)', borderRadius: 'var(--radius-md)', fontSize: '0.82rem' }}>
-            <span>🤱 Nursing Duration: <strong>{formatDurationMs(trends.feed.totalBreastMs)}</strong></span>
-            <span>L: {formatDurationMs(trends.feed.leftBreastMs)} | R: {formatDurationMs(trends.feed.rightBreastMs)}</span>
+            <span>🤱 {t('trends.nursingDuration')}: <strong>{formatDurationMs(trends.feed.totalBreastMs, language)}</strong></span>
+            <span>L: {formatDurationMs(trends.feed.leftBreastMs, language)} | R: {formatDurationMs(trends.feed.rightBreastMs, language)}</span>
           </div>
         )}
 
@@ -147,8 +147,8 @@ export function TrendsView() {
         <div style={{ marginTop: '0.5rem' }}>
           <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
             {trends.feed.breastSessions > trends.feed.bottleCount
-              ? (trends.seriesAggregation === 'weekly' ? 'Weekly Avg Daily Nursing (Minutes)' : 'Daily Nursing (Minutes)')
-              : (trends.seriesAggregation === 'weekly' ? `Weekly Avg Daily Bottle (${isMetric ? 'mL' : 'oz'})` : `Daily Bottle Volume (${isMetric ? 'mL' : 'oz'})`)}
+              ? (trends.seriesAggregation === 'weekly' ? (language === 'nl' ? 'Wekelijks gem. dagelijkse borstvoeding (minuten)' : 'Weekly Avg Daily Nursing (Minutes)') : (language === 'nl' ? 'Dagelijkse borstvoeding (minuten)' : 'Daily Nursing (Minutes)'))
+              : (trends.seriesAggregation === 'weekly' ? (language === 'nl' ? `Wekelijks gem. flesje per dag (${isMetric ? 'mL' : 'oz'})` : `Weekly Avg Daily Bottle (${isMetric ? 'mL' : 'oz'})`) : (language === 'nl' ? `Dagelijks flesvolume (${isMetric ? 'mL' : 'oz'})` : `Daily Bottle Volume (${isMetric ? 'mL' : 'oz'})`))}
           </div>
           <MiniBarChart
             data={trends.dailySeries.map(d => ({
@@ -171,26 +171,26 @@ export function TrendsView() {
             <div style={{ width: 30, height: 30, borderRadius: '50%', backgroundColor: 'var(--color-caramel-light)', color: 'var(--color-caramel)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Sparkles size={16} />
             </div>
-            <h3>Diaper Changes</h3>
+            <h3>{t('trends.diapersTitle')}</h3>
           </div>
           <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-caramel)' }}>
-            {trends.diaper.avgPerDay} / day
+            {t('trends.diapersPerDay', { count: trends.diaper.avgPerDay })}
           </span>
         </div>
 
         <div className="trend-metrics-grid">
           <div className="metric-box">
-            <span className="metric-label">Total Diapers</span>
+            <span className="metric-label">{t('trends.totalDiapers')}</span>
             <span className="metric-value">{trends.diaper.total}</span>
           </div>
 
           <div className="metric-box">
-            <span className="metric-label">Wet / Dirty</span>
+            <span className="metric-label">{t('trends.wetDirty')}</span>
             <span className="metric-value">{trends.diaper.wet} / {trends.diaper.dirty}</span>
           </div>
 
           <div className="metric-box">
-            <span className="metric-label">Blowouts</span>
+            <span className="metric-label">{t('trends.blowouts')}</span>
             <span className="metric-value">{trends.diaper.blowouts}</span>
           </div>
         </div>
@@ -198,7 +198,7 @@ export function TrendsView() {
         {/* Daily Diapers Bar Chart */}
         <div style={{ marginTop: '0.5rem' }}>
           <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
-            {trends.seriesAggregation === 'weekly' ? 'Weekly Avg Daily Diapers' : 'Daily Diapers'}
+            {trends.seriesAggregation === 'weekly' ? t('trends.weeklyDiapers') : t('trends.dailyDiapers')}
           </div>
           <MiniBarChart
             data={trends.dailySeries.map(d => ({ label: d.label, subLabel: d.subLabel, value: d.diapers }))}
@@ -226,7 +226,7 @@ export function TrendsView() {
                 <div style={{ width: 30, height: 30, borderRadius: '50%', backgroundColor: 'var(--color-sage-light)', color: 'var(--color-sage)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Scale size={16} />
                 </div>
-                <h3>Growth History</h3>
+                <h3>{t('trends.growthHistory')}</h3>
               </div>
               <button
                 className="btn-secondary"
@@ -234,13 +234,14 @@ export function TrendsView() {
                 onClick={() => openModal('GROWTH')}
               >
                 <Plus size={13} />
-                <span>Log Checkup</span>
+                <span>{t('trends.logCheckup')}</span>
               </button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
               {childGrowthEvents.map((ev) => {
                 const det = ev.details || {};
+                const dateStr = new Date(ev.beginDt).toLocaleDateString(language === 'nl' ? 'nl-BE' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 return (
                   <div
                     key={ev.id}
@@ -256,15 +257,15 @@ export function TrendsView() {
                       transition: 'all var(--transition-fast)',
                     }}
                     onClick={() => openModal('GROWTH', ev)}
-                    title="Tap to edit this measurement"
+                    title={t('trends.tapToEdit')}
                   >
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
                       <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                        {new Date(ev.beginDt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                        {dateStr}
                       </span>
                       {det.caregiver && (
                         <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
-                          Logged by {det.caregiver}
+                          {t('trends.loggedBy', { name: det.caregiver })}
                         </span>
                       )}
                     </div>
@@ -272,7 +273,7 @@ export function TrendsView() {
                     <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
                       {det.weightKg && isMetric ? `${det.weightKg} kg` : (det.weightLb ? formatWeight(det.weightLb, preferences.weightUnit) : '')}
                       {det.heightCm && preferences.lengthUnit === 'cm' ? ` • ${det.heightCm} cm` : (det.heightIn ? ` • ${formatLength(det.heightIn, preferences.lengthUnit)}` : '')}
-                      {det.headCm && preferences.lengthUnit === 'cm' ? ` • Head: ${det.headCm} cm` : (det.headIn ? ` • Head: ${formatLength(det.headIn, preferences.lengthUnit)}` : '')}
+                      {det.headCm && preferences.lengthUnit === 'cm' ? ` • ${t('trends.headCirc', { value: det.headCm + ' cm' })}` : (det.headIn ? ` • ${t('trends.headCirc', { value: formatLength(det.headIn, preferences.lengthUnit) })}` : '')}
                     </span>
                   </div>
                 );

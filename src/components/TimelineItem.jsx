@@ -20,8 +20,9 @@ import {
 } from 'lucide-react';
 
 export function TimelineItem({ event }) {
-  const { preferences, deleteEvent, openModal } = useApp();
+  const { preferences, deleteEvent, openModal, language, t } = useApp();
   const [menuOpen, setMenuOpen] = useState(false);
+  const isDutch = language === 'nl';
 
   const det = event.details || {};
   const isMetric = preferences.weightUnit === 'kg';
@@ -33,20 +34,24 @@ export function TimelineItem({ event }) {
         const chips = [];
         const side = (det.side || '').toUpperCase();
         if (side === 'BOTH' || (det.leftDurationMs > 0 && det.rightDurationMs > 0)) {
-          chips.push(`Both Sides (L: ${formatDurationMs(det.leftDurationMs)}, R: ${formatDurationMs(det.rightDurationMs)})`);
+          chips.push(
+            isDutch
+              ? `Beide kanten (L: ${formatDurationMs(det.leftDurationMs, language)}, R: ${formatDurationMs(det.rightDurationMs, language)})`
+              : `Both Sides (L: ${formatDurationMs(det.leftDurationMs)}, R: ${formatDurationMs(det.rightDurationMs)})`
+          );
         } else if (side.includes('LEFT') || det.leftDurationMs > 0) {
           const dur = det.leftDurationMs || event.durationMs;
-          chips.push(dur ? `Left · ${formatDurationMs(dur)}` : 'Left Side');
+          chips.push(dur ? `${isDutch ? 'Links' : 'Left'} · ${formatDurationMs(dur, language)}` : (isDutch ? 'Linkerkant' : 'Left Side'));
         } else if (side.includes('RIGHT') || det.rightDurationMs > 0) {
           const dur = det.rightDurationMs || event.durationMs;
-          chips.push(dur ? `Right · ${formatDurationMs(dur)}` : 'Right Side');
+          chips.push(dur ? `${isDutch ? 'Rechts' : 'Right'} · ${formatDurationMs(dur, language)}` : (isDutch ? 'Rechterkant' : 'Right Side'));
         } else {
-          chips.push(formatDurationMs(event.durationMs) || 'Nursing');
+          chips.push(formatDurationMs(event.durationMs, language) || (isDutch ? 'Borstvoeding' : 'Nursing'));
         }
         return {
           icon: Heart,
           badgeClass: 'feed',
-          title: 'Breastfeed',
+          title: isDutch ? 'Borstvoeding' : 'Breastfeed',
           chips,
         };
       }
@@ -54,10 +59,12 @@ export function TimelineItem({ event }) {
         return {
           icon: Milk,
           badgeClass: 'feed',
-          title: 'Bottle Feed',
+          title: isDutch ? 'Flesje' : 'Bottle Feed',
           chips: [
             det.volumeFloz ? formatVolume(det.volumeFloz, preferences.volumeUnit) : '',
-            det.milkType === 'FORMULA' ? (det.formulaName || 'Formula') : 'Breast Milk',
+            det.milkType === 'FORMULA'
+              ? (det.formulaName || (isDutch ? 'Kunstvoeding' : 'Formula'))
+              : (isDutch ? 'Moedermelk' : 'Breast Milk'),
           ].filter(Boolean),
         };
       case 'COMBO':
@@ -74,23 +81,23 @@ export function TimelineItem({ event }) {
         return {
           icon: Apple,
           badgeClass: 'feed',
-          title: 'Solid Food',
-          chips: [det.food || 'Meal', det.reaction ? `Reaction: ${det.reaction}` : ''].filter(Boolean),
+          title: isDutch ? 'Vaste voeding' : 'Solid Food',
+          chips: [det.food || (isDutch ? 'Hapje' : 'Meal'), det.reaction ? `${isDutch ? 'Reactie' : 'Reaction'}: ${det.reaction}` : ''].filter(Boolean),
         };
       case 'SLEEP': {
         const isOngoing = !event.durationMs && !event.endDt;
         return {
           icon: Moon,
           badgeClass: 'sleep',
-          title: det.sleepType === 'NIGHT' ? 'Night Sleep' : 'Nap',
-          chips: [isOngoing ? 'Sleeping now...' : formatDurationMs(event.durationMs || (event.endDt - event.beginDt))],
+          title: det.sleepType === 'NIGHT' ? (isDutch ? 'Nachtslaap' : 'Night Sleep') : (isDutch ? 'Dutje' : 'Nap'),
+          chips: [isOngoing ? (isDutch ? 'Slaapt nu...' : 'Sleeping now...') : formatDurationMs(event.durationMs || (event.endDt - event.beginDt), language)],
         };
       }
       case 'DIAPER': {
         const parts = [];
-        if (det.pee) parts.push('Wet');
-        if (det.poop) parts.push('Dirty');
-        if (det.dry) parts.push('Dry');
+        if (det.pee) parts.push(isDutch ? 'Nat' : 'Wet');
+        if (det.poop) parts.push(isDutch ? 'Kaka' : 'Dirty');
+        if (det.dry) parts.push(isDutch ? 'Droog' : 'Dry');
 
         const formatDesc = (str) => {
           if (!str) return '';
@@ -104,12 +111,12 @@ export function TimelineItem({ event }) {
         return {
           icon: Sparkles,
           badgeClass: 'diaper',
-          title: 'Diaper Change',
+          title: isDutch ? 'Pamper ververst' : 'Diaper Change',
           chips: [
-            parts.length > 0 ? parts.join('/') : 'Diaper',
+            parts.length > 0 ? parts.join(' & ') : (isDutch ? 'Pamper' : 'Diaper'),
             colorTexture ? `(${colorTexture})` : '',
-            det.blowout ? '⚠️ Blowout' : '',
-            det.rash ? 'Rash' : '',
+            det.blowout ? (isDutch ? '⚠️ Doorgelekt' : '⚠️ Blowout') : '',
+            det.rash ? (isDutch ? 'Luieruitslag' : 'Rash') : '',
           ].filter(Boolean),
         };
       }
@@ -117,7 +124,7 @@ export function TimelineItem({ event }) {
         return {
           icon: Pipette,
           badgeClass: 'pump',
-          title: 'Pumping',
+          title: isDutch ? 'Afkolven' : 'Pumping',
           chips: [
             det.totalFloz
               ? formatVolume(det.totalFloz, preferences.volumeUnit)
@@ -125,18 +132,18 @@ export function TimelineItem({ event }) {
             (det.leftFloz || det.rightFloz) && det.totalFloz !== (det.leftFloz || 0)
               ? `L: ${formatVolume(det.leftFloz || 0, preferences.volumeUnit)} | R: ${formatVolume(det.rightFloz || 0, preferences.volumeUnit)}`
               : '',
-            formatDurationMs(event.durationMs),
+            formatDurationMs(event.durationMs, language),
           ].filter(Boolean),
         };
       case 'GROWTH': {
         const chips = [];
-        let title = 'Growth Check';
+        let title = isDutch ? 'Meting' : 'Growth Check';
         const hasWeight = det.weightKg || det.weightLb;
         const hasHeight = det.heightCm || det.heightIn;
         const hasHead = det.headCm || det.headIn;
 
-        if (hasWeight && !hasHeight && !hasHead) title = 'Weight Check';
-        else if (hasHead && !hasWeight && !hasHeight) title = 'Head Circumference';
+        if (hasWeight && !hasHeight && !hasHead) title = isDutch ? 'Gewichtsmeting' : 'Weight Check';
+        else if (hasHead && !hasWeight && !hasHeight) title = isDutch ? 'Hoofdomtrek' : 'Head Circumference';
 
         if (det.weightKg && isMetric) chips.push(`${det.weightKg} kg`);
         else if (det.weightLb) chips.push(formatWeight(det.weightLb, preferences.weightUnit));
@@ -144,8 +151,8 @@ export function TimelineItem({ event }) {
         if (det.heightCm && preferences.lengthUnit === 'cm') chips.push(`${det.heightCm} cm`);
         else if (det.heightIn) chips.push(formatLength(det.heightIn, preferences.lengthUnit));
 
-        if (det.headCm && preferences.lengthUnit === 'cm') chips.push(`Head: ${det.headCm} cm`);
-        else if (det.headIn) chips.push(`Head: ${formatLength(det.headIn, preferences.lengthUnit)}`);
+        if (det.headCm && preferences.lengthUnit === 'cm') chips.push(`${isDutch ? 'Hoofd' : 'Head'}: ${det.headCm} cm`);
+        else if (det.headIn) chips.push(`${isDutch ? 'Hoofd' : 'Head'}: ${formatLength(det.headIn, preferences.lengthUnit)}`);
 
         return {
           icon: Ruler,
@@ -156,23 +163,23 @@ export function TimelineItem({ event }) {
       }
       case 'HEALTH': {
         const chips = [];
-        let title = 'Health & Meds';
+        let title = isDutch ? 'Gezondheid & Zorgen' : 'Health & Meds';
         if (det.medicineName) {
-          title = 'Medication';
+          title = isDutch ? 'Medicatie' : 'Medication';
           chips.push(det.medicineName);
           if (det.dosage) chips.push(det.dosage);
         } else if (det.temperatureC || det.temperatureF) {
-          title = 'Temperature Check';
+          title = isDutch ? 'Temperatuurmeting' : 'Temperature Check';
           if (det.temperatureC && preferences.tempUnit === 'C') chips.push(`${det.temperatureC}°C`);
           else if (det.temperatureF) chips.push(formatTemp(det.temperatureF, preferences.tempUnit));
         } else if (det.doctorName) {
-          title = 'Doctor Visit';
+          title = isDutch ? 'Doktersbezoek' : 'Doctor Visit';
           chips.push(det.doctorName);
         } else if (det.vaccineName) {
-          title = 'Vaccine';
+          title = isDutch ? 'Vaccinatie' : 'Vaccine';
           chips.push(det.vaccineName);
         } else if (event.note) {
-          title = 'Health / Checkup Note';
+          title = isDutch ? 'Notitie gezondheid' : 'Health / Checkup Note';
         }
 
         return {
@@ -186,16 +193,16 @@ export function TimelineItem({ event }) {
         return {
           icon: Clock,
           badgeClass: 'routine',
-          title: det.routineName || 'Routine',
-          chips: [formatDurationMs(event.durationMs)],
+          title: det.routineName || (isDutch ? 'Routine' : 'Routine'),
+          chips: [formatDurationMs(event.durationMs, language)],
         };
       case 'MILESTONE': {
         const isFirst = det.isBabyFirst;
         return {
           icon: Award,
           badgeClass: 'note',
-          title: det.milestoneName || (isFirst ? 'Baby First' : 'Milestone'),
-          chips: [isFirst ? '🌟 Baby First' : '🏆 Milestone'],
+          title: det.milestoneName || (isFirst ? (isDutch ? 'Eerste keer' : 'Baby First') : (isDutch ? 'Mijlpaal' : 'Milestone')),
+          chips: [isFirst ? (isDutch ? '🌟 Eerste keer' : '🌟 Baby First') : (isDutch ? '🏆 Mijlpaal' : '🏆 Milestone')],
         };
       }
       case 'NOTE':
@@ -203,7 +210,7 @@ export function TimelineItem({ event }) {
         return {
           icon: BookOpen,
           badgeClass: 'note',
-          title: 'Journal Note',
+          title: isDutch ? 'Notitie' : 'Journal Note',
           chips: [],
         };
     }
@@ -219,7 +226,7 @@ export function TimelineItem({ event }) {
 
   const handleDelete = () => {
     setMenuOpen(false);
-    if (window.confirm('Delete this logged activity?')) {
+    if (window.confirm(isDutch ? 'Ben je zeker dat je deze activiteit wil verwijderen?' : 'Delete this logged activity?')) {
       deleteEvent(event.id);
     }
   };
@@ -246,14 +253,14 @@ export function TimelineItem({ event }) {
           {det.caregiver && (
             <div className="item-caregiver-tag">
               <User size={11} />
-              <span>Logged by {det.caregiver}</span>
+              <span>{isDutch ? `Gelogd door ${det.caregiver}` : `Logged by ${det.caregiver}`}</span>
             </div>
           )}
         </div>
       </div>
 
       <div className="timeline-item-right">
-        <span className="item-time">{formatTime(event.beginDt)}</span>
+        <span className="item-time">{formatTime(event.beginDt, language)}</span>
 
         <div style={{ position: 'relative' }}>
           <button
@@ -302,7 +309,7 @@ export function TimelineItem({ event }) {
                   }}
                 >
                   <Edit2 size={13} />
-                  Edit
+                  {isDutch ? 'Bewerken' : 'Edit'}
                 </button>
                 <button
                   onClick={handleDelete}
@@ -319,7 +326,7 @@ export function TimelineItem({ event }) {
                   }}
                 >
                   <Trash2 size={13} />
-                  Delete
+                  {isDutch ? 'Verwijderen' : 'Delete'}
                 </button>
               </div>
             </>

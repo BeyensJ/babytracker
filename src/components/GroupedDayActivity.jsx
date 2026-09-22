@@ -24,7 +24,8 @@ import {
 } from 'lucide-react';
 
 export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) {
-  const { preferences, openModal, deleteEvent } = useApp();
+  const { preferences, openModal, deleteEvent, language, t } = useApp();
+  const isDutch = language === 'nl';
   const isMetric = preferences.weightUnit === 'kg';
   const isMetricVol = preferences.volumeUnit === 'ml';
 
@@ -63,11 +64,17 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
     }
   });
 
-  let feedSummaryText = `${feeds.length} Feed${feeds.length === 1 ? '' : 's'}`;
+  let feedSummaryText = isDutch
+    ? `${feeds.length} voeding${feeds.length === 1 ? '' : 'en'}`
+    : `${feeds.length} Feed${feeds.length === 1 ? '' : 's'}`;
   const feedSubParts = [];
-  if (totalNursingMs > 0) feedSubParts.push(`${formatDurationMs(totalNursingMs)} Nursing`);
+  if (totalNursingMs > 0) {
+    feedSubParts.push(isDutch ? `${formatDurationMs(totalNursingMs, language)} borst` : `${formatDurationMs(totalNursingMs)} Nursing`);
+  }
   if (totalBottleVol > 0) feedSubParts.push(formatVolume(totalBottleVol, preferences.volumeUnit));
-  if (solidsCount > 0) feedSubParts.push(`${solidsCount} Solid${solidsCount === 1 ? '' : 's'}`);
+  if (solidsCount > 0) {
+    feedSubParts.push(isDutch ? `${solidsCount} hapje${solidsCount === 1 ? '' : 's'}` : `${solidsCount} Solid${solidsCount === 1 ? '' : 's'}`);
+  }
   if (feedSubParts.length > 0) {
     feedSummaryText += ` · ${feedSubParts.join(', ')}`;
   }
@@ -84,10 +91,16 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
     else napCount++;
   });
 
-  let sleepSummaryText = `${formatDurationMs(totalSleepMs)} Total`;
+  let sleepSummaryText = isDutch
+    ? `${formatDurationMs(totalSleepMs, language)} totaal`
+    : `${formatDurationMs(totalSleepMs)} Total`;
   const sleepBreakdown = [];
-  if (napCount > 0) sleepBreakdown.push(`${napCount} Nap${napCount === 1 ? '' : 's'}`);
-  if (nightCount > 0) sleepBreakdown.push(`${nightCount} Night`);
+  if (napCount > 0) {
+    sleepBreakdown.push(isDutch ? `${napCount} dutje${napCount === 1 ? '' : 's'}` : `${napCount} Nap${napCount === 1 ? '' : 's'}`);
+  }
+  if (nightCount > 0) {
+    sleepBreakdown.push(isDutch ? `${nightCount} nacht` : `${nightCount} Night`);
+  }
   if (sleepBreakdown.length > 0) {
     sleepSummaryText += ` · ${sleepBreakdown.join(', ')}`;
   }
@@ -103,15 +116,17 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
     if (det.blowout) blowoutCount++;
   });
 
-  let diaperSummaryText = `${diapers.length} Change${diapers.length === 1 ? '' : 's'}`;
+  let diaperSummaryText = isDutch
+    ? `${diapers.length} pamper${diapers.length === 1 ? '' : 's'}`
+    : `${diapers.length} Change${diapers.length === 1 ? '' : 's'}`;
   const diaperParts = [];
-  if (wetCount > 0) diaperParts.push(`${wetCount} Wet`);
-  if (dirtyCount > 0) diaperParts.push(`${dirtyCount} Dirty`);
+  if (wetCount > 0) diaperParts.push(isDutch ? `${wetCount} nat` : `${wetCount} Wet`);
+  if (dirtyCount > 0) diaperParts.push(isDutch ? `${dirtyCount} kaka` : `${dirtyCount} Dirty`);
   if (diaperParts.length > 0) {
     diaperSummaryText += ` · ${diaperParts.join(', ')}`;
   }
   if (blowoutCount > 0) {
-    diaperSummaryText += ` (⚠️ ${blowoutCount} Blowout)`;
+    diaperSummaryText += isDutch ? ` (⚠️ ${blowoutCount} doorgelekt)` : ` (⚠️ ${blowoutCount} Blowout)`;
   }
 
   return (
@@ -120,14 +135,14 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
       {feeds.length > 0 && (
         <CategoryCard
           categoryKey="feeds"
-          title="Feeding"
+          title={isDutch ? 'Voeding' : 'Feeding'}
           icon={Utensils}
           colorClass="feed"
           count={feeds.length}
           summaryText={feedSummaryText}
           events={feeds}
           defaultOpen={defaultExpanded}
-          renderItem={(ev) => <FeedItemRow key={ev.id} event={ev} preferences={preferences} onEdit={openModal} onDelete={deleteEvent} />}
+          renderItem={(ev) => <FeedItemRow key={ev.id} event={ev} preferences={preferences} language={language} onEdit={openModal} onDelete={deleteEvent} />}
         />
       )}
 
@@ -135,14 +150,14 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
       {sleeps.length > 0 && (
         <CategoryCard
           categoryKey="sleep"
-          title="Sleep"
+          title={isDutch ? 'Slaap' : 'Sleep'}
           icon={Moon}
           colorClass="sleep"
           count={sleeps.length}
           summaryText={sleepSummaryText}
           events={sleeps}
           defaultOpen={defaultExpanded}
-          renderItem={(ev) => <SleepItemRow key={ev.id} event={ev} onEdit={openModal} onDelete={deleteEvent} />}
+          renderItem={(ev) => <SleepItemRow key={ev.id} event={ev} language={language} onEdit={openModal} onDelete={deleteEvent} />}
         />
       )}
 
@@ -150,14 +165,29 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
       {diapers.length > 0 && (
         <CategoryCard
           categoryKey="diaper"
-          title="Diapers"
+          title={isDutch ? 'Pampers' : 'Diapers'}
           icon={Sparkles}
           colorClass="diaper"
           count={diapers.length}
           summaryText={diaperSummaryText}
           events={diapers}
           defaultOpen={defaultExpanded}
-          renderItem={(ev) => <DiaperItemRow key={ev.id} event={ev} onEdit={openModal} onDelete={deleteEvent} />}
+          renderItem={(ev) => <DiaperItemRow key={ev.id} event={ev} language={language} onEdit={openModal} onDelete={deleteEvent} />}
+        />
+      )}
+
+      {/* 4. Other Activities Section */}
+      {others.length > 0 && (
+        <CategoryCard
+          categoryKey="others"
+          title={isDutch ? 'Overige activiteiten' : 'Other Activities'}
+          icon={Layers}
+          colorClass="other"
+          count={others.length}
+          summaryText={isDutch ? `${others.length} registratie${others.length === 1 ? '' : 's'}` : `${others.length} Activities`}
+          events={others}
+          defaultOpen={defaultExpanded}
+          renderItem={(ev) => <OtherItemRow key={ev.id} event={ev} preferences={preferences} language={language} onEdit={openModal} onDelete={deleteEvent} />}
         />
       )}
 
@@ -228,38 +258,46 @@ function CategoryCard({ categoryKey, title, icon: Icon, colorClass, count, summa
 /**
  * Feed Item Row
  */
-function FeedItemRow({ event, preferences, onEdit, onDelete }) {
+/**
+ * Feed Item Row
+ */
+function FeedItemRow({ event, preferences, language, onEdit, onDelete }) {
+  const isDutch = language === 'nl';
   const det = event.details || {};
-  let label = 'Feed';
+  let label = isDutch ? 'Voeding' : 'Feed';
   let detailChip = '';
 
   if (event.type === 'BREAST') {
-    label = 'Nurse';
+    label = isDutch ? 'Borst' : 'Nurse';
     const side = (det.side || '').toUpperCase();
     if (side === 'BOTH' || (det.leftDurationMs > 0 && det.rightDurationMs > 0)) {
-      detailChip = `Both (L: ${formatDurationMs(det.leftDurationMs)}, R: ${formatDurationMs(det.rightDurationMs)})`;
+      detailChip = isDutch
+        ? `Beide (L: ${formatDurationMs(det.leftDurationMs, language)}, R: ${formatDurationMs(det.rightDurationMs, language)})`
+        : `Both (L: ${formatDurationMs(det.leftDurationMs)}, R: ${formatDurationMs(det.rightDurationMs)})`;
     } else if (side.includes('LEFT') || det.leftDurationMs > 0) {
       const dur = det.leftDurationMs || event.durationMs;
-      detailChip = dur ? `Left · ${formatDurationMs(dur)}` : 'Left Side';
+      detailChip = dur ? `${isDutch ? 'Links' : 'Left'} · ${formatDurationMs(dur, language)}` : (isDutch ? 'Linkerkant' : 'Left Side');
     } else if (side.includes('RIGHT') || det.rightDurationMs > 0) {
       const dur = det.rightDurationMs || event.durationMs;
-      detailChip = dur ? `Right · ${formatDurationMs(dur)}` : 'Right Side';
+      detailChip = dur ? `${isDutch ? 'Rechts' : 'Right'} · ${formatDurationMs(dur, language)}` : (isDutch ? 'Rechterkant' : 'Right Side');
     } else {
-      detailChip = formatDurationMs(event.durationMs) || 'Nursing';
+      detailChip = formatDurationMs(event.durationMs, language) || (isDutch ? 'Borstvoeding' : 'Nursing');
     }
   } else if (event.type === 'BOTTLE') {
-    label = 'Bottle';
+    label = isDutch ? 'Flesje' : 'Bottle';
     const volStr = det.volumeFloz ? formatVolume(det.volumeFloz, preferences.volumeUnit) : '';
-    const milkStr = det.milkType === 'FORMULA' ? (det.formulaName || 'Formula') : 'Breast Milk';
+    const milkStr = det.milkType === 'FORMULA'
+      ? (det.formulaName || (isDutch ? 'Kunstvoeding' : 'Formula'))
+      : (isDutch ? 'Moedermelk' : 'Breast Milk');
     detailChip = [volStr, milkStr].filter(Boolean).join(' · ');
   } else if (event.type === 'SOLIDS') {
-    label = 'Solids';
-    detailChip = [det.food || 'Meal', det.reaction ? `Reaction: ${det.reaction}` : ''].filter(Boolean).join(' · ');
+    label = isDutch ? 'Vaste voeding' : 'Solids';
+    detailChip = [det.food || (isDutch ? 'Hapje' : 'Meal'), det.reaction ? `${isDutch ? 'Reactie' : 'Reaction'}: ${det.reaction}` : ''].filter(Boolean).join(' · ');
   } else if (event.type === 'COMBO') {
-    label = 'Combo Feed';
+    label = isDutch ? 'Combo voeding' : 'Combo Feed';
     detailChip = [
       det.volumeFloz ? formatVolume(det.volumeFloz, preferences.volumeUnit) : '',
-      formatDurationMs(event.durationMs),
+      formatDurationMs(event.durationMs, language),
     ].filter(Boolean).join(' · ');
   }
 
@@ -268,6 +306,7 @@ function FeedItemRow({ event, preferences, onEdit, onDelete }) {
       event={event}
       label={label}
       detailChip={detailChip}
+      language={language}
       onEdit={onEdit}
       onDelete={onDelete}
     />
@@ -277,20 +316,22 @@ function FeedItemRow({ event, preferences, onEdit, onDelete }) {
 /**
  * Sleep Item Row
  */
-function SleepItemRow({ event, onEdit, onDelete }) {
+function SleepItemRow({ event, language, onEdit, onDelete }) {
+  const isDutch = language === 'nl';
   const det = event.details || {};
   const isOngoing = !event.durationMs && !event.endDt;
   const isNight = det.sleepType === 'NIGHT';
-  const label = isNight ? 'Night Sleep' : 'Nap';
+  const label = isNight ? (isDutch ? 'Nachtslaap' : 'Night Sleep') : (isDutch ? 'Dutje' : 'Nap');
   const durationStr = isOngoing
-    ? 'Sleeping now...'
-    : formatDurationMs(event.durationMs || (event.endDt - event.beginDt));
+    ? (isDutch ? 'Slaapt nu...' : 'Sleeping now...')
+    : formatDurationMs(event.durationMs || (event.endDt - event.beginDt), language);
 
   return (
     <ItemRowTemplate
       event={event}
       label={label}
       detailChip={durationStr}
+      language={language}
       onEdit={onEdit}
       onDelete={onDelete}
     />
@@ -300,22 +341,24 @@ function SleepItemRow({ event, onEdit, onDelete }) {
 /**
  * Diaper Item Row
  */
-function DiaperItemRow({ event, onEdit, onDelete }) {
+function DiaperItemRow({ event, language, onEdit, onDelete }) {
+  const isDutch = language === 'nl';
   const det = event.details || {};
   const parts = [];
-  if (det.pee) parts.push('Wet');
-  if (det.poop) parts.push('Dirty');
-  if (det.dry) parts.push('Dry');
+  if (det.pee) parts.push(isDutch ? 'Nat' : 'Wet');
+  if (det.poop) parts.push(isDutch ? 'Kaka' : 'Dirty');
+  if (det.dry) parts.push(isDutch ? 'Droog' : 'Dry');
 
-  let desc = parts.join(' & ') || 'Diaper';
-  if (det.blowout) desc += ' ⚠️ Blowout';
-  if (det.rash) desc += ' (Rash)';
+  let desc = parts.join(' & ') || (isDutch ? 'Pamper' : 'Diaper');
+  if (det.blowout) desc += isDutch ? ' ⚠️ Doorgelekt' : ' ⚠️ Blowout';
+  if (det.rash) desc += isDutch ? ' (Luieruitslag)' : ' (Rash)';
 
   return (
     <ItemRowTemplate
       event={event}
-      label="Diaper"
+      label={isDutch ? 'Pamper' : 'Diaper'}
       detailChip={desc}
+      language={language}
       onEdit={onEdit}
       onDelete={onDelete}
     />
@@ -325,18 +368,19 @@ function DiaperItemRow({ event, onEdit, onDelete }) {
 /**
  * Other Activities Row (Pump, Growth, Health, Routine, Milestone, Note)
  */
-function OtherItemRow({ event, preferences, onEdit, onDelete }) {
+function OtherItemRow({ event, preferences, language, onEdit, onDelete }) {
+  const isDutch = language === 'nl';
   const det = event.details || {};
-  let label = 'Activity';
+  let label = isDutch ? 'Activiteit' : 'Activity';
   let detailChip = '';
 
   if (event.type === 'PUMP') {
-    label = 'Pumping';
+    label = isDutch ? 'Afkolven' : 'Pumping';
     detailChip = det.totalFloz
       ? formatVolume(det.totalFloz, preferences.volumeUnit)
-      : formatDurationMs(event.durationMs);
+      : formatDurationMs(event.durationMs, language);
   } else if (event.type === 'GROWTH') {
-    label = 'Growth';
+    label = isDutch ? 'Groei' : 'Growth';
     const isMetric = preferences.weightUnit === 'kg';
     const parts = [];
     if (det.weightKg && isMetric) parts.push(`${det.weightKg} kg`);
@@ -344,16 +388,16 @@ function OtherItemRow({ event, preferences, onEdit, onDelete }) {
     if (det.heightCm && preferences.lengthUnit === 'cm') parts.push(`${det.heightCm} cm`);
     detailChip = parts.join(' • ');
   } else if (event.type === 'HEALTH') {
-    label = det.medicineName ? 'Medication' : (det.temperatureC || det.temperatureF ? 'Temperature' : 'Health');
+    label = det.medicineName ? (isDutch ? 'Medicatie' : 'Medication') : (det.temperatureC || det.temperatureF ? (isDutch ? 'Temperatuur' : 'Temperature') : (isDutch ? 'Gezondheid' : 'Health'));
     detailChip = det.medicineName || (det.temperatureC ? `${det.temperatureC}°C` : '');
   } else if (event.type === 'ROUTINE') {
-    label = det.routineName || 'Routine';
-    detailChip = formatDurationMs(event.durationMs);
+    label = det.routineName || (isDutch ? 'Routine' : 'Routine');
+    detailChip = formatDurationMs(event.durationMs, language);
   } else if (event.type === 'MILESTONE') {
-    label = det.milestoneName || 'Milestone';
-    detailChip = det.isBabyFirst ? '🌟 Baby First' : '🏆 Milestone';
+    label = det.milestoneName || (isDutch ? 'Mijlpaal' : 'Milestone');
+    detailChip = det.isBabyFirst ? (isDutch ? '🌟 Eerste keer' : '🌟 Baby First') : (isDutch ? '🏆 Mijlpaal' : '🏆 Milestone');
   } else if (event.type === 'NOTE') {
-    label = 'Journal Note';
+    label = isDutch ? 'Notitie' : 'Journal Note';
   }
 
   return (
@@ -361,6 +405,7 @@ function OtherItemRow({ event, preferences, onEdit, onDelete }) {
       event={event}
       label={label}
       detailChip={detailChip}
+      language={language}
       onEdit={onEdit}
       onDelete={onDelete}
     />
@@ -370,14 +415,14 @@ function OtherItemRow({ event, preferences, onEdit, onDelete }) {
 /**
  * Base Item Row Template
  */
-function ItemRowTemplate({ event, label, detailChip, onEdit, onDelete }) {
-  const [menuOpen, setMenuOpen] = useState(false);
+function ItemRowTemplate({ event, label, detailChip, language = 'nl', onEdit, onDelete }) {
+  const isDutch = language === 'nl';
   const det = event.details || {};
 
   return (
     <div className="grouped-item-row">
       <div className="grouped-item-left">
-        <span className="grouped-item-time">{formatTime(event.beginDt)}</span>
+        <span className="grouped-item-time">{formatTime(event.beginDt, language)}</span>
         <div className="grouped-item-content">
           <div className="grouped-item-main">
             <span className="grouped-item-label">{label}</span>
@@ -387,7 +432,7 @@ function ItemRowTemplate({ event, label, detailChip, onEdit, onDelete }) {
           {det.caregiver && (
             <div className="grouped-caregiver-tag">
               <User size={10} />
-              <span>{det.caregiver}</span>
+              <span>{isDutch ? `Door ${det.caregiver}` : det.caregiver}</span>
             </div>
           )}
         </div>
@@ -397,18 +442,18 @@ function ItemRowTemplate({ event, label, detailChip, onEdit, onDelete }) {
         <button
           className="grouped-item-btn"
           onClick={() => onEdit(event.type, event)}
-          title="Edit"
+          title={isDutch ? 'Bewerken' : 'Edit'}
         >
           <Edit2 size={13} />
         </button>
         <button
           className="grouped-item-btn delete"
           onClick={() => {
-            if (window.confirm('Delete this entry?')) {
+            if (window.confirm(isDutch ? 'Ben je zeker dat je deze activiteit wil verwijderen?' : 'Delete this entry?')) {
               onDelete(event.id);
             }
           }}
-          title="Delete"
+          title={isDutch ? 'Verwijderen' : 'Delete'}
         >
           <Trash2 size={13} />
         </button>

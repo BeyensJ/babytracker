@@ -17,29 +17,29 @@ import {
 } from 'lucide-react';
 
 export function QuickActions() {
-  const { openModal, preferences } = useApp();
+  const { openModal, preferences, t } = useApp();
   const [showMoreModal, setShowMoreModal] = useState(false);
 
   const primaryActions = [
-    { id: 'BREAST', label: 'Nurse', icon: Heart, type: 'breast' },
-    { id: 'BOTTLE', label: 'Bottle', icon: Milk, type: 'bottle' },
-    { id: 'SLEEP', label: 'Sleep', icon: Moon, type: 'sleep' },
-    { id: 'DIAPER', label: 'Diaper', icon: Sparkles, type: 'diaper' },
+    { id: 'BREAST', label: t('quickActions.breast'), icon: Heart, type: 'breast' },
+    { id: 'BOTTLE', label: t('quickActions.bottle'), icon: Milk, type: 'bottle' },
+    { id: 'SLEEP', label: t('quickActions.sleep'), icon: Moon, type: 'sleep' },
+    { id: 'DIAPER', label: t('quickActions.diaper'), icon: Sparkles, type: 'diaper' },
   ];
 
   const moreActions = [
-    { id: 'PUMP', label: 'Pump', icon: Pipette, desc: 'Pumping session & volume' },
-    { id: 'SOLIDS', label: 'Solids', icon: Apple, desc: 'Purees & first foods' },
-    { id: 'GROWTH', label: 'Growth', icon: Ruler, desc: 'Weight, length & head size' },
-    { id: 'HEALTH', label: 'Health', icon: Stethoscope, desc: 'Medicine, temp & visits' },
-    { id: 'ROUTINE', label: 'Routine', icon: Clock, desc: 'Tummy time & baths' },
-    { id: 'NOTE', label: 'Notes', icon: BookOpen, desc: 'Milestones & thoughts' },
+    { id: 'PUMP', label: t('quickActions.pumpLabel'), icon: Pipette, desc: t('quickActions.pumpDesc') },
+    { id: 'SOLIDS', label: t('quickActions.solidsLabel'), icon: Apple, desc: t('quickActions.solidsDesc') },
+    { id: 'GROWTH', label: t('quickActions.growthLabel'), icon: Ruler, desc: t('quickActions.growthDesc') },
+    { id: 'HEALTH', label: t('quickActions.healthLabel'), icon: Stethoscope, desc: t('quickActions.healthDesc') },
+    { id: 'ROUTINE', label: t('quickActions.routineLabel'), icon: Clock, desc: t('quickActions.routineDesc') },
+    { id: 'NOTE', label: t('quickActions.noteLabel'), icon: BookOpen, desc: t('quickActions.noteDesc') },
   ];
 
   return (
     <div className="quick-actions-strip-wrap">
       <div className="quick-actions-header">
-        <span className="quick-actions-title">Quick Log</span>
+        <span className="quick-actions-title">{t('quickActions.moreTitle')}</span>
       </div>
 
       <div className="quick-actions-dock">
@@ -74,7 +74,7 @@ export function QuickActions() {
           <div className="dock-icon-circle more">
             <Plus size={22} />
           </div>
-          <span className="dock-btn-label">More</span>
+          <span className="dock-btn-label">{t('quickActions.more')}</span>
         </button>
       </div>
 
@@ -89,7 +89,7 @@ export function QuickActions() {
         >
           <div className="more-sheet-card" onClick={(e) => e.stopPropagation()}>
             <div className="more-sheet-header">
-              <div className="more-sheet-title">More Activities</div>
+              <div className="more-sheet-title">{t('quickActions.moreTitle')}</div>
               <button
                 type="button"
                 className="more-sheet-close"

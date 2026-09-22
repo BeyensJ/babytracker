@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { Stethoscope, X } from 'lucide-react';
 
 export function HealthModal() {
-  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences } = useApp();
+  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, t, language } = useApp();
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
   const isCelsius = preferences.tempUnit === 'C';
@@ -36,7 +36,21 @@ export function HealthModal() {
 
   if (activeModal !== 'HEALTH') return null;
 
-  const commonMeds = ['Infant Tylenol (Acetaminophen)', 'Motrin (Ibuprofen)', 'Vitamin D Drops', 'Vitamin K', 'Gas Drops (Simethicone)', 'Probiotic Drops'];
+  const commonMeds = language === 'nl' ? [
+    'Perdolan (Paracetamol)',
+    'Dafalgan siroop',
+    'Vitamine D (D-Cure)',
+    'Fysiologisch serum',
+    'Infacol krampjes',
+    'Probiotica baby'
+  ] : [
+    'Infant Tylenol (Acetaminophen)',
+    'Motrin (Ibuprofen)',
+    'Vitamin D Drops',
+    'Vitamin K',
+    'Gas Drops (Simethicone)',
+    'Probiotic Drops'
+  ];
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -88,9 +102,9 @@ export function HealthModal() {
             <div className="modal-title-icon" style={{ backgroundColor: 'var(--color-sage-light)', color: 'var(--color-sage)' }}>
               <Stethoscope size={18} />
             </div>
-            <h2>{isEditing ? 'Edit Health Log' : 'Log Health & Meds'}</h2>
+            <h2>{isEditing ? t('healthModal.titleEdit') : t('healthModal.titleAdd')}</h2>
           </div>
-          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label="Close modal">
+          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label={t('common.close')}>
             <X size={20} />
           </button>
         </div>
@@ -99,35 +113,35 @@ export function HealthModal() {
           <div className="modal-body">
             {/* Health Category Subtype */}
             <div className="form-group">
-              <label className="form-label">Category</label>
+              <label className="form-label">{language === 'nl' ? 'Categorie' : 'Category'}</label>
               <div className="segmented-control">
                 <button
                   type="button"
                   className={`segmented-btn ${subType === 'MED' ? 'active' : ''}`}
                   onClick={() => setSubType('MED')}
                 >
-                  Medicine
+                  {language === 'nl' ? 'Medicatie' : 'Medicine'}
                 </button>
                 <button
                   type="button"
                   className={`segmented-btn ${subType === 'TEMP' ? 'active' : ''}`}
                   onClick={() => setSubType('TEMP')}
                 >
-                  Temperature
+                  {language === 'nl' ? 'Temperatuur' : 'Temperature'}
                 </button>
                 <button
                   type="button"
                   className={`segmented-btn ${subType === 'VISIT' ? 'active' : ''}`}
                   onClick={() => setSubType('VISIT')}
                 >
-                  Doctor Visit
+                  {language === 'nl' ? 'Doktersbezoek' : 'Doctor Visit'}
                 </button>
                 <button
                   type="button"
                   className={`segmented-btn ${subType === 'VACCINE' ? 'active' : ''}`}
                   onClick={() => setSubType('VACCINE')}
                 >
-                  Vaccine
+                  {language === 'nl' ? 'Vaccinatie' : 'Vaccine'}
                 </button>
               </div>
             </div>
@@ -136,11 +150,11 @@ export function HealthModal() {
             {subType === 'MED' && (
               <>
                 <div className="form-group">
-                  <label className="form-label">Medication Name</label>
+                  <label className="form-label">{language === 'nl' ? 'Naam geneesmiddel' : 'Medication Name'}</label>
                   <input
                     type="text"
                     className="form-input"
-                    placeholder="e.g. Tylenol, Vitamin D"
+                    placeholder={language === 'nl' ? 'bv. Perdolan baby, Vitamine D' : 'e.g. Tylenol, Vitamin D'}
                     value={medicineName}
                     onChange={e => setMedicineName(e.target.value)}
                     required
@@ -148,7 +162,7 @@ export function HealthModal() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Common Medications</label>
+                  <label className="form-label">{language === 'nl' ? 'Veelgebruikte medicatie' : 'Common Medications'}</label>
                   <div className="chip-grid">
                     {commonMeds.map(m => (
                       <button
@@ -164,11 +178,11 @@ export function HealthModal() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Dose / Amount</label>
+                  <label className="form-label">{language === 'nl' ? 'Dosis / hoeveelheid' : 'Dose / Amount'}</label>
                   <input
                     type="text"
                     className="form-input"
-                    placeholder="e.g. 1.25 mL, 1 drop, 400 IU"
+                    placeholder={language === 'nl' ? 'bv. 1 suppo (100mg), 6 druppeltjes' : 'e.g. 1.25 mL, 1 drop, 400 IU'}
                     value={dosage}
                     onChange={e => setDosage(e.target.value)}
                   />
@@ -179,7 +193,7 @@ export function HealthModal() {
             {/* Temperature Fields */}
             {subType === 'TEMP' && (
               <div className="form-group">
-                <label className="form-label">Temperature ({isCelsius ? '°C' : '°F'})</label>
+                <label className="form-label">{t('healthModal.tempValue', { unit: isCelsius ? '°C' : '°F' })}</label>
                 <input
                   type="number"
                   step="0.1"
@@ -196,11 +210,11 @@ export function HealthModal() {
             {/* Doctor Visit Fields */}
             {subType === 'VISIT' && (
               <div className="form-group">
-                <label className="form-label">Doctor / Clinic / Reason</label>
+                <label className="form-label">{language === 'nl' ? 'Arts / Kind & Gezin / Reden' : 'Doctor / Clinic / Reason'}</label>
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="e.g. Pediatrician, 2 Month Checkup, Dr. Jansen"
+                  placeholder={language === 'nl' ? 'bv. Kind & Gezin consult, Kinderarts, Huisarts' : 'e.g. Pediatrician, 2 Month Checkup, Dr. Jansen'}
                   value={doctorName}
                   onChange={e => setDoctorName(e.target.value)}
                 />
@@ -210,11 +224,11 @@ export function HealthModal() {
             {/* Vaccine Fields */}
             {subType === 'VACCINE' && (
               <div className="form-group">
-                <label className="form-label">Vaccine / Immunization</label>
+                <label className="form-label">{t('healthModal.vaccineName')}</label>
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="e.g. DTaP, Rotavirus, Hep B, 2 Month shots"
+                  placeholder={language === 'nl' ? 'bv. Hexyon, Prevenar, RotaTeq (8 weken prikjes)' : 'e.g. DTaP, Rotavirus, Hep B, 2 Month shots'}
                   value={vaccineName}
                   onChange={e => setVaccineName(e.target.value)}
                   required
@@ -224,7 +238,7 @@ export function HealthModal() {
 
             {/* Time */}
             <div className="form-group">
-              <label className="form-label">Time</label>
+              <label className="form-label">{t('common.time')}</label>
               <input
                 type="time"
                 className="form-input"
@@ -235,11 +249,11 @@ export function HealthModal() {
 
             {/* Notes */}
             <div className="form-group">
-              <label className="form-label">Notes (optional)</label>
+              <label className="form-label">{t('common.notes')}</label>
               <textarea
                 className="form-textarea"
                 rows="2"
-                placeholder="Reason given, pediatrician advised, mild fussiness..."
+                placeholder={language === 'nl' ? 'Koorts na prikje, huilerig, goed gedronken...' : 'Reason given, pediatrician advised, mild fussiness...'}
                 value={note}
                 onChange={e => setNote(e.target.value)}
               />
@@ -248,10 +262,10 @@ export function HealthModal() {
 
           <div className="modal-footer">
             <button type="button" className="btn-secondary" onClick={closeModal}>
-              Cancel
+              {t('common.cancel')}
             </button>
             <button type="submit" className="btn-primary" style={{ backgroundColor: 'var(--color-sage)' }}>
-              {isEditing ? 'Save Changes' : 'Log Health Entry'}
+              {isEditing ? t('healthModal.submitEdit') : t('healthModal.submitAdd')}
             </button>
           </div>
         </form>

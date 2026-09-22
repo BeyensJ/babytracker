@@ -1,0 +1,1006 @@
+// Flemish Dutch (nl) & English (en) Translation Dictionary for Nara Baby
+export const translations = {
+  en: {
+    // Navigation
+    nav: {
+      timeline: 'Timeline',
+      trends: 'Trends',
+      calendar: 'Calendar',
+      settings: 'Settings',
+      more: 'More',
+    },
+
+    // Categories & Activities
+    categories: {
+      BOTTLE: 'Bottle',
+      BREAST: 'Nursing',
+      DIAPER: 'Diaper',
+      SLEEP: 'Sleep',
+      PUMP: 'Pumping',
+      SOLIDS: 'Solids',
+      GROWTH: 'Growth',
+      HEALTH: 'Health',
+      ROUTINE: 'Routine',
+      NOTE: 'Note',
+    },
+
+    // Header & Caregivers
+    header: {
+      childAge: '{age} old',
+      activeChild: 'Active Baby',
+      switchBaby: 'Switch Baby',
+      themeWarmLinen: 'Warm Linen Mode',
+      themeMocha: 'Cozy Mocha Mode',
+      themeOled: 'Midnight OLED Mode',
+      caregiverGreeting: 'Caregiver: {name}',
+    },
+
+    // Quick Actions Dock
+    quickActions: {
+      bottle: 'Bottle',
+      breast: 'Nursing',
+      diaper: 'Diaper',
+      sleep: 'Sleep',
+      more: 'More',
+      moreTitle: 'More Activities',
+      pumpLabel: 'Pumping',
+      pumpDesc: 'Log pumped breast milk',
+      solidsLabel: 'Solids',
+      solidsDesc: 'Baby food, purees & bites',
+      growthLabel: 'Growth',
+      growthDesc: 'Weight, length & head size',
+      healthLabel: 'Health & Meds',
+      healthDesc: 'Temperature, medicine & symptoms',
+      routineLabel: 'Routine',
+      routineDesc: 'Tummy time, bath & walk',
+      noteLabel: 'Note',
+      noteDesc: 'Milestones & memories',
+    },
+
+    // Daily Summary & Wake Windows
+    summary: {
+      today: 'Today',
+      dailySummary: 'Daily Summary',
+      awakeFor: 'Awake for {duration}',
+      wakeWindow: 'Wake Window',
+      wakeWindowOptimal: 'Optimal window for nap: {range}',
+      wakeWindowExceeded: 'Approaching overtired threshold',
+      lastFed: 'Last fed: {time}',
+      lastDiaper: 'Last diaper: {time}',
+      lastSleep: 'Last sleep: {time}',
+      totalMilk: 'Total Milk',
+      totalBottles: 'Bottles',
+      totalNursing: 'Nursing',
+      totalSleep: 'Total Sleep',
+      diapersCount: '{count} diapers',
+      diapersDetail: '{wet} wet, {dirty} dirty',
+      pumpedTotal: 'Total Expressed',
+      napsCount: '{count} naps',
+    },
+
+    // Today / Timeline View
+    timeline: {
+      emptyTitle: 'No activities logged today yet',
+      emptySubtitle: 'Tap any action button below to start tracking',
+      allFilter: 'All',
+      feedingFilter: 'Feeding',
+      diapersFilter: 'Diapers',
+      sleepFilter: 'Sleep',
+      otherFilter: 'Other',
+      todayGroup: 'Today',
+      yesterdayGroup: 'Yesterday',
+      timeAgoNow: 'Just now',
+      timeAgoMin: '{min}m ago',
+      timeAgoHour: '{hour}h ago',
+      leftSide: 'Left',
+      rightSide: 'Right',
+      bothSides: 'Both sides',
+      edit: 'Edit',
+      delete: 'Delete',
+      deleteConfirm: 'Are you sure you want to delete this event?',
+    },
+
+    // Trends View
+    trends: {
+      title: 'Trends & Insights',
+      subtitle: 'Nara patterns over time',
+      rangeDay: 'Day',
+      rangeWeek: 'Week',
+      rangeMonth: 'Month',
+      rangeAll: 'Lifetime',
+      day1: '1 Day',
+      days7: '7 Days',
+      days14: '14 Days',
+      days30: '30 Days',
+      lifetime: 'Lifetime',
+      sleepPatterns: 'Sleep Patterns',
+      avgPerDay: 'Avg {value} / day',
+      avgNap: 'Avg Nap',
+      avgWakeWindow: 'Avg Wake Window',
+      longestStretch: 'Longest Stretch',
+      weeklySleep: 'Weekly Avg Daily Sleep (Hours)',
+      dailySleep: 'Daily Sleep (Hours)',
+      feedingBreakdown: 'Feeding Breakdown',
+      sessionsCount: '{count} Sessions',
+      avgNursing: 'Avg Nursing',
+      totalNursing: 'Total Nursing',
+      avgBottle: 'Avg Bottle',
+      totalBottle: 'Total Bottle Milk',
+      timeBtwnFeeds: 'Time Btwn Feeds',
+      nursingDuration: 'Nursing Duration',
+      diapersTitle: 'Diaper Changes',
+      diapersPerDay: '{count} / day',
+      totalDiapers: 'Total Diapers',
+      wetDirty: 'Wet / Dirty',
+      blowouts: 'Blowouts',
+      weeklyDiapers: 'Weekly Avg Daily Diapers',
+      dailyDiapers: 'Daily Diapers',
+      growthHistory: 'Growth History',
+      logCheckup: 'Log Checkup',
+      headCirc: 'Head: {value}',
+      tapToEdit: 'Tap to edit this measurement',
+      loggedBy: 'Logged by {name}',
+      whoGrowthTab: 'WHO Guidelines',
+      dailyAverage: 'Daily Average',
+      totalVolume: 'Total Volume',
+      sleepAverage: 'Avg Sleep per Day',
+      diaperAverage: 'Avg Diapers per Day',
+      nursingAverage: 'Avg Nursing Time',
+      whoWeightTitle: 'Weight vs WHO Growth Standards',
+      whoLengthTitle: 'Length vs WHO Growth Standards',
+      percentileP50: '50th Percentile (Median)',
+      percentileNormal: 'Standard Range (P15 - P85)',
+      babyMeasurements: 'Measurements',
+    },
+
+    // Calendar View
+    calendar: {
+      title: 'Activity Calendar',
+      viewDay: 'Day',
+      viewWeek: 'Week',
+      viewMonth: 'Month',
+      selectDayHint: 'Tap any day to see its full chronological log',
+      weekSummary: 'Week Summary',
+      monthSummary: 'Month Summary',
+    },
+
+    // Settings View
+    settings: {
+      title: 'Settings & Preferences',
+      languageTitle: 'Language / Taal',
+      languageDesc: 'Choose Flemish Dutch or English',
+      langDutch: 'Nederlands (Vlaams)',
+      langEnglish: 'English',
+      babyProfiles: 'Baby Profiles',
+      addChild: 'Add Baby',
+      caregivers: 'Caregivers',
+      addCaregiver: 'Add Caregiver',
+      displayUnits: 'Display & Units',
+      volumeUnit: 'Volume Units',
+      volumeUnitDesc: 'For bottles and pumping',
+      weightUnit: 'Weight Units',
+      weightUnitDesc: 'For baby growth',
+      appearance: 'Appearance',
+      appearanceDesc: 'Linen daytime, Mocha, or Midnight OLED',
+      themeLight: 'Light',
+      themeDark: 'Dark',
+      themeOled: 'OLED',
+      haptics: 'Haptic Feedback',
+      hapticsDesc: 'Tactile vibrations on button clicks',
+      hapticsOn: 'On',
+      hapticsOff: 'Off',
+      subtitle: 'Import from Nara Baby, export backups, and configure preferences',
+      importTitle: 'Import From Nara Baby',
+      importDesc: 'Upload your exported CSV or JSON file from the Nara Baby app. Our smart parser accurately detects all nursing sessions, sleep stretches, wake windows, diapers, growth checkups, and baby firsts!',
+      dragDropTitle: 'Drag & Drop your Nara Baby CSV or JSON here',
+      dragDropSub: 'or click to browse your device files',
+      loadBabyTitle: "Load Baby's Export (1,319 Events)",
+      loadBabySub: 'Found your provided export file: 696 feeds, 383 sleeps, 180 diapers, 16 firsts',
+      loadBabyBtn: 'Load My Export',
+      needSampleTitle: 'Need generic sample data?',
+      needSampleSub: 'Load a synthetic 14-day baby care dataset',
+      loadSampleBtn: 'Load Sample Data',
+      exportTitle: 'Export & Backup',
+      recordsCount: '{count} records',
+      exportCsvBtn: 'Export CSV',
+      exportCsvSub: 'Nara-compatible CSV format',
+      exportJsonBtn: 'JSON Archive',
+      exportJsonSub: 'Complete backup file',
+      clearAllConfirm: 'Are you sure you want to clear all logged activities? This cannot be undone.',
+      clearAllAlert: 'All activity data cleared.',
+      sampleConfirm: 'Replace current data with sample dataset?',
+      sampleSuccess: 'Loaded 14 days of realistic baby data! Check Today and Trends tabs.',
+      bornOn: 'Born: {date}',
+      selectBaby: 'Select',
+      syncTitle: 'Family Sync & Backup',
+      syncStatus: 'Server status: Connected',
+      syncNow: 'Sync Now',
+      exportData: 'Export Data (CSV)',
+      importData: 'Import Nara Baby CSV',
+      importHint: 'Drag and drop or tap to select a Nara Baby CSV file',
+      loadExample: 'Load Baby Demo Export',
+      loadSample: 'Load Realistic Sample Data',
+      clearData: 'Clear All Logged Data',
+      notificationsTitle: 'Live Notifications & Tray',
+      notificationsDesc: 'Shows active timers pinned in your Android notification shade while locked',
+      notifActive: '● Active & Allowed',
+      notifInsecure: '⚠️ Requires HTTPS',
+      notifDenied: '✕ Denied',
+      notifDisabled: '○ Not Enabled',
+      enableTray: 'Enable Live Tray',
+      sendTestAlert: 'Send Test Alert',
+      securityTitle: 'Security & Family Password',
+      securityDesc: 'Protected so only you and your partner can view and track baby data',
+      changeFamilyPassword: 'Change Family Password',
+      signOut: 'Lock Device / Sign Out',
+    },
+
+    // Modals Common
+    common: {
+      cancel: 'Cancel',
+      save: 'Save Changes',
+      done: 'Done',
+      time: 'Time',
+      notes: 'Notes (optional)',
+      date: 'Date',
+      duration: 'Duration',
+      quickPresets: 'Quick Presets',
+      close: 'Close',
+    },
+
+    // Bottle Modal
+    bottleModal: {
+      titleAdd: 'Log Bottle Feed',
+      titleEdit: 'Edit Bottle',
+      milkType: 'Milk Type',
+      breastMilk: 'Breast Milk',
+      formula: 'Formula',
+      formulaBrand: 'Brand / Formula Name (e.g. Kendamil, Nan, Nutrilon)',
+      calcModeExact: 'Exact Amount',
+      calcModeOffered: 'Offered & Left',
+      offeredLabel: 'Prepared / Offered ({unit})',
+      leftoverLabel: 'Left in Bottle ({unit})',
+      drankLabel: 'Amount Baby Drank:',
+      submitAdd: 'Log Bottle',
+      submitEdit: 'Save Changes',
+    },
+
+    // Breastfeed Modal
+    breastModal: {
+      titleAdd: 'Log Nursing Session',
+      titleEdit: 'Edit Nursing',
+      side: 'Nursing Side',
+      left: 'Left Breast',
+      right: 'Right Breast',
+      both: 'Both Breasts',
+      durationMinutes: 'Duration (minutes)',
+      startTimer: 'Start Nursing Timer',
+      submitAdd: 'Log Nursing',
+      submitEdit: 'Save Changes',
+    },
+
+    // Diaper Modal
+    diaperModal: {
+      titleAdd: 'Log Diaper Change',
+      titleEdit: 'Edit Diaper',
+      contents: 'Diaper Contents',
+      wet: 'Wet',
+      dirty: 'Dirty',
+      both: 'Wet & Dirty',
+      dry: 'Dry',
+      poopColor: 'Poop Color',
+      yellow: 'Mustard Yellow',
+      brown: 'Brown',
+      green: 'Green',
+      orange: 'Orange',
+      black: 'Dark / Black',
+      consistency: 'Texture / Consistency',
+      seedy: 'Seedy / Normal',
+      loose: 'Loose / Liquid',
+      solid: 'Formed / Solid',
+      mucus: 'Mucus',
+      rash: 'Diaper Rash / Redness',
+      submitAdd: 'Log Diaper',
+      submitEdit: 'Save Changes',
+    },
+
+    // Pump Modal
+    pumpModal: {
+      titleAdd: 'Log Pumping',
+      titleEdit: 'Edit Pump Session',
+      totalExpressed: 'Total Expressed',
+      sideSelection: 'Sides Pumped',
+      bothSides: 'Both Sides',
+      leftOnly: 'Left Only',
+      rightOnly: 'Right Only',
+      leftSide: 'Left Breast',
+      rightSide: 'Right Breast',
+      copyToRight: 'Copy to Right',
+      copyToLeft: 'Copy to Left',
+      sessionDuration: 'Session Duration',
+      submitAdd: 'Log Pump',
+      submitEdit: 'Save Changes',
+    },
+
+    // Sleep Modal
+    sleepModal: {
+      titleAdd: 'Log Sleep',
+      titleEdit: 'Edit Sleep',
+      fellAsleep: 'Fell Asleep',
+      wokeUp: 'Woke Up',
+      stillSleeping: 'Still sleeping',
+      quality: 'Sleep Quality',
+      peaceful: 'Peaceful',
+      restless: 'Restless',
+      submitAdd: 'Log Sleep',
+      submitEdit: 'Save Changes',
+    },
+
+    // Solids Modal
+    solidsModal: {
+      titleAdd: 'Log Solids / Bites',
+      titleEdit: 'Edit Food Entry',
+      foodType: 'Food / Ingredient',
+      foodPlaceholder: 'e.g. Avocado, sweet potato puree, banana',
+      category: 'Food Category',
+      puree: 'Puree / Mash',
+      fingerFood: 'Finger Food / BLW',
+      snack: 'Snack / Fruit',
+      reaction: 'Reaction / Appetite',
+      loved: 'Loved It',
+      ateSome: 'Ate Some',
+      tasted: 'Just Tasted',
+      refused: 'Refused',
+      reactionAllergic: 'Allergic Reaction',
+      submitAdd: 'Log Food',
+      submitEdit: 'Save Changes',
+    },
+
+    // Growth Modal
+    growthModal: {
+      titleAdd: 'Log Baby Growth',
+      titleEdit: 'Edit Growth Entry',
+      weight: 'Weight ({unit})',
+      length: 'Length / Height ({unit})',
+      head: 'Head Circumference ({unit})',
+      whoRef: 'Compared automatically against WHO Guidelines',
+      submitAdd: 'Save Measurement',
+      submitEdit: 'Save Changes',
+    },
+
+    // Health Modal
+    healthModal: {
+      titleAdd: 'Log Health & Medication',
+      titleEdit: 'Edit Health Entry',
+      type: 'Entry Type',
+      typeTemp: 'Temperature',
+      typeMed: 'Medication',
+      typeSymptom: 'Symptom',
+      typeVaccine: 'Vaccination',
+      tempValue: 'Body Temperature ({unit})',
+      medName: 'Medicine Name & Dosage',
+      medPlaceholder: 'e.g. Perdolan 100mg, Vitamin D',
+      symptoms: 'Observed Symptoms',
+      fever: 'Fever',
+      teething: 'Teething',
+      cramps: 'Cramps',
+      runnyNose: 'Runny Nose',
+      cough: 'Cough',
+      vaccineName: 'Vaccine Details',
+      submitAdd: 'Log Health',
+      submitEdit: 'Save Changes',
+    },
+
+    // Routine Modal
+    routineModal: {
+      titleAdd: 'Log Routine & Activity',
+      titleEdit: 'Edit Routine Entry',
+      activityType: 'Activity',
+      tummyTime: 'Tummy Time',
+      bath: 'Bath',
+      walk: 'Stroller Walk',
+      reading: 'Story Time',
+      massage: 'Baby Massage',
+      outdoor: 'Outdoor Play',
+      submitAdd: 'Log Routine',
+      submitEdit: 'Save Changes',
+    },
+
+    // Note Modal
+    noteModal: {
+      titleAdd: 'Add Note / Milestone',
+      titleEdit: 'Edit Note',
+      placeholder: 'First smile, cute moment, doctor appointment notes...',
+      submitAdd: 'Save Note',
+      submitEdit: 'Save Changes',
+    },
+
+    // Caregiver Modal
+    caregiverModal: {
+      title: 'Family Caregivers',
+      manageTitle: 'Who is logging right now?',
+      addCaregiver: 'Add New Caregiver',
+      name: 'Name',
+      role: 'Role / Relation',
+      roleMom: 'Mom',
+      roleDad: 'Dad',
+      roleGrandparent: 'Grandparent',
+      roleNanny: 'Nanny / Babysitter',
+      avatarColor: 'Avatar Color',
+      saveCaregiver: 'Save Caregiver',
+      changePassword: 'Change Family Password',
+      signOut: 'Lock / Sign Out',
+      done: 'Done',
+    },
+
+    // Child Settings Modal
+    childModal: {
+      titleAdd: 'Add Baby Profile',
+      titleEdit: 'Edit Baby Profile',
+      name: 'Baby Name',
+      birthdate: 'Birthdate',
+      gender: 'Sex (for WHO growth curves)',
+      genderGirl: 'Girl',
+      genderBoy: 'Boy',
+      avatarColor: 'Theme Accent Color',
+      submitAdd: 'Save Baby',
+      submitEdit: 'Save Changes',
+    },
+
+    // Change Password Modal
+    passwordModal: {
+      title: 'Change Family Password',
+      current: 'Current Password',
+      newPass: 'New Password',
+      confirmPass: 'Confirm New Password',
+      submit: 'Update Password',
+      updating: 'Updating...',
+    },
+
+    // Import Preview Modal
+    importModal: {
+      title: 'Import Nara Baby Data',
+      recognized: 'Successfully Recognized {count} Activities!',
+      mergeOption: 'Merge with existing data',
+      mergeDesc: 'Keep current entries and append new ones without duplicates',
+      replaceOption: 'Replace current data',
+      confirmBtn: 'Import {count} Records',
+    },
+
+    // Live Timers
+    timers: {
+      activeNursing: 'Active Nursing Timer',
+      activeSleep: 'Baby is Sleeping',
+      activePump: 'Active Pump Timer',
+      pause: 'Pause',
+      resume: 'Resume',
+      stopAndLog: 'Stop & Log',
+      startedAt: 'Started at {time}',
+    },
+  },
+
+  nl: {
+    // Navigatie (Vlaams)
+    nav: {
+      timeline: 'Tijdlijn',
+      trends: 'Trends',
+      calendar: 'Kalender',
+      settings: 'Instellingen',
+      more: 'Meer',
+    },
+
+    // Categorieën & Activiteiten
+    categories: {
+      BOTTLE: 'Flesje',
+      BREAST: 'Borstvoeding',
+      DIAPER: 'Pamper',
+      SLEEP: 'Slaap',
+      PUMP: 'Afkolven',
+      SOLIDS: 'Vaste voeding',
+      GROWTH: 'Groei',
+      HEALTH: 'Gezondheid',
+      ROUTINE: 'Routine',
+      NOTE: 'Notitie',
+    },
+
+    // Header & Verzorgers
+    header: {
+      childAge: '{age} oud',
+      activeChild: 'Actieve baby',
+      switchBaby: 'Wissel van baby',
+      themeWarmLinen: 'Warm linnen (dag)',
+      themeMocha: 'Gezellige mokka (donker)',
+      themeOled: 'Nachtelijk OLED (gitzwart)',
+      caregiverGreeting: 'Verzorger: {name}',
+    },
+
+    // Snelle Knoppen Dock
+    quickActions: {
+      bottle: 'Flesje',
+      breast: 'Borst',
+      diaper: 'Pamper',
+      sleep: 'Slaap',
+      more: 'Meer',
+      moreTitle: 'Meer activiteiten',
+      pumpLabel: 'Afkolven',
+      pumpDesc: 'Afgekolfde melk registreren',
+      solidsLabel: 'Vaste voeding',
+      solidsDesc: 'Groente- & fruitpapjes, hapjes',
+      growthLabel: 'Groei',
+      growthDesc: 'Gewicht, lengte & hoofdomtrek',
+      healthLabel: 'Gezondheid',
+      healthDesc: 'Temperatuur, medicatie & kwaaltjes',
+      routineLabel: 'Routine',
+      routineDesc: 'Buiktijd, badje & wandeling',
+      noteLabel: 'Notitie',
+      noteDesc: 'Mijlpalen & herinneringen',
+    },
+
+    // Dagelijks Overzicht & Wakkertijd
+    summary: {
+      today: 'Vandaag',
+      dailySummary: 'Overzicht van vandaag',
+      awakeFor: 'Al {duration} wakker',
+      wakeWindow: 'Wakkertijd',
+      wakeWindowOptimal: 'Aanbevolen wakkertijd: {range}',
+      wakeWindowExceeded: 'Let op: kans op oververmoeidheid',
+      lastFed: 'Laatste voeding: {time}',
+      lastDiaper: 'Laatste pamper: {time}',
+      lastSleep: 'Laatste slaap: {time}',
+      totalMilk: 'Totaal melk',
+      totalBottles: 'Flesjes',
+      totalNursing: 'Borstvoeding',
+      totalSleep: 'Totale slaap',
+      diapersCount: '{count} pampers',
+      diapersDetail: '{wet} nat, {dirty} kaka',
+      pumpedTotal: 'Totaal afgekolfd',
+      napsCount: '{count} dutjes',
+    },
+
+    // Tijdlijn / Vandaag weergave
+    timeline: {
+      emptyTitle: 'Nog geen activiteiten gelogd vandaag',
+      emptySubtitle: 'Tik op een knop hieronder om te beginnen',
+      allFilter: 'Alles',
+      feedingFilter: 'Voeding',
+      diapersFilter: 'Pampers',
+      sleepFilter: 'Slaap',
+      otherFilter: 'Overige',
+      todayGroup: 'Vandaag',
+      yesterdayGroup: 'Gisteren',
+      timeAgoNow: 'Zonet',
+      timeAgoMin: '{min} min geleden',
+      timeAgoHour: '{hour}u geleden',
+      leftSide: 'Links',
+      rightSide: 'Rechts',
+      bothSides: 'Beide kanten',
+      edit: 'Bewerken',
+      delete: 'Verwijderen',
+      deleteConfirm: 'Ben je zeker dat je deze activiteit wil verwijderen?',
+    },
+
+    // Trends & Inzichten
+    trends: {
+      title: 'Trends & Inzichten',
+      subtitle: 'Nara patronen over de tijd',
+      rangeDay: 'Dag',
+      rangeWeek: 'Week',
+      rangeMonth: 'Maand',
+      rangeAll: 'Alles',
+      day1: '1 Dag',
+      days7: '7 Dagen',
+      days14: '14 Dagen',
+      days30: '30 Dagen',
+      lifetime: 'Alles',
+      sleepPatterns: 'Slaappatronen',
+      avgPerDay: 'Gem. {value} / dag',
+      avgNap: 'Gem. Dutje',
+      avgWakeWindow: 'Gem. Wakkertijd',
+      longestStretch: 'Langste blok',
+      weeklySleep: 'Wekelijks gem. slaap per dag (uren)',
+      dailySleep: 'Dagelijkse slaap (uren)',
+      feedingBreakdown: 'Voedingsoverzicht',
+      sessionsCount: '{count} voedingen',
+      avgNursing: 'Gem. borstvoeding',
+      totalNursing: 'Totale borstvoeding',
+      avgBottle: 'Gem. flesje',
+      totalBottle: 'Totaal flesvoeding',
+      timeBtwnFeeds: 'Tijd tussen voedingen',
+      nursingDuration: 'Borstvoedingsduur',
+      diapersTitle: 'Pamperwissels',
+      diapersPerDay: '{count} / dag',
+      totalDiapers: 'Totaal pampers',
+      wetDirty: 'Pipje / Kaka',
+      blowouts: 'Spuitluiers / Lekjes',
+      weeklyDiapers: 'Wekelijks gem. pampers per dag',
+      dailyDiapers: 'Dagelijkse pampers',
+      growthHistory: 'Groeigeschiedenis',
+      logCheckup: 'Meting toevoegen',
+      headCirc: 'Hoofdje: {value}',
+      tapToEdit: 'Tik om meting te bewerken',
+      loggedBy: 'Geregistreerd door {name}',
+      whoGrowthTab: 'WHO-Groeicurve',
+      dailyAverage: 'Dagelijks gemiddelde',
+      totalVolume: 'Totaal volume',
+      sleepAverage: 'Gem. slaap per dag',
+      diaperAverage: 'Gem. pampers per dag',
+      nursingAverage: 'Gem. borstvoedingstijd',
+      whoWeightTitle: 'Gewicht volgens WHO-groeicurve',
+      whoLengthTitle: 'Lengte volgens WHO-groeicurve',
+      percentileP50: 'Mediaan (P50)',
+      percentileNormal: 'Normale curve (P15 - P85)',
+      babyMeasurements: 'Metingen van baby',
+    },
+
+    // Kalender
+    calendar: {
+      title: 'Activiteitenkalender',
+      viewDay: 'Dag',
+      viewWeek: 'Week',
+      viewMonth: 'Maand',
+      selectDayHint: 'Tik op een dag om het volledige overzicht te bekijken',
+      weekSummary: 'Weekoverzicht',
+      monthSummary: 'Maandoverzicht',
+    },
+
+    // Instellingen
+    settings: {
+      title: 'Instellingen & Voorkeuren',
+      languageTitle: 'Taal / Language',
+      languageDesc: 'Kies Nederlands (Vlaams) of Engels',
+      langDutch: 'Nederlands (Vlaams)',
+      langEnglish: 'English',
+      babyProfiles: 'Babyprofielen',
+      addChild: 'Baby toevoegen',
+      caregivers: 'Verzorgers',
+      addCaregiver: 'Verzorger toevoegen',
+      displayUnits: 'Weergave & Eenheden',
+      volumeUnit: 'Volume-eenheden',
+      volumeUnitDesc: 'Voor flesjes en afkolven',
+      weightUnit: 'Gewichtseenheden',
+      weightUnitDesc: 'Voor babygroei',
+      appearance: 'Weergave',
+      appearanceDesc: 'Warm linnen, Mokka, of Nachtelijk OLED',
+      themeLight: 'Licht',
+      themeDark: 'Donker',
+      themeOled: 'OLED',
+      haptics: 'Haptische feedback',
+      hapticsDesc: 'Trilsignaal bij tikken op knoppen',
+      hapticsOn: 'Aan',
+      hapticsOff: 'Uit',
+      subtitle: 'Importeer vanuit Nara Baby, bewaar back-ups en beheer instellingen',
+      importTitle: 'Importeren vanuit Nara Baby',
+      importDesc: 'Upload je geëxporteerde CSV- of JSON-bestand vanuit de Nara Baby app. Onze slimme parser herkent nauwkeurig alle borst- en flesvoedingen, slaapjes, wakkertijden, pampers, groeimetingen en mijlpalen!',
+      dragDropTitle: 'Sleep je Nara Baby CSV of JSON hierheen',
+      dragDropSub: 'of klik om bestanden op je apparaat te kiezen',
+      loadBabyTitle: "Baby's export laden (1.319 items)",
+      loadBabySub: 'Gevonden voorbeeldbestand: 696 voedingen, 383 slaapjes, 180 pampers, 16 mijlpalen',
+      loadBabyBtn: 'Mijn export laden',
+      needSampleTitle: 'Demogegevens nodig?',
+      needSampleSub: 'Laad een realistische 14-daagse babyverzorging dataset',
+      loadSampleBtn: 'Demogegevens laden',
+      exportTitle: 'Exporteren & Back-up',
+      recordsCount: '{count} items',
+      exportCsvBtn: 'CSV exporteren',
+      exportCsvSub: 'Nara-compatibel CSV-formaat',
+      exportJsonBtn: 'JSON archief',
+      exportJsonSub: 'Volledig back-upbestand',
+      clearAllConfirm: 'Ben je zeker dat je alle geregistreerde activiteiten wilt wissen? Dit kan niet ongedaan worden gemaakt.',
+      clearAllAlert: 'Alle activiteitsgegevens zijn gewist.',
+      sampleConfirm: 'Huidige gegevens vervangen door demogegevens?',
+      sampleSuccess: '14 dagen realistische babygegevens geladen! Bekijk Vandaag en Trends.',
+      bornOn: 'Geboren: {date}',
+      selectBaby: 'Kiezen',
+      syncTitle: 'Gezinssynchronisatie & Back-up',
+      syncStatus: 'Serverstatus: Verbonden',
+      syncNow: 'Nu synchroniseren',
+      exportData: 'Gegevens exporteren (CSV)',
+      importData: 'Nara Baby CSV importeren',
+      importHint: 'Sleep een bestand hierheen of tik om te kiezen',
+      loadExample: 'Voorbeeld Baby importeren',
+      loadSample: 'Realistische demogegevens laden',
+      clearData: 'Alle gegevens wissen',
+      notificationsTitle: 'Live Meldingen & Notificatiebalk',
+      notificationsDesc: 'Toont actieve timers vastgezet in het Android-meldingsvenster bij vergrendeld scherm',
+      notifActive: '● Actief & Toegestaan',
+      notifInsecure: '⚠️ Vereist HTTPS',
+      notifDenied: '✕ Geweigerd',
+      notifDisabled: '○ Niet ingeschakeld',
+      enableTray: 'Notificatiebalk inschakelen',
+      sendTestAlert: 'Testmelding versturen',
+      securityTitle: 'Beveiliging & Gezinswachtwoord',
+      securityDesc: 'Beveiligd zodat enkel jij en je partner babygegevens kunnen bekijken en bijhouden',
+      changeFamilyPassword: 'Gezinswachtwoord wijzigen',
+      signOut: 'Vergrendelen / Afmelden',
+    },
+
+    // Algemeen / Knoppen
+    common: {
+      cancel: 'Annuleren',
+      save: 'Wijzigingen opslaan',
+      done: 'Klaar',
+      time: 'Tijdstip',
+      notes: 'Notities (optioneel)',
+      date: 'Datum',
+      duration: 'Duur',
+      quickPresets: 'Snelle keuzes',
+      close: 'Sluiten',
+    },
+
+    // Flesje Dialoog
+    bottleModal: {
+      titleAdd: 'Flesje registreren',
+      titleEdit: 'Flesje bewerken',
+      milkType: 'Type melk',
+      breastMilk: 'Moedermelk',
+      formula: 'Kunstvoeding / Poedermelk',
+      formulaBrand: 'Merk / naam voeding (bv. Nutrilon, Nan, Kendamil)',
+      calcModeExact: 'Exacte hoeveelheid',
+      calcModeOffered: 'Aangeboden & overschot',
+      offeredLabel: 'Klaargemaakt / aangeboden ({unit})',
+      leftoverLabel: 'Overschot in flesje ({unit})',
+      drankLabel: 'Hoeveelheid gedronken:',
+      submitAdd: 'Flesje opslaan',
+      submitEdit: 'Wijzigingen opslaan',
+    },
+
+    // Borstvoeding Dialoog
+    breastModal: {
+      titleAdd: 'Borstvoeding registreren',
+      titleEdit: 'Borstvoeding bewerken',
+      side: 'Borst',
+      left: 'Linkerborst',
+      right: 'Rechterborst',
+      both: 'Beide borsten',
+      durationMinutes: 'Duur (minuten)',
+      startTimer: 'Borstvoedingstimer starten',
+      submitAdd: 'Borstvoeding opslaan',
+      submitEdit: 'Wijzigingen opslaan',
+    },
+
+    // Pamper Dialoog
+    diaperModal: {
+      titleAdd: 'Pamper verversen',
+      titleEdit: 'Pamper bewerken',
+      contents: 'Inhoud pamper',
+      wet: 'Nat (pipje)',
+      dirty: 'Stoelgang (kaka)',
+      both: 'Nat & kaka',
+      dry: 'Droog',
+      poopColor: 'Kleur stoelgang',
+      yellow: 'Mosterdgeel',
+      brown: 'Bruin',
+      green: 'Groen',
+      orange: 'Oranje',
+      black: 'Donker / Zwart',
+      consistency: 'Consistentie',
+      seedy: 'Korrelig / Normaal',
+      loose: 'Vloeibaar / Diarree',
+      solid: 'Vast',
+      mucus: 'Slijmerig',
+      rash: 'Roodheid / Luieruitslag',
+      submitAdd: 'Pamper opslaan',
+      submitEdit: 'Wijzigingen opslaan',
+    },
+
+    // Afkolven Dialoog
+    pumpModal: {
+      titleAdd: 'Afkolven registreren',
+      titleEdit: 'Kolfsessie bewerken',
+      totalExpressed: 'Totaal afgekolfd',
+      sideSelection: 'Gekolfde kant(en)',
+      bothSides: 'Beide kanten',
+      leftOnly: 'Enkel links',
+      rightOnly: 'Enkel rechts',
+      leftSide: 'Linkerkant',
+      rightSide: 'Rechterkant',
+      copyToRight: 'Kopieer naar rechts',
+      copyToLeft: 'Kopieer naar links',
+      sessionDuration: 'Duur van kolfsessie',
+      submitAdd: 'Kolfsessie opslaan',
+      submitEdit: 'Wijzigingen opslaan',
+    },
+
+    // Slaap Dialoog
+    sleepModal: {
+      titleAdd: 'Slaap registreren',
+      titleEdit: 'Slaap bewerken',
+      fellAsleep: 'In slaap gevallen',
+      wokeUp: 'Wakker geworden',
+      stillSleeping: 'Slaapt nu nog',
+      quality: 'Slaapkwaliteit',
+      peaceful: 'Rustig geslapen',
+      restless: 'Onrustig geslapen',
+      submitAdd: 'Slaap opslaan',
+      submitEdit: 'Wijzigingen opslaan',
+    },
+
+    // Vaste Voeding Dialoog
+    solidsModal: {
+      titleAdd: 'Vaste voeding registreren',
+      titleEdit: 'Hapje bewerken',
+      foodType: 'Voedingsmiddel / Ingrediënt',
+      foodPlaceholder: 'bv. Avocado, wortelpapje, bananenbrood',
+      category: 'Categorie',
+      puree: 'Groente- of fruitpap',
+      fingerFood: 'Vaste stukjes / Rapley',
+      snack: 'Tussendoortje / Koekje',
+      reaction: 'Eetlust / Reactie',
+      loved: 'Heel goed gegeten',
+      ateSome: 'Beetje gegeten',
+      tasted: 'Enkel geproefd',
+      refused: 'Geweigerd',
+      reactionAllergic: 'Allergische reactie',
+      submitAdd: 'Voeding opslaan',
+      submitEdit: 'Wijzigingen opslaan',
+    },
+
+    // Groei Dialoog
+    growthModal: {
+      titleAdd: 'Meting registreren',
+      titleEdit: 'Meting bewerken',
+      weight: 'Gewicht ({unit})',
+      length: 'Lengte ({unit})',
+      head: 'Hoofdomtrek ({unit})',
+      whoRef: 'Wordt vergeleken met de officiële WHO-groeicurve',
+      submitAdd: 'Meting opslaan',
+      submitEdit: 'Wijzigingen opslaan',
+    },
+
+    // Gezondheid Dialoog
+    healthModal: {
+      titleAdd: 'Gezondheid & Zorgen',
+      titleEdit: 'Gezondheid bewerken',
+      type: 'Type registratie',
+      typeTemp: 'Temperatuur',
+      typeMed: 'Medicatie',
+      typeSymptom: 'Symptoom / Klacht',
+      typeVaccine: 'Vaccinatie',
+      tempValue: 'Lichaamstemperatuur ({unit})',
+      medName: 'Medicatie & Dosis',
+      medPlaceholder: 'bv. Perdolan 100mg, Vitamine D druppels',
+      symptoms: 'Opmerkingen / Symptomen',
+      fever: 'Koorts',
+      teething: 'Tandjes',
+      cramps: 'Krampjes',
+      runnyNose: 'Loopneus',
+      cough: 'Hoest',
+      vaccineName: 'Vaccinatiegegevens',
+      submitAdd: 'Gezondheid opslaan',
+      submitEdit: 'Wijzigingen opslaan',
+    },
+
+    // Routine Dialoog
+    routineModal: {
+      titleAdd: 'Routine & Activiteit',
+      titleEdit: 'Routine bewerken',
+      activityType: 'Activiteit',
+      tummyTime: 'Buiktijd',
+      bath: 'Badje',
+      walk: 'Wandeling in kinderwagen',
+      reading: 'Boekje lezen',
+      massage: 'Babymassage',
+      outdoor: 'Buiten spelen',
+      submitAdd: 'Routine opslaan',
+      submitEdit: 'Wijzigingen opslaan',
+    },
+
+    // Notitie Dialoog
+    noteModal: {
+      titleAdd: 'Notitie / Mijlpaal',
+      titleEdit: 'Notitie bewerken',
+      placeholder: 'Eerste glimlachje, leuk moment, notitie van kinderarts...',
+      submitAdd: 'Notitie opslaan',
+      submitEdit: 'Wijzigingen opslaan',
+    },
+
+    // Verzorgers Dialoog
+    caregiverModal: {
+      title: 'Verzorgers in het gezin',
+      manageTitle: 'Wie logt er momenteel?',
+      addCaregiver: 'Nieuwe verzorger toevoegen',
+      name: 'Naam',
+      role: 'Rol / Relatie',
+      roleMom: 'Mama',
+      roleDad: 'Papa',
+      roleGrandparent: 'Grootouder (Oma/Opa)',
+      roleNanny: 'Babysit / Onthaalouder',
+      avatarColor: 'Kleur icoon',
+      saveCaregiver: 'Verzorger opslaan',
+      changePassword: 'Gezinswachtwoord wijzigen',
+      signOut: 'Vergrendelen / Afmelden',
+      done: 'Klaar',
+    },
+
+    // Babyprofiel Dialoog
+    childModal: {
+      titleAdd: 'Babyprofiel toevoegen',
+      titleEdit: 'Babyprofiel bewerken',
+      name: 'Naam van de baby',
+      birthdate: 'Geboortedatum',
+      gender: 'Geslacht (voor WHO-groeicurve)',
+      genderGirl: 'Meisje',
+      genderBoy: 'Jongen',
+      avatarColor: 'Themakleur',
+      submitAdd: 'Baby opslaan',
+      submitEdit: 'Wijzigingen opslaan',
+    },
+
+    // Wachtwoord Dialoog
+    passwordModal: {
+      title: 'Gezinswachtwoord wijzigen',
+      current: 'Huidig wachtwoord',
+      newPass: 'Nieuw wachtwoord',
+      confirmPass: 'Bevestig nieuw wachtwoord',
+      submit: 'Wachtwoord bijwerken',
+      updating: 'Bezig met bijwerken...',
+    },
+
+    // Import Dialoog
+    importModal: {
+      title: 'Nara Baby Gegevens Importeren',
+      recognized: '{count} activiteiten succesvol herkend!',
+      mergeOption: 'Samenvoegen met bestaande gegevens',
+      mergeDesc: 'Bestaande logs behouden en nieuwe toevoegen zonder dubbels',
+      replaceOption: 'Bestaande gegevens vervangen',
+      confirmBtn: '{count} rijen importeren',
+    },
+
+    // Timers
+    timers: {
+      activeNursing: 'Borstvoedingstimer actief',
+      activeSleep: 'Baby slaapt momenteel',
+      activePump: 'Kolfsessie actief',
+      pause: 'Pauzeren',
+      resume: 'Hervatten',
+      stopAndLog: 'Stop & Opslaan',
+      startedAt: 'Gestart om {time}',
+    },
+  },
+};
+
+/**
+ * Translate a dot-notated key into the active language with English fallback and parameter replacement.
+ * e.g. t('summary.awakeFor', { duration: '1u 30m' })
+ */
+export function getTranslation(key, lang = 'nl', params = {}) {
+  const activeLang = lang === 'en' ? 'en' : 'nl';
+  const parts = key.split('.');
+
+  let node = translations[activeLang];
+  for (const part of parts) {
+    if (node && typeof node === 'object' && part in node) {
+      node = node[part];
+    } else {
+      node = undefined;
+      break;
+    }
+  }
+
+  // Fallback to English if missing in selected language
+  if (node === undefined && activeLang !== 'en') {
+    let fallbackNode = translations.en;
+    for (const part of parts) {
+      if (fallbackNode && typeof fallbackNode === 'object' && part in fallbackNode) {
+        fallbackNode = fallbackNode[part];
+      } else {
+        fallbackNode = undefined;
+        break;
+      }
+    }
+    node = fallbackNode;
+  }
+
+  if (typeof node !== 'string') {
+    return key;
+  }
+
+  let result = node;
+  if (params && typeof params === 'object') {
+    for (const [k, v] of Object.entries(params)) {
+      result = result.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+    }
+  }
+
+  return result;
+}

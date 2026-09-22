@@ -3,9 +3,10 @@ import { useApp } from '../../context/AppContext';
 import { Baby, X } from 'lucide-react';
 
 export function ChildSettingsModal() {
-  const { activeModal, modalInitialData, closeModal, addChild, updateChild } = useApp();
+  const { activeModal, modalInitialData, closeModal, addChild, updateChild, preferences, t, language } = useApp();
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
+  const isMetric = preferences?.weightUnit === 'kg';
 
   const [name, setName] = useState(() => modalInitialData?.name || '');
   const [birthdate, setBirthdate] = useState(() => modalInitialData?.birthdate || new Date().toISOString().split('T')[0]);
@@ -26,7 +27,7 @@ export function ChildSettingsModal() {
   const handleSave = (e) => {
     e.preventDefault();
     const payload = {
-      name: name.trim() || 'Baby',
+      name: name.trim() || (language === 'nl' ? 'Baby' : 'Baby'),
       birthdate,
       birthWeightLb: parseFloat(birthWeightLb) || null,
       birthHeightIn: parseFloat(birthHeightIn) || null,
@@ -50,9 +51,9 @@ export function ChildSettingsModal() {
             <div className="modal-title-icon" style={{ backgroundColor: 'var(--color-terracotta-light)', color: 'var(--color-terracotta)' }}>
               <Baby size={18} />
             </div>
-            <h2>{isEditing ? 'Edit Child Profile' : 'Add Child Profile'}</h2>
+            <h2>{isEditing ? t('childModal.titleEdit') : t('childModal.titleAdd')}</h2>
           </div>
-          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label="Close modal">
+          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label={t('common.close')}>
             <X size={20} />
           </button>
         </div>
@@ -60,11 +61,11 @@ export function ChildSettingsModal() {
         <form onSubmit={handleSave}>
           <div className="modal-body">
             <div className="form-group">
-              <label className="form-label">Baby's Name</label>
+              <label className="form-label">{t('childModal.name')}</label>
               <input
                 type="text"
                 className="form-input"
-                placeholder="e.g. Rowan, Maya, Liam"
+                placeholder={language === 'nl' ? 'bv. Lucas, Emma, Arthur, Ella' : 'e.g. Rowan, Maya, Liam'}
                 value={name}
                 onChange={e => setName(e.target.value)}
                 required
@@ -72,7 +73,7 @@ export function ChildSettingsModal() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Birth Date</label>
+              <label className="form-label">{t('childModal.birthdate')}</label>
               <input
                 type="date"
                 className="form-input"
@@ -84,24 +85,28 @@ export function ChildSettingsModal() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div className="form-group">
-                <label className="form-label">Birth Weight (lbs)</label>
+                <label className="form-label">
+                  {language === 'nl' ? `Geboortegewicht (${isMetric ? 'kg' : 'lbs'})` : `Birth Weight (${isMetric ? 'kg' : 'lbs'})`}
+                </label>
                 <input
                   type="number"
-                  step="0.1"
+                  step="0.05"
                   className="form-input"
-                  placeholder="e.g. 7.5"
+                  placeholder={isMetric ? '3.45' : '7.5'}
                   value={birthWeightLb}
                   onChange={e => setBirthWeightLb(e.target.value)}
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Birth Length (in)</label>
+                <label className="form-label">
+                  {language === 'nl' ? `Geboortelengte (${preferences?.lengthUnit === 'cm' ? 'cm' : 'in'})` : `Birth Length (${preferences?.lengthUnit === 'cm' ? 'cm' : 'in'})`}
+                </label>
                 <input
                   type="number"
                   step="0.1"
                   className="form-input"
-                  placeholder="e.g. 20.0"
+                  placeholder={preferences?.lengthUnit === 'cm' ? '50.0' : '20.0'}
                   value={birthHeightIn}
                   onChange={e => setBirthHeightIn(e.target.value)}
                 />
@@ -109,7 +114,7 @@ export function ChildSettingsModal() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Theme Color</label>
+              <label className="form-label">{t('childModal.avatarColor')}</label>
               <div className="chip-grid">
                 {colorOptions.map(c => (
                   <button
@@ -128,10 +133,10 @@ export function ChildSettingsModal() {
 
           <div className="modal-footer">
             <button type="button" className="btn-secondary" onClick={closeModal}>
-              Cancel
+              {t('common.cancel')}
             </button>
             <button type="submit" className="btn-primary">
-              {isEditing ? 'Save Profile' : 'Add Child'}
+              {isEditing ? t('childModal.submitEdit') : t('childModal.submitAdd')}
             </button>
           </div>
         </form>

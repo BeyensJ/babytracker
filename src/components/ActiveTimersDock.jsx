@@ -15,6 +15,8 @@ export function ActiveTimersDock() {
     updateTimerStartTime,
     notificationPermission,
     requestNotificationPermission,
+    t,
+    language,
   } = useApp();
 
   const [tick, setTick] = useState(Date.now());
@@ -45,6 +47,8 @@ export function ActiveTimersDock() {
           onResume={resumeBreastTimer}
           onFinish={stopBreastTimer}
           onUpdateStartTime={(newTs) => updateTimerStartTime('breast', newTs)}
+          t={t}
+          language={language}
         />
       )}
 
@@ -55,6 +59,8 @@ export function ActiveTimersDock() {
           now={tick}
           onFinish={stopSleepTimer}
           onUpdateStartTime={(newTs) => updateTimerStartTime('sleep', newTs)}
+          t={t}
+          language={language}
         />
       )}
 
@@ -65,13 +71,15 @@ export function ActiveTimersDock() {
           now={tick}
           onFinish={stopPumpTimer}
           onUpdateStartTime={(newTs) => updateTimerStartTime('pump', newTs)}
+          t={t}
+          language={language}
         />
       )}
     </div>
   );
 }
 
-function BreastTimerRow({ timer, now, onSwitch, onPause, onResume, onFinish, onUpdateStartTime }) {
+function BreastTimerRow({ timer, now, onSwitch, onPause, onResume, onFinish, onUpdateStartTime, t, language }) {
   const [showAdjust, setShowAdjust] = useState(false);
 
   let leftElapsed = timer.leftElapsedMs || 0;
@@ -94,7 +102,7 @@ function BreastTimerRow({ timer, now, onSwitch, onPause, onResume, onFinish, onU
           {timer.running && <span className="timer-pulse-ring" />}
         </div>
         <div>
-          <div className="timer-title">Nursing Timer</div>
+          <div className="timer-title">{language === 'nl' ? 'Borstvoedingstimer' : 'Nursing Timer'}</div>
           <div className="timer-side-badges" style={{ marginTop: '0.2rem' }}>
             <span className={`side-badge ${timer.activeSide === 'LEFT' ? 'active' : ''}`}>
               L: {formatTimerClock(leftElapsed)}
@@ -105,15 +113,15 @@ function BreastTimerRow({ timer, now, onSwitch, onPause, onResume, onFinish, onU
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.2rem' }}>
             <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.7)' }}>
-              Started at {formatTime(sessionStart)}
+              {t('timers.startedAt', { time: formatTime(sessionStart, language) })}
             </span>
             <button
               type="button"
               className="timer-adjust-link"
               onClick={() => setShowAdjust(!showAdjust)}
-              title="Adjust starting time"
+              title={language === 'nl' ? 'Begintijd aanpassen' : 'Adjust starting time'}
             >
-              <Clock size={11} /> Edit
+              <Clock size={11} /> {t('timeline.edit')}
             </button>
           </div>
           {showAdjust && (
@@ -121,7 +129,7 @@ function BreastTimerRow({ timer, now, onSwitch, onPause, onResume, onFinish, onU
               <button type="button" onClick={() => onUpdateStartTime(sessionStart - 5 * 60000)}>-5m</button>
               <button type="button" onClick={() => onUpdateStartTime(sessionStart - 10 * 60000)}>-10m</button>
               <button type="button" onClick={() => onUpdateStartTime(sessionStart + 5 * 60000)}>+5m</button>
-              <button type="button" onClick={() => setShowAdjust(false)}>Done</button>
+              <button type="button" onClick={() => setShowAdjust(false)}>{t('common.done')}</button>
             </div>
           )}
         </div>
@@ -132,24 +140,24 @@ function BreastTimerRow({ timer, now, onSwitch, onPause, onResume, onFinish, onU
         <div className="timer-actions">
           {timer.running ? (
             <>
-              <button className="timer-btn switch-side" onClick={onSwitch} title="Switch to other side">
+              <button className="timer-btn switch-side" onClick={onSwitch} title={language === 'nl' ? 'Wissel van borst' : 'Switch to other side'}>
                 <RefreshCw size={13} />
-                {timer.activeSide === 'LEFT' ? 'To R' : 'To L'}
+                {timer.activeSide === 'LEFT' ? (language === 'nl' ? 'Naar R' : 'To R') : (language === 'nl' ? 'Naar L' : 'To L')}
               </button>
-              <button className="timer-btn pause" onClick={onPause} title="Pause">
+              <button className="timer-btn pause" onClick={onPause} title={t('timers.pause')}>
                 <Pause size={13} />
               </button>
             </>
           ) : (
-            <button className="timer-btn pause" onClick={onResume} title="Resume">
+            <button className="timer-btn pause" onClick={onResume} title={t('timers.resume')}>
               <Play size={13} />
-              Resume
+              {t('timers.resume')}
             </button>
           )}
 
-          <button className="timer-btn finish" onClick={onFinish} title="Finish and log">
+          <button className="timer-btn finish" onClick={onFinish} title={language === 'nl' ? 'Afronden en opslaan' : 'Finish and log'}>
             <Check size={14} />
-            Done
+            {t('common.done')}
           </button>
         </div>
       </div>
@@ -157,7 +165,7 @@ function BreastTimerRow({ timer, now, onSwitch, onPause, onResume, onFinish, onU
   );
 }
 
-function SleepTimerRow({ timer, now, onFinish, onUpdateStartTime }) {
+function SleepTimerRow({ timer, now, onFinish, onUpdateStartTime, t, language }) {
   const [showAdjust, setShowAdjust] = useState(false);
   const elapsed = Math.max(0, now - timer.startMs);
 
@@ -169,18 +177,18 @@ function SleepTimerRow({ timer, now, onFinish, onUpdateStartTime }) {
           <span className="timer-pulse-ring" />
         </div>
         <div>
-          <div className="timer-title">Sleeping Now</div>
+          <div className="timer-title">{language === 'nl' ? 'Slaapt nu' : 'Sleeping Now'}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.15rem' }}>
             <span className="timer-subtitle">
-              Started at {formatTime(timer.startMs)}
+              {t('timers.startedAt', { time: formatTime(timer.startMs, language) })}
             </span>
             <button
               type="button"
               className="timer-adjust-link"
               onClick={() => setShowAdjust(!showAdjust)}
-              title="Adjust starting time"
+              title={language === 'nl' ? 'Begintijd aanpassen' : 'Adjust starting time'}
             >
-              <Clock size={11} /> Edit
+              <Clock size={11} /> {t('timeline.edit')}
             </button>
           </div>
           {showAdjust && (
@@ -188,7 +196,7 @@ function SleepTimerRow({ timer, now, onFinish, onUpdateStartTime }) {
               <button type="button" onClick={() => onUpdateStartTime(timer.startMs - 5 * 60000)}>-5m</button>
               <button type="button" onClick={() => onUpdateStartTime(timer.startMs - 15 * 60000)}>-15m</button>
               <button type="button" onClick={() => onUpdateStartTime(timer.startMs + 5 * 60000)}>+5m</button>
-              <button type="button" onClick={() => setShowAdjust(false)}>Done</button>
+              <button type="button" onClick={() => setShowAdjust(false)}>{t('common.done')}</button>
             </div>
           )}
         </div>
@@ -198,14 +206,14 @@ function SleepTimerRow({ timer, now, onFinish, onUpdateStartTime }) {
         <div className="timer-digital-clock">{formatTimerClock(elapsed)}</div>
         <button className="timer-btn finish" onClick={onFinish}>
           <Check size={14} />
-          Woke Up
+          {language === 'nl' ? 'Wakker' : 'Woke Up'}
         </button>
       </div>
     </div>
   );
 }
 
-function PumpTimerRow({ timer, now, onFinish, onUpdateStartTime }) {
+function PumpTimerRow({ timer, now, onFinish, onUpdateStartTime, t, language }) {
   const [showAdjust, setShowAdjust] = useState(false);
   const elapsed = Math.max(0, now - timer.startMs);
 
@@ -217,18 +225,18 @@ function PumpTimerRow({ timer, now, onFinish, onUpdateStartTime }) {
           <span className="timer-pulse-ring" />
         </div>
         <div>
-          <div className="timer-title">Pumping Session</div>
+          <div className="timer-title">{language === 'nl' ? 'Afkolftimer' : 'Pumping Session'}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.15rem' }}>
             <span className="timer-subtitle">
-              Started at {formatTime(timer.startMs)}
+              {t('timers.startedAt', { time: formatTime(timer.startMs, language) })}
             </span>
             <button
               type="button"
               className="timer-adjust-link"
               onClick={() => setShowAdjust(!showAdjust)}
-              title="Adjust starting time"
+              title={language === 'nl' ? 'Begintijd aanpassen' : 'Adjust starting time'}
             >
-              <Clock size={11} /> Edit
+              <Clock size={11} /> {t('timeline.edit')}
             </button>
           </div>
           {showAdjust && (
@@ -236,7 +244,7 @@ function PumpTimerRow({ timer, now, onFinish, onUpdateStartTime }) {
               <button type="button" onClick={() => onUpdateStartTime(timer.startMs - 5 * 60000)}>-5m</button>
               <button type="button" onClick={() => onUpdateStartTime(timer.startMs - 10 * 60000)}>-10m</button>
               <button type="button" onClick={() => onUpdateStartTime(timer.startMs + 5 * 60000)}>+5m</button>
-              <button type="button" onClick={() => setShowAdjust(false)}>Done</button>
+              <button type="button" onClick={() => setShowAdjust(false)}>{t('common.done')}</button>
             </div>
           )}
         </div>
@@ -246,7 +254,7 @@ function PumpTimerRow({ timer, now, onFinish, onUpdateStartTime }) {
         <div className="timer-digital-clock">{formatTimerClock(elapsed)}</div>
         <button className="timer-btn finish" onClick={onFinish}>
           <Check size={14} />
-          Done
+          {t('common.done')}
         </button>
       </div>
     </div>

@@ -6,9 +6,10 @@ import { GroupedDayActivity } from './GroupedDayActivity';
 import { Sparkles, Calendar, Layers, Clock } from 'lucide-react';
 
 export function TimelineFeed({ limitDays = null }) {
-  const { events, activeChildId, openModal } = useApp();
+  const { events, activeChildId, openModal, language, t } = useApp();
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [viewMode, setViewMode] = useState('grouped'); // 'grouped' | 'stream'
+  const isDutch = language === 'nl';
 
   // Filter by active child
   const childEvents = events.filter(e => !e.childKey || e.childKey === activeChildId);
@@ -38,12 +39,12 @@ export function TimelineFeed({ limitDays = null }) {
   }
 
   const filters = [
-    { id: 'ALL', label: 'All' },
-    { id: 'FEEDS', label: 'Feeds' },
-    { id: 'SLEEP', label: 'Sleep' },
-    { id: 'DIAPER', label: 'Diapers' },
-    { id: 'PUMP', label: 'Pumping' },
-    { id: 'OTHER', label: 'Other' },
+    { id: 'ALL', label: isDutch ? 'Alles' : 'All' },
+    { id: 'FEEDS', label: isDutch ? 'Voeding' : 'Feeds' },
+    { id: 'SLEEP', label: isDutch ? 'Slaap' : 'Sleep' },
+    { id: 'DIAPER', label: isDutch ? 'Pampers' : 'Diapers' },
+    { id: 'PUMP', label: isDutch ? 'Afkolven' : 'Pumping' },
+    { id: 'OTHER', label: isDutch ? 'Overige' : 'Other' },
   ];
 
   return (
@@ -51,7 +52,7 @@ export function TimelineFeed({ limitDays = null }) {
       <div className="timeline-header">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '0.5rem' }}>
           <div className="section-label" style={{ margin: 0 }}>
-            <span>Activity Log</span>
+            <span>{isDutch ? 'Activiteitenlogboek' : 'Activity Log'}</span>
           </div>
 
           {/* Grouped by Type vs Chronological Stream Toggle */}
@@ -59,18 +60,18 @@ export function TimelineFeed({ limitDays = null }) {
             <button
               className={`feed-mode-btn ${viewMode === 'grouped' ? 'active' : ''}`}
               onClick={() => setViewMode('grouped')}
-              title="Group entries by type (Feeds, Sleep, Diapers, Other)"
+              title={isDutch ? 'Groepeer per type (Voeding, Slaap, Pampers, Overige)' : 'Group entries by type (Feeds, Sleep, Diapers, Other)'}
             >
               <Layers size={13} />
-              <span>Grouped</span>
+              <span>{isDutch ? 'Gegroepeerd' : 'Grouped'}</span>
             </button>
             <button
               className={`feed-mode-btn ${viewMode === 'stream' ? 'active' : ''}`}
               onClick={() => setViewMode('stream')}
-              title="Chronological timeline stream"
+              title={isDutch ? 'Chronologische tijdlijnweergave' : 'Chronological timeline stream'}
             >
               <Clock size={13} />
-              <span>Stream</span>
+              <span>{isDutch ? 'Tijdlijn' : 'Stream'}</span>
             </button>
           </div>
         </div>
@@ -96,12 +97,14 @@ export function TimelineFeed({ limitDays = null }) {
           <div className="empty-icon-wrap">
             <Sparkles size={28} />
           </div>
-          <h3>No activity recorded yet</h3>
+          <h3>{isDutch ? 'Nog geen activiteiten gelogd' : 'No activity recorded yet'}</h3>
           <p>
-            Log your baby's feeds, naps, or diapers above, or import your existing Nara Baby history in Settings!
+            {isDutch
+              ? 'Registreer een voeding, dutje of pamper hierboven, of importeer bestaande gegevens bij Instellingen!'
+              : "Log your baby's feeds, naps, or diapers above, or import your existing Nara Baby history in Settings!"}
           </p>
           <button className="btn-primary" onClick={() => openModal('BREAST')}>
-            Log First Feed
+            {isDutch ? 'Eerste activiteit loggen' : 'Log First Feed'}
           </button>
         </div>
       ) : (
@@ -109,9 +112,9 @@ export function TimelineFeed({ limitDays = null }) {
           <div key={dateKey} className="timeline-day-group">
             <div className="timeline-day-label">
               <Calendar size={14} color="var(--text-tertiary)" />
-              <span>{formatDateHeading(dateKey)}</span>
+              <span>{formatDateHeading(dateKey, language)}</span>
               <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', fontWeight: 400 }}>
-                ({groupedByDay[dateKey].length} {groupedByDay[dateKey].length === 1 ? 'entry' : 'entries'})
+                ({groupedByDay[dateKey].length} {isDutch ? (groupedByDay[dateKey].length === 1 ? 'activiteit' : 'activiteiten') : (groupedByDay[dateKey].length === 1 ? 'entry' : 'entries')})
               </span>
             </div>
 

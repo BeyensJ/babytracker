@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { Lock, Eye, EyeOff, Check, Heart, ShieldCheck } from 'lucide-react';
 
 export function LoginScreen() {
-  const { login, caregivers } = useApp();
+  const { login, caregivers, activeChild, t, language } = useApp();
   const [selectedCaregiverId, setSelectedCaregiverId] = useState(() => {
     // Default to Mom or first caregiver
     return caregivers?.[0]?.id || 'cg_mom';
@@ -18,14 +18,16 @@ export function LoginScreen() {
   const availableCaregivers = caregivers?.length > 0
     ? caregivers
     : [
-      { id: 'cg_mom', name: 'Mom', role: 'Mom', color: '#CE6B4C' },
-      { id: 'cg_dad', name: 'Dad', role: 'Dad', color: '#546C7E' },
+      { id: 'cg_mom', name: 'Mom', role: language === 'nl' ? 'Mama' : 'Mom', color: '#CE6B4C' },
+      { id: 'cg_dad', name: 'Dad', role: language === 'nl' ? 'Papa' : 'Dad', color: '#546C7E' },
     ];
+
+  const babyName = activeChild?.name || 'Baby';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!password) {
-      setErrorMessage('Please enter the family password.');
+      setErrorMessage(language === 'nl' ? 'Voer het gezinswachtwoord in.' : 'Please enter the family password.');
       triggerShake();
       return;
     }
@@ -36,7 +38,7 @@ export function LoginScreen() {
     try {
       await login(password, selectedCaregiverId, rememberMe);
     } catch (err) {
-      setErrorMessage(err.message || 'Incorrect family password. Please try again.');
+      setErrorMessage(err.message || (language === 'nl' ? 'Onjuist gezinswachtwoord. Probeer opnieuw.' : 'Incorrect family password. Please try again.'));
       triggerShake();
     } finally {
       setIsSubmitting(false);
@@ -64,12 +66,16 @@ export function LoginScreen() {
             </svg>
           </div>
           <h1 className="login-title">Baby Tracker</h1>
-          <p className="login-subtitle">Private family tracker for Baby</p>
+          <p className="login-subtitle">
+            {language === 'nl' ? `Privé gezinstracker voor ${babyName}` : `Private family tracker for ${babyName}`}
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
           {/* Caregiver Selection */}
-          <div className="login-section-label">Who is logging on?</div>
+          <div className="login-section-label">
+            {language === 'nl' ? 'Wie logt er in?' : 'Who is logging on?'}
+          </div>
           <div className="login-caregiver-grid">
             {availableCaregivers.map((cg) => {
               const isSelected = cg.id === selectedCaregiverId;
@@ -103,7 +109,7 @@ export function LoginScreen() {
           {/* Password Input */}
           <div className="login-field-group">
             <label className="login-field-label" htmlFor="family-password-input">
-              Family Password
+              {language === 'nl' ? 'Gezinswachtwoord' : 'Family Password'}
             </label>
             <div className="login-input-wrapper">
               <Lock size={18} className="login-input-icon" />
@@ -115,7 +121,7 @@ export function LoginScreen() {
                   setPassword(e.target.value);
                   if (errorMessage) setErrorMessage('');
                 }}
-                placeholder="Enter password"
+                placeholder={language === 'nl' ? 'Wachtwoord invoeren' : 'Enter password'}
                 className="login-input"
                 autoFocus
                 disabled={isSubmitting}
@@ -125,7 +131,7 @@ export function LoginScreen() {
                 className="login-toggle-password-btn"
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex={-1}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-label={showPassword ? (language === 'nl' ? 'Wachtwoord verbergen' : 'Hide password') : (language === 'nl' ? 'Wachtwoord tonen' : 'Show password')}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -147,7 +153,9 @@ export function LoginScreen() {
               onChange={(e) => setRememberMe(e.target.checked)}
               className="login-checkbox"
             />
-            <span className="login-remember-text">Remember this device (stay signed in)</span>
+            <span className="login-remember-text">
+              {language === 'nl' ? 'Onthoud dit apparaat (aangemeld blijven)' : 'Remember this device (stay signed in)'}
+            </span>
           </label>
 
           {/* Submit Button */}
@@ -162,12 +170,11 @@ export function LoginScreen() {
             ) : (
               <>
                 <ShieldCheck size={18} />
-                <span>Unlock Baby Tracker</span>
+                <span>{language === 'nl' ? 'Baby Tracker Ontgrendelen' : 'Unlock Baby Tracker'}</span>
               </>
             )}
           </button>
         </form>
-
       </div>
     </div>
   );

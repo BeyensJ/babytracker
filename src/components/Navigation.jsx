@@ -4,13 +4,13 @@ import { useApp } from '../context/AppContext';
 import { triggerHaptic } from '../utils/haptics';
 
 export function Navigation({ activeTab, onTabChange }) {
-  const { preferences } = useApp();
+  const { preferences, t } = useApp();
   const tabs = [
-    { id: 'today', label: 'Today', icon: Home },
-    { id: 'calendar', label: 'Calendar', icon: Calendar },
-    { id: 'trends', label: 'Trends', icon: BarChart2 },
-    { id: 'history', label: 'Log', icon: Clock },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'today', label: t('summary.today'), icon: Home },
+    { id: 'calendar', label: t('nav.calendar'), icon: Calendar },
+    { id: 'trends', label: t('nav.trends'), icon: BarChart2 },
+    { id: 'history', label: t('nav.timeline'), icon: Clock },
+    { id: 'settings', label: t('nav.settings'), icon: Settings },
   ];
 
   return (

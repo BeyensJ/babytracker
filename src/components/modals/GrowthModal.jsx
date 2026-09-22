@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { Ruler, X } from 'lucide-react';
 
 export function GrowthModal() {
-  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences } = useApp();
+  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, t, language } = useApp();
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
   const isMetric = preferences.weightUnit === 'kg';
@@ -116,9 +116,9 @@ export function GrowthModal() {
             <div className="modal-title-icon" style={{ backgroundColor: 'var(--color-caramel-light)', color: 'var(--color-caramel)' }}>
               <Ruler size={18} />
             </div>
-            <h2>{isEditing ? 'Edit Measurements' : 'Log Growth'}</h2>
+            <h2>{isEditing ? t('growthModal.titleEdit') : t('growthModal.titleAdd')}</h2>
           </div>
-          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label="Close modal">
+          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label={t('common.close')}>
             <X size={20} />
           </button>
         </div>
@@ -127,7 +127,7 @@ export function GrowthModal() {
           <div className="modal-body">
             {/* Weight */}
             <div className="form-group">
-              <label className="form-label">Weight ({isMetric ? 'kg' : 'lbs'})</label>
+              <label className="form-label">{t('growthModal.weight', { unit: isMetric ? 'kg' : 'lbs' })}</label>
               <input
                 type="number"
                 step="0.05"
@@ -142,7 +142,7 @@ export function GrowthModal() {
 
             {/* Height */}
             <div className="form-group">
-              <label className="form-label">Height / Length ({preferences.lengthUnit === 'cm' ? 'cm' : 'inches'})</label>
+              <label className="form-label">{t('growthModal.length', { unit: preferences.lengthUnit === 'cm' ? 'cm' : 'inches' })}</label>
               <input
                 type="number"
                 step="0.1"
@@ -157,14 +157,14 @@ export function GrowthModal() {
 
             {/* Head Circumference */}
             <div className="form-group">
-              <label className="form-label">Head Circumference (optional, {preferences.lengthUnit === 'cm' ? 'cm' : 'inches'})</label>
+              <label className="form-label">{t('growthModal.head', { unit: preferences.lengthUnit === 'cm' ? 'cm' : 'inches' })}</label>
               <input
                 type="number"
                 step="0.1"
                 min="5"
                 max="100"
                 className="form-input"
-                placeholder="e.g. 15.5"
+                placeholder="e.g. 35.5"
                 value={headInput}
                 onChange={e => setHeadInput(e.target.value)}
               />
@@ -172,7 +172,7 @@ export function GrowthModal() {
 
             {/* Date */}
             <div className="form-group">
-              <label className="form-label">Date of Measurement</label>
+              <label className="form-label">{language === 'nl' ? 'Datum van meting' : 'Date of Measurement'}</label>
               <input
                 type="date"
                 className="form-input"
@@ -183,11 +183,11 @@ export function GrowthModal() {
 
             {/* Notes */}
             <div className="form-group">
-              <label className="form-label">Notes (optional)</label>
+              <label className="form-label">{t('common.notes')}</label>
               <textarea
                 className="form-textarea"
                 rows="2"
-                placeholder="Pediatrician checkup notes, percentiles..."
+                placeholder={language === 'nl' ? 'Controle bij Kind & Gezin / kinderarts, percentielen...' : 'Pediatrician checkup notes, percentiles...'}
                 value={note}
                 onChange={e => setNote(e.target.value)}
               />
@@ -196,10 +196,10 @@ export function GrowthModal() {
 
           <div className="modal-footer">
             <button type="button" className="btn-secondary" onClick={closeModal}>
-              Cancel
+              {t('common.cancel')}
             </button>
             <button type="submit" className="btn-primary" style={{ backgroundColor: 'var(--color-caramel)' }}>
-              {isEditing ? 'Save Changes' : 'Save Measurements'}
+              {isEditing ? t('growthModal.submitEdit') : t('growthModal.submitAdd')}
             </button>
           </div>
         </form>

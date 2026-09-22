@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { Apple, X } from 'lucide-react';
 
 export function SolidsModal() {
-  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent } = useApp();
+  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, t, language } = useApp();
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
 
@@ -18,7 +18,25 @@ export function SolidsModal() {
 
   if (activeModal !== 'SOLIDS') return null;
 
-  const reactions = [
+  const mealTypes = language === 'nl' ? [
+    { id: 'Breakfast', label: 'Ontbijt' },
+    { id: 'Lunch', label: 'Groentepap / Lunch' },
+    { id: 'Snack', label: 'Fruitpap / Vieruurtje' },
+    { id: 'Dinner', label: 'Avondmaal' }
+  ] : [
+    { id: 'Breakfast', label: 'Breakfast' },
+    { id: 'Lunch', label: 'Lunch' },
+    { id: 'Snack', label: 'Snack' },
+    { id: 'Dinner', label: 'Dinner' }
+  ];
+
+  const reactions = language === 'nl' ? [
+    { id: 'loved', label: '😍 Vond het heerlijk' },
+    { id: 'liked', label: '😊 Goed gegeten' },
+    { id: 'neutral', label: '😐 Geproefd' },
+    { id: 'disliked', label: '😣 Geweigerd' },
+    { id: 'allergic', label: '⚠️ Reactie / Uitslag' },
+  ] : [
     { id: 'loved', label: '😍 Loved it' },
     { id: 'liked', label: '😊 Liked' },
     { id: 'neutral', label: '😐 Neutral' },
@@ -26,7 +44,21 @@ export function SolidsModal() {
     { id: 'allergic', label: '⚠️ Reaction / Rash' },
   ];
 
-  const commonFoods = ['Avocado puree', 'Banana mash', 'Sweet potato', 'Oatmeal cereal', 'Steamed carrots', 'Apple puree'];
+  const commonFoods = language === 'nl' ? [
+    'Groentepap (wortel/aardappel)',
+    'Fruitpap (banaan/appel)',
+    'Wortelpuree',
+    'Pompoenpuree',
+    'Avocadomoes',
+    'Bananenpuree'
+  ] : [
+    'Avocado puree',
+    'Banana mash',
+    'Sweet potato',
+    'Oatmeal cereal',
+    'Steamed carrots',
+    'Apple puree'
+  ];
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -41,7 +73,7 @@ export function SolidsModal() {
       endDt: null,
       durationMs: 0,
       details: {
-        food: food.trim() || 'Solid Food',
+        food: food.trim() || (language === 'nl' ? 'Vaste voeding' : 'Solid Food'),
         mealType,
         reaction,
       },
@@ -65,9 +97,9 @@ export function SolidsModal() {
             <div className="modal-title-icon" style={{ backgroundColor: 'var(--color-terracotta-light)', color: 'var(--color-terracotta)' }}>
               <Apple size={18} />
             </div>
-            <h2>{isEditing ? 'Edit Solid Feed' : 'Log Solid Food'}</h2>
+            <h2>{isEditing ? t('solidsModal.titleEdit') : t('solidsModal.titleAdd')}</h2>
           </div>
-          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label="Close modal">
+          <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label={t('common.close')}>
             <X size={20} />
           </button>
         </div>
@@ -76,16 +108,16 @@ export function SolidsModal() {
           <div className="modal-body">
             {/* Meal Type */}
             <div className="form-group">
-              <label className="form-label">Meal</label>
+              <label className="form-label">{language === 'nl' ? 'Maaltijd' : 'Meal'}</label>
               <div className="segmented-control">
-                {['Breakfast', 'Lunch', 'Dinner', 'Snack'].map(m => (
+                {mealTypes.map(m => (
                   <button
-                    key={m}
+                    key={m.id}
                     type="button"
-                    className={`segmented-btn ${mealType === m ? 'active' : ''}`}
-                    onClick={() => setMealType(m)}
+                    className={`segmented-btn ${mealType === m.id ? 'active' : ''}`}
+                    onClick={() => setMealType(m.id)}
                   >
-                    {m}
+                    {m.label}
                   </button>
                 ))}
               </div>
@@ -93,11 +125,11 @@ export function SolidsModal() {
 
             {/* Food Name */}
             <div className="form-group">
-              <label className="form-label">Food</label>
+              <label className="form-label">{t('solidsModal.foodType')}</label>
               <input
                 type="text"
                 className="form-input"
-                placeholder="e.g. Mashed avocado with breast milk"
+                placeholder={language === 'nl' ? 'bv. Wortel-aardappelpapje met olijfolie' : 'e.g. Mashed avocado with breast milk'}
                 value={food}
                 onChange={e => setFood(e.target.value)}
                 required
@@ -106,7 +138,7 @@ export function SolidsModal() {
 
             {/* Quick Food Suggestions */}
             <div className="form-group">
-              <label className="form-label">Quick Suggestions</label>
+              <label className="form-label">{t('common.quickPresets')}</label>
               <div className="chip-grid">
                 {commonFoods.map(f => (
                   <button
@@ -123,7 +155,7 @@ export function SolidsModal() {
 
             {/* Reaction */}
             <div className="form-group">
-              <label className="form-label">Baby's Reaction</label>
+              <label className="form-label">{t('solidsModal.reaction')}</label>
               <div className="chip-grid">
                 {reactions.map(r => (
                   <button
@@ -140,7 +172,7 @@ export function SolidsModal() {
 
             {/* Time */}
             <div className="form-group">
-              <label className="form-label">Time</label>
+              <label className="form-label">{t('common.time')}</label>
               <input
                 type="time"
                 className="form-input"
@@ -151,11 +183,11 @@ export function SolidsModal() {
 
             {/* Notes */}
             <div className="form-group">
-              <label className="form-label">Notes (optional)</label>
+              <label className="form-label">{t('common.notes')}</label>
               <textarea
                 className="form-textarea"
                 rows="2"
-                placeholder="Ate about 2 tablespoons, great interest..."
+                placeholder={language === 'nl' ? 'Ongeveer 150g gegeten, flink gelepeld...' : 'Ate about 2 tablespoons, great interest...'}
                 value={note}
                 onChange={e => setNote(e.target.value)}
               />
@@ -164,10 +196,10 @@ export function SolidsModal() {
 
           <div className="modal-footer">
             <button type="button" className="btn-secondary" onClick={closeModal}>
-              Cancel
+              {t('common.cancel')}
             </button>
-            <button type="submit" className="btn-primary">
-              {isEditing ? 'Save Changes' : 'Log Food'}
+            <button type="submit" className="btn-primary" style={{ backgroundColor: 'var(--color-terracotta)' }}>
+              {isEditing ? t('solidsModal.submitEdit') : t('solidsModal.submitAdd')}
             </button>
           </div>
         </form>
