@@ -319,6 +319,9 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEYS.PREFERENCES, JSON.stringify(preferences));
+      if (preferences.theme) {
+        localStorage.setItem(STORAGE_KEYS.DEVICE_THEME, preferences.theme);
+      }
       const currentTheme = preferences.theme || 'light';
       if (currentTheme === 'dark' || currentTheme === 'oled') {
         document.documentElement.setAttribute('data-theme', 'dark');

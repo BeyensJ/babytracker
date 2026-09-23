@@ -20,6 +20,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <title>Baby Tracker</title>
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem('babytracker_device_theme_v1');
+          if (!t) {
+            var p = localStorage.getItem('babytracker_preferences_v1');
+            if (p) {
+              var parsed = JSON.parse(p);
+              if (parsed && parsed.theme) t = parsed.theme;
+            }
+          }
+          if (t === 'dark' || t === 'oled') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', '#000000');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
