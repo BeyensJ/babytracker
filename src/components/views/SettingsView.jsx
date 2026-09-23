@@ -28,6 +28,8 @@ export function SettingsView() {
     language,
   } = useApp();
 
+  const isDutch = language === 'nl';
+
   const fileInputRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
   const [importError, setImportError] = useState('');
@@ -324,7 +326,7 @@ export function SettingsView() {
                   className="btn-secondary"
                   style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
                   onClick={() => openModal('CHILD_SETTINGS', c)}
-                  aria-label="Edit child profile"
+                  aria-label={t('childModal.titleEdit')}
                 >
                   <Edit2 size={13} />
                 </button>
@@ -437,7 +439,7 @@ export function SettingsView() {
                 setPreferences(p => ({ ...p, theme: 'light' }));
                 triggerHaptic('light', preferences?.haptics);
               }}
-              title="Warm Linen Daytime"
+              title={t('header.themeWarmLinen')}
             >
               <Sun size={13} style={{ marginRight: 4 }} /> {t('settings.themeLight')}
             </button>
@@ -448,7 +450,7 @@ export function SettingsView() {
                 setPreferences(p => ({ ...p, theme: 'dark' }));
                 triggerHaptic('light', preferences?.haptics);
               }}
-              title="Cozy Mocha Night"
+              title={t('header.themeMocha')}
             >
               <Moon size={13} style={{ marginRight: 4 }} /> {t('settings.themeDark')}
             </button>
@@ -459,7 +461,7 @@ export function SettingsView() {
                 setPreferences(p => ({ ...p, theme: 'oled' }));
                 triggerHaptic('light', preferences?.haptics);
               }}
-              title="Pitch-Black OLED Mode (#000000)"
+              title={t('header.themeOled')}
             >
               <Sparkles size={13} style={{ marginRight: 4 }} /> {t('settings.themeOled')}
             </button>
@@ -565,14 +567,25 @@ export function SettingsView() {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600, color: '#C25E00', marginBottom: '0.3rem' }}>
               <AlertTriangle size={15} />
-              Home Server Notice: Insecure HTTP Connection
+              {t('settings.insecureTitle')}
             </div>
             <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
-              Browsers strictly disable Notifications and Service Workers over plain HTTP LAN addresses (e.g. <code>http://192.168.x.x:3001</code>). To receive notifications on your phone:
+              {isDutch
+                ? `Browsers blokkeren meldingen en Service Workers over gewone HTTP LAN-adressen (zoals http://192.168.x.x:3001). Om meldingen op je smartphone te ontvangen:`
+                : `Browsers strictly disable Notifications and Service Workers over plain HTTP LAN addresses (e.g. http://192.168.x.x:3001). To receive notifications on your phone:`}
             </p>
             <ul style={{ margin: '0.4rem 0 0 1.2rem', padding: 0, color: 'var(--text-secondary)' }}>
-              <li><strong>Option A (Recommended):</strong> Put HTTPS in front of your server (e.g., Caddy, Nginx Proxy Manager, or Cloudflare Tunnel).</li>
-              <li><strong>Option B (Chrome on Android/Desktop):</strong> Open <code>chrome://flags/#unsafely-treat-insecure-origin-as-secure</code>, add this exact URL (<code>{window.location.origin}</code>), set to <strong>Enabled</strong>, and restart Chrome.</li>
+              <li>
+                <strong>{isDutch ? 'Optie A (Aanbevolen):' : 'Option A (Recommended):'}</strong>{' '}
+                {isDutch ? 'Plaats HTTPS voor je server (bv. Caddy, Nginx Proxy Manager of Cloudflare Tunnel).' : 'Put HTTPS in front of your server (e.g., Caddy, Nginx Proxy Manager, or Cloudflare Tunnel).'}
+              </li>
+              <li>
+                <strong>{isDutch ? 'Optie B (Chrome op Android/desktop):' : 'Option B (Chrome on Android/Desktop):'}</strong>{' '}
+                {isDutch ? 'Open ' : 'Open '}
+                <code>chrome://flags/#unsafely-treat-insecure-origin-as-secure</code>, {isDutch ? 'voeg deze exacte URL toe (' : 'add this exact URL ('}
+                <code>{window.location.origin}</code>), {isDutch ? 'kies ' : 'set to '}
+                <strong>{isDutch ? 'Ingeschakeld' : 'Enabled'}</strong>{isDutch ? ' en herstart Chrome.' : ', and restart Chrome.'}
+              </li>
             </ul>
           </div>
         )}

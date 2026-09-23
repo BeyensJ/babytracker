@@ -69,7 +69,7 @@ export function QuickActions() {
             setShowMoreModal(true);
           }}
           id="log-btn-more"
-          aria-label="More tracking categories"
+          aria-label={t('quickActions.moreTitle')}
         >
           <div className="dock-icon-circle more">
             <Plus size={22} />
@@ -97,7 +97,7 @@ export function QuickActions() {
                   triggerHaptic('light', preferences?.haptics);
                   setShowMoreModal(false);
                 }}
-                aria-label="Close"
+                aria-label={t('common.close')}
               >
                 <X size={20} />
               </button>

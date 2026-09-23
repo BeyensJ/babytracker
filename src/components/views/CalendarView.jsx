@@ -503,10 +503,10 @@ export function CalendarView() {
               <button className="calendar-today-btn" onClick={handleJumpToTodayMonth}>
                 {t('summary.today')}
               </button>
-              <button className="calendar-icon-btn" onClick={handlePrevDay} aria-label="Previous day">
+              <button className="calendar-icon-btn" onClick={handlePrevDay} aria-label={language === 'nl' ? 'Vorige dag' : 'Previous day'}>
                 <ChevronLeft size={18} />
               </button>
-              <button className="calendar-icon-btn" onClick={handleNextDay} aria-label="Next day">
+              <button className="calendar-icon-btn" onClick={handleNextDay} aria-label={language === 'nl' ? 'Volgende dag' : 'Next day'}>
                 <ChevronRight size={18} />
               </button>
             </div>
@@ -530,10 +530,10 @@ export function CalendarView() {
               <button className="calendar-today-btn" onClick={handleJumpToCurrentWeek}>
                 {language === 'nl' ? 'Deze week' : 'This Week'}
               </button>
-              <button className="calendar-icon-btn" onClick={handlePrevWeek} aria-label="Previous week">
+              <button className="calendar-icon-btn" onClick={handlePrevWeek} aria-label={language === 'nl' ? 'Vorige week' : 'Previous week'}>
                 <ChevronLeft size={18} />
               </button>
-              <button className="calendar-icon-btn" onClick={handleNextWeek} aria-label="Next week">
+              <button className="calendar-icon-btn" onClick={handleNextWeek} aria-label={language === 'nl' ? 'Volgende week' : 'Next week'}>
                 <ChevronRight size={18} />
               </button>
             </div>
@@ -678,10 +678,10 @@ export function CalendarView() {
               <button className="calendar-today-btn" onClick={handleJumpToTodayMonth}>
                 {t('summary.today')}
               </button>
-              <button className="calendar-icon-btn" onClick={handlePrevMonth} aria-label="Previous month">
+              <button className="calendar-icon-btn" onClick={handlePrevMonth} aria-label={language === 'nl' ? 'Vorige maand' : 'Previous month'}>
                 <ChevronLeft size={18} />
               </button>
-              <button className="calendar-icon-btn" onClick={handleNextMonth} aria-label="Next month">
+              <button className="calendar-icon-btn" onClick={handleNextMonth} aria-label={language === 'nl' ? 'Volgende maand' : 'Next month'}>
                 <ChevronRight size={18} />
               </button>
             </div>

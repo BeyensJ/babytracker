@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useApp } from '../context/AppContext';
 import { notificationService } from '../services/notificationService';
 import { Bell, Heart, Moon, Milk, Check, X } from 'lucide-react';
 
 export function NotificationToast() {
+  const { language } = useApp();
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
@@ -111,7 +113,7 @@ export function NotificationToast() {
           justifyContent: 'center',
           borderRadius: '50%',
         }}
-        aria-label="Dismiss notification"
+        aria-label={language === 'nl' ? 'Melding sluiten' : 'Dismiss notification'}
       >
         <X size={16} />
       </button>

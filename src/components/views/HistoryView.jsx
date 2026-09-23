@@ -5,7 +5,7 @@ import { TimelineItem } from '../TimelineItem';
 import { Search, Calendar, Filter, FileText } from 'lucide-react';
 
 export function HistoryView() {
-  const { events, activeChildId } = useApp();
+  const { events, activeChildId, t, language } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [selectedDate, setSelectedDate] = useState('');
@@ -55,23 +55,23 @@ export function HistoryView() {
   const dayKeys = Object.keys(groupedByDay).sort().reverse();
 
   const filters = [
-    { id: 'ALL', label: 'All' },
-    { id: 'FEEDS', label: 'Feeds' },
-    { id: 'SLEEP', label: 'Sleep' },
-    { id: 'DIAPER', label: 'Diapers' },
-    { id: 'PUMP', label: 'Pumping' },
-    { id: 'GROWTH', label: 'Growth' },
-    { id: 'HEALTH', label: 'Health' },
-    { id: 'MILESTONE', label: 'Firsts' },
+    { id: 'ALL', label: t('history.filterAll') },
+    { id: 'FEEDS', label: t('categories.feeding') },
+    { id: 'SLEEP', label: t('categories.SLEEP') },
+    { id: 'DIAPER', label: t('categories.DIAPER') },
+    { id: 'PUMP', label: t('categories.PUMP') },
+    { id: 'GROWTH', label: t('categories.GROWTH') },
+    { id: 'HEALTH', label: t('categories.HEALTH') },
+    { id: 'MILESTONE', label: t('categories.firsts') },
   ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h2>Activity Log</h2>
+          <h2>{t('history.title')}</h2>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            Complete history ({filteredEvents.length} records)
+            {t('history.recordsCount', { count: filteredEvents.length })}
           </span>
         </div>
       </div>
@@ -84,7 +84,7 @@ export function HistoryView() {
             type="text"
             className="form-input"
             style={{ paddingLeft: '2.2rem', paddingRight: '0.8rem' }}
-            placeholder="Search notes, meds, food..."
+            placeholder={t('history.searchPlaceholder')}
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
           />
@@ -104,7 +104,7 @@ export function HistoryView() {
             style={{ padding: '0.45rem 0.85rem', fontSize: '0.8rem' }}
             onClick={() => setSelectedDate('')}
           >
-            Clear Date
+            {t('history.clearDate')}
           </button>
         )}
       </div>
@@ -126,17 +126,17 @@ export function HistoryView() {
       {dayKeys.length === 0 ? (
         <div className="timeline-empty">
           <FileText size={32} color="var(--text-tertiary)" />
-          <h3>No events found</h3>
-          <p>Try adjusting your search terms or filter selections.</p>
+          <h3>{t('history.noEventsTitle')}</h3>
+          <p>{t('history.noEventsDesc')}</p>
         </div>
       ) : (
         dayKeys.map(dateKey => (
           <div key={dateKey} className="timeline-day-group">
             <div className="timeline-day-label">
               <Calendar size={14} color="var(--text-tertiary)" />
-              <span>{formatDateHeading(dateKey)}</span>
+              <span>{formatDateHeading(dateKey, language)}</span>
               <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', fontWeight: 400 }}>
-                ({groupedByDay[dateKey].length} entries)
+                {t('history.entriesCount', { count: groupedByDay[dateKey].length })}
               </span>
             </div>
 

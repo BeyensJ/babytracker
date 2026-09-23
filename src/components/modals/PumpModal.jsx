@@ -6,6 +6,7 @@ import { TimerStartCard } from '../TimerStartCard';
 
 export function PumpModal() {
   const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, startPumpTimer, t, language } = useApp();
+  const isDutch = language === 'nl';
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
   const defaultUnit = preferences.volumeUnit === 'ml' ? 'ml' : 'oz';
@@ -288,7 +289,7 @@ export function PumpModal() {
                     type="button"
                     className="pump-stepper-btn"
                     onClick={() => adjustSide('LEFT', isMl ? -5 : -0.25)}
-                    aria-label="Decrease Left amount"
+                    aria-label={isDutch ? 'Links verlagen' : 'Decrease Left amount'}
                   >
                     <Minus size={16} />
                   </button>
@@ -308,7 +309,7 @@ export function PumpModal() {
                     type="button"
                     className="pump-stepper-btn"
                     onClick={() => adjustSide('LEFT', isMl ? 5 : 0.25)}
-                    aria-label="Increase Left amount"
+                    aria-label={isDutch ? 'Links verhogen' : 'Increase Left amount'}
                   >
                     <Plus size={16} />
                   </button>
@@ -357,7 +358,7 @@ export function PumpModal() {
                     type="button"
                     className="pump-stepper-btn"
                     onClick={() => adjustSide('RIGHT', isMl ? -5 : -0.25)}
-                    aria-label="Decrease Right amount"
+                    aria-label={isDutch ? 'Rechts verlagen' : 'Decrease Right amount'}
                   >
                     <Minus size={16} />
                   </button>
@@ -377,7 +378,7 @@ export function PumpModal() {
                     type="button"
                     className="pump-stepper-btn"
                     onClick={() => adjustSide('RIGHT', isMl ? 5 : 0.25)}
-                    aria-label="Increase Right amount"
+                    aria-label={isDutch ? 'Rechts verhogen' : 'Increase Right amount'}
                   >
                     <Plus size={16} />
                   </button>

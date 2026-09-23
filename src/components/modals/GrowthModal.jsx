@@ -164,7 +164,7 @@ export function GrowthModal() {
                 min="5"
                 max="100"
                 className="form-input"
-                placeholder="e.g. 35.5"
+                placeholder={t('growthModal.headPlaceholder')}
                 value={headInput}
                 onChange={e => setHeadInput(e.target.value)}
               />

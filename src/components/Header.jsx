@@ -69,7 +69,7 @@ export function Header({ onOpenSettings }) {
         <button
           className="baby-profile-btn"
           onClick={() => setDropdownOpen(!dropdownOpen)}
-          aria-label="Switch child profile"
+          aria-label={t('header.switchBaby')}
           id="baby-selector-btn"
         >
           <div className="baby-avatar">
@@ -196,13 +196,19 @@ export function Header({ onOpenSettings }) {
             triggerHaptic('light', preferences?.haptics);
           }}
           title={
-            (preferences?.theme === 'oled')
-              ? 'Current: Midnight OLED (Tap for Warm Linen)'
-              : (preferences?.theme === 'dark')
-              ? 'Current: Cozy Mocha (Tap for Midnight OLED)'
-              : 'Current: Warm Linen (Tap for Cozy Mocha)'
+            language === 'nl'
+              ? (preferences?.theme === 'oled'
+                ? 'Huidig: Nachtelijk OLED (Tik voor Warm linnen)'
+                : preferences?.theme === 'dark'
+                ? 'Huidig: Gezellige mokka (Tik voor Nachtelijk OLED)'
+                : 'Huidig: Warm linnen (Tik voor Gezellige mokka)')
+              : (preferences?.theme === 'oled'
+                ? 'Current: Midnight OLED (Tap for Warm Linen)'
+                : preferences?.theme === 'dark'
+                ? 'Current: Cozy Mocha (Tap for Midnight OLED)'
+                : 'Current: Warm Linen (Tap for Cozy Mocha)')
           }
-          aria-label="Toggle theme appearance"
+          aria-label={language === 'nl' ? 'Thema wisselen' : 'Toggle theme appearance'}
           id="quick-theme-btn"
         >
           {preferences?.theme === 'oled' ? (
@@ -217,7 +223,11 @@ export function Header({ onOpenSettings }) {
         <button
           className="header-caregiver-btn"
           onClick={() => openModal('CAREGIVER')}
-          title={`Active Caregiver: ${activeCaregiver?.name} (${activeCaregiver?.role}) · Tap to switch profile`}
+          title={
+            language === 'nl'
+              ? `Actieve verzorger: ${activeCaregiver?.name} (${activeCaregiver?.role}) · Tik om profiel te wisselen`
+              : `Active Caregiver: ${activeCaregiver?.name} (${activeCaregiver?.role}) · Tap to switch profile`
+          }
           id="caregiver-switcher-btn"
         >
           <div className="header-avatar-wrap">

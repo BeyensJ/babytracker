@@ -266,7 +266,7 @@ export function TimelineItem({ event }) {
           <button
             className="item-menu-btn"
             onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Activity menu"
+            aria-label={language === 'nl' ? 'Opties voor activiteit' : 'Activity menu'}
           >
             <MoreVertical size={16} />
           </button>

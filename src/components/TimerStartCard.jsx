@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useApp } from '../context/AppContext';
 import { Clock, Play } from 'lucide-react';
 
 /**
@@ -8,14 +9,20 @@ import { Clock, Play } from 'lucide-react';
  * - Exact time input (HH:MM)
  */
 export function TimerStartCard({
-  title = 'Start Live Timer',
-  subtitle = 'Track in real time',
+  title,
+  subtitle,
   icon: Icon,
   iconColor = 'var(--color-terracotta)',
   iconBg = 'var(--color-terracotta-light)',
   actions = [], // e.g. [{ id, label, side, className, style }]
   onStart, // (startTs, action) => void
 }) {
+  const { language } = useApp();
+  const isDutch = language === 'nl';
+
+  const defaultTitle = isDutch ? 'Live timer starten' : 'Start Live Timer';
+  const defaultSubtitle = isDutch ? 'Volg in real-time' : 'Track in real time';
+
   const [offsetMinutes, setOffsetMinutes] = useState(0);
   const [timeStr, setTimeStr] = useState(() => {
     const d = new Date();
@@ -75,8 +82,8 @@ export function TimerStartCard({
             </div>
           )}
           <div>
-            <div className="timer-start-title">{title}</div>
-            <div className="timer-start-subtitle">{subtitle}</div>
+            <div className="timer-start-title">{title || defaultTitle}</div>
+            <div className="timer-start-subtitle">{subtitle || defaultSubtitle}</div>
           </div>
         </div>
       </div>
@@ -86,24 +93,24 @@ export function TimerStartCard({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
             <Clock size={13} />
-            <span>Started at:</span>
+            <span>{isDutch ? 'Gestart om:' : 'Started at:'}</span>
             <input
               type="time"
               className="timer-time-input"
               value={timeStr}
               onChange={handleManualTimeChange}
-              title="Set exact start time"
+              title={isDutch ? 'Exacte starttijd instellen' : 'Set exact start time'}
               id="timer-start-time-input"
             />
           </div>
 
           {elapsedPreviewMinutes > 0 ? (
             <span className="timer-start-preview-pill active">
-              Starts with {elapsedPreviewMinutes}m elapsed
+              {isDutch ? `Start met ${elapsedPreviewMinutes}m verstreken` : `Starts with ${elapsedPreviewMinutes}m elapsed`}
             </span>
           ) : (
             <span className="timer-start-preview-pill">
-              Starts now (00:00)
+              {isDutch ? 'Start nu (00:00)' : 'Starts now (00:00)'}
             </span>
           )}
         </div>
@@ -115,35 +122,35 @@ export function TimerStartCard({
             className={`timer-quick-pill ${offsetMinutes === 0 ? 'active' : ''}`}
             onClick={() => handleSelectOffset(0)}
           >
-            Now
+            {isDutch ? 'Nu' : 'Now'}
           </button>
           <button
             type="button"
             className={`timer-quick-pill ${offsetMinutes === 5 ? 'active' : ''}`}
             onClick={() => handleSelectOffset(5)}
           >
-            5m ago
+            {isDutch ? '5m geleden' : '5m ago'}
           </button>
           <button
             type="button"
             className={`timer-quick-pill ${offsetMinutes === 10 ? 'active' : ''}`}
             onClick={() => handleSelectOffset(10)}
           >
-            10m ago
+            {isDutch ? '10m geleden' : '10m ago'}
           </button>
           <button
             type="button"
             className={`timer-quick-pill ${offsetMinutes === 15 ? 'active' : ''}`}
             onClick={() => handleSelectOffset(15)}
           >
-            15m ago
+            {isDutch ? '15m geleden' : '15m ago'}
           </button>
           <button
             type="button"
             className={`timer-quick-pill ${offsetMinutes === 30 ? 'active' : ''}`}
             onClick={() => handleSelectOffset(30)}
           >
-            30m ago
+            {isDutch ? '30m geleden' : '30m ago'}
           </button>
         </div>
       </div>

@@ -4,7 +4,8 @@ import { triggerHaptic } from '../../utils/haptics';
 import { Milk, X, Plus, Minus, Calculator, Sparkles, Check } from 'lucide-react';
 
 export function BottleModal() {
-  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, t } = useApp();
+  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, t, language } = useApp();
+  const isDutch = language === 'nl';
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
   const defaultUnit = preferences.volumeUnit === 'ml' ? 'ml' : 'oz';
@@ -199,7 +200,7 @@ export function BottleModal() {
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="bv. Nutrilon, Kendamil, Nan Optipro"
+                  placeholder={t('bottleModal.formulaPlaceholder')}
                   value={formulaName}
                   onChange={(e) => setFormulaName(e.target.value)}
                 />
@@ -279,8 +280,8 @@ export function BottleModal() {
                       type="button"
                       className="bottle-step-btn primary"
                       onClick={() => handleAdjust(isMl ? -5 : -0.25)}
-                      aria-label="Decrease amount"
-                      title={isMl ? 'Decrease by 5 mL' : 'Decrease by 0.25 oz'}
+                      aria-label={isDutch ? 'Hoeveelheid verlagen' : 'Decrease amount'}
+                      title={isDutch ? (isMl ? 'Met 5 mL verlagen' : 'Met 0.25 oz verlagen') : (isMl ? 'Decrease by 5 mL' : 'Decrease by 0.25 oz')}
                     >
                       <Minus size={18} />
                     </button>
@@ -304,8 +305,8 @@ export function BottleModal() {
                       type="button"
                       className="bottle-step-btn primary"
                       onClick={() => handleAdjust(isMl ? 5 : 0.25)}
-                      aria-label="Increase amount"
-                      title={isMl ? 'Increase by 5 mL' : 'Increase by 0.25 oz'}
+                      aria-label={isDutch ? 'Hoeveelheid verhogen' : 'Increase amount'}
+                      title={isDutch ? (isMl ? 'Met 5 mL verhogen' : 'Met 0.25 oz verhogen') : (isMl ? 'Increase by 5 mL' : 'Increase by 0.25 oz')}
                     >
                       <Plus size={18} />
                     </button>
@@ -337,7 +338,7 @@ export function BottleModal() {
                           type="button"
                           className="bottle-step-btn"
                           onClick={() => handleAdjust(-30)}
-                          title="Minus 30 mL (1 oz scoop)"
+                          title={isDutch ? '-30 mL (1 maatschepje)' : 'Minus 30 mL (1 oz scoop)'}
                         >
                           -30
                         </button>
@@ -352,7 +353,7 @@ export function BottleModal() {
                           type="button"
                           className="bottle-step-btn"
                           onClick={() => handleAdjust(-1)}
-                          title="Fine adjust -1 mL"
+                          title={isDutch ? 'Fijnafstelling -1 mL' : 'Fine adjust -1 mL'}
                         >
                           -1
                         </button>
@@ -360,7 +361,7 @@ export function BottleModal() {
                           type="button"
                           className="bottle-step-btn"
                           onClick={() => handleAdjust(1)}
-                          title="Fine adjust +1 mL"
+                          title={isDutch ? 'Fijnafstelling +1 mL' : 'Fine adjust +1 mL'}
                         >
                           +1
                         </button>
@@ -375,7 +376,7 @@ export function BottleModal() {
                           type="button"
                           className="bottle-step-btn"
                           onClick={() => handleAdjust(30)}
-                          title="Plus 30 mL (1 oz scoop)"
+                          title={isDutch ? '+30 mL (1 maatschepje)' : 'Plus 30 mL (1 oz scoop)'}
                         >
                           +30
                         </button>
@@ -400,7 +401,7 @@ export function BottleModal() {
                           type="button"
                           className="bottle-step-btn"
                           onClick={() => handleAdjust(-0.1)}
-                          title="Fine adjust -0.1 oz"
+                          title={isDutch ? 'Fijnafstelling -0.1 oz' : 'Fine adjust -0.1 oz'}
                         >
                           -0.1
                         </button>
@@ -408,7 +409,7 @@ export function BottleModal() {
                           type="button"
                           className="bottle-step-btn"
                           onClick={() => handleAdjust(0.1)}
-                          title="Fine adjust +0.1 oz"
+                          title={isDutch ? 'Fijnafstelling +0.1 oz' : 'Fine adjust +0.1 oz'}
                         >
                           +0.1
                         </button>

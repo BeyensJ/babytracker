@@ -22,6 +22,9 @@ export const translations = {
       HEALTH: 'Health',
       ROUTINE: 'Routine',
       NOTE: 'Note',
+      feeding: 'Feeding',
+      diaper: 'Diaper',
+      firsts: 'Firsts',
     },
 
     // Header & Caregivers
@@ -164,6 +167,18 @@ export const translations = {
       monthSummary: 'Month Summary',
     },
 
+    // History View
+    history: {
+      title: 'Activity Log',
+      recordsCount: 'Complete history ({count} records)',
+      searchPlaceholder: 'Search notes, meds, food...',
+      clearDate: 'Clear Date',
+      filterAll: 'All',
+      noEventsTitle: 'No events found',
+      noEventsDesc: 'Try adjusting your search terms or filter selections.',
+      entriesCount: '({count} entries)',
+    },
+
     // Settings View
     settings: {
       title: 'Settings & Preferences',
@@ -233,6 +248,10 @@ export const translations = {
       securityDesc: 'Protected so only you and your partner can view and track baby data',
       changeFamilyPassword: 'Change Family Password',
       signOut: 'Lock Device / Sign Out',
+      insecureTitle: 'Home Server Notice: Insecure HTTP Connection',
+      insecureDesc: 'Browsers strictly disable Notifications and Service Workers over plain HTTP LAN addresses (e.g. {url}). To receive notifications on your phone:',
+      insecureOptA: 'Option A (Recommended): Put HTTPS in front of your server (e.g., Caddy, Nginx Proxy Manager, or Cloudflare Tunnel).',
+      insecureOptB: 'Option B (Chrome on Android/Desktop): Open {flagUrl}, add this exact URL ({url}), set to Enabled, and restart Chrome.',
     },
 
     // Modals Common
@@ -256,6 +275,7 @@ export const translations = {
       breastMilk: 'Breast Milk',
       formula: 'Formula',
       formulaBrand: 'Brand / Formula Name (e.g. Kendamil, Nan, Nutrilon)',
+      formulaPlaceholder: 'e.g. Nutrilon, Kendamil, Similac',
       calcModeExact: 'Exact Amount',
       calcModeOffered: 'Offered & Left',
       offeredLabel: 'Prepared / Offered ({unit})',
@@ -299,6 +319,7 @@ export const translations = {
       loose: 'Loose / Liquid',
       solid: 'Formed / Solid',
       mucus: 'Mucus',
+      blowout: 'Blowout (leaked out)',
       rash: 'Diaper Rash / Redness',
       submitAdd: 'Log Diaper',
       submitEdit: 'Save Changes',
@@ -363,6 +384,7 @@ export const translations = {
       weight: 'Weight ({unit})',
       length: 'Length / Height ({unit})',
       head: 'Head Circumference ({unit})',
+      headPlaceholder: 'e.g. 35.5',
       whoRef: 'Compared automatically against WHO Guidelines',
       submitAdd: 'Save Measurement',
       submitEdit: 'Save Changes',
@@ -501,6 +523,9 @@ export const translations = {
       HEALTH: 'Gezondheid',
       ROUTINE: 'Routine',
       NOTE: 'Notitie',
+      feeding: 'Voeding',
+      diaper: 'Pamper',
+      firsts: 'Mijlpalen',
     },
 
     // Header & Verzorgers
@@ -643,6 +668,18 @@ export const translations = {
       monthSummary: 'Maandoverzicht',
     },
 
+    // Geschiedenis
+    history: {
+      title: 'Activiteitenlogboek',
+      recordsCount: 'Volledige geschiedenis ({count} registraties)',
+      searchPlaceholder: 'Zoek in notities, medicatie, voeding...',
+      clearDate: 'Datum wissen',
+      filterAll: 'Alles',
+      noEventsTitle: 'Geen activiteiten gevonden',
+      noEventsDesc: 'Probeer je zoektermen of filterselectie aan te passen.',
+      entriesCount: '({count} items)',
+    },
+
     // Instellingen
     settings: {
       title: 'Instellingen & Voorkeuren',
@@ -712,6 +749,10 @@ export const translations = {
       securityDesc: 'Beveiligd zodat enkel jij en je partner babygegevens kunnen bekijken en bijhouden',
       changeFamilyPassword: 'Gezinswachtwoord wijzigen',
       signOut: 'Vergrendelen / Afmelden',
+      insecureTitle: 'Thuisserver melding: Onbeveiligde HTTP-verbinding',
+      insecureDesc: 'Browsers blokkeren meldingen en Service Workers over gewone HTTP LAN-adressen (zoals {url}). Om meldingen op je smartphone te ontvangen:',
+      insecureOptA: 'Optie A (Aanbevolen): Plaats HTTPS voor je server (bv. Caddy, Nginx Proxy Manager of Cloudflare Tunnel).',
+      insecureOptB: 'Optie B (Chrome op Android/desktop): Open {flagUrl}, voeg deze exacte URL toe ({url}), kies Ingeschakeld en herstart Chrome.',
     },
 
     // Algemeen / Knoppen
@@ -735,6 +776,7 @@ export const translations = {
       breastMilk: 'Moedermelk',
       formula: 'Kunstvoeding / Poedermelk',
       formulaBrand: 'Merk / naam voeding (bv. Nutrilon, Nan, Kendamil)',
+      formulaPlaceholder: 'bv. Nutrilon, Kendamil, Nan Optipro',
       calcModeExact: 'Exacte hoeveelheid',
       calcModeOffered: 'Aangeboden & overschot',
       offeredLabel: 'Klaargemaakt / aangeboden ({unit})',
@@ -778,6 +820,7 @@ export const translations = {
       loose: 'Vloeibaar / Diarree',
       solid: 'Vast',
       mucus: 'Slijmerig',
+      blowout: 'Spuitluier (doorgelekt)',
       rash: 'Roodheid / Luieruitslag',
       submitAdd: 'Pamper opslaan',
       submitEdit: 'Wijzigingen opslaan',
@@ -842,6 +885,7 @@ export const translations = {
       weight: 'Gewicht ({unit})',
       length: 'Lengte ({unit})',
       head: 'Hoofdomtrek ({unit})',
+      headPlaceholder: 'bv. 35.5',
       whoRef: 'Wordt vergeleken met de officiële WHO-groeicurve',
       submitAdd: 'Meting opslaan',
       submitEdit: 'Wijzigingen opslaan',

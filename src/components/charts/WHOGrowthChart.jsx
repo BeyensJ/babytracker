@@ -177,21 +177,21 @@ export function WHOGrowthChart({ allEvents }) {
             <button
               className={`who-toggle-btn ${maxMonths === 6 ? 'active' : ''}`}
               onClick={() => setMaxMonths(6)}
-              title="View first 6 months"
+              title={language === 'nl' ? 'Bekijk eerste 6 maanden' : 'View first 6 months'}
             >
               0–6m
             </button>
             <button
               className={`who-toggle-btn ${maxMonths === 12 ? 'active' : ''}`}
               onClick={() => setMaxMonths(12)}
-              title="View first year"
+              title={language === 'nl' ? 'Bekijk eerste jaar' : 'View first year'}
             >
               0–12m
             </button>
             <button
               className={`who-toggle-btn ${maxMonths === 24 ? 'active' : ''}`}
               onClick={() => setMaxMonths(24)}
-              title="View 0 to 24 months"
+              title={language === 'nl' ? 'Bekijk 0 tot 24 maanden' : 'View 0 to 24 months'}
             >
               0–24m
             </button>
@@ -547,7 +547,7 @@ export function WHOGrowthChart({ allEvents }) {
             <button
               className="tooltip-close-btn"
               onClick={() => setActivePoint(null)}
-              aria-label="Close tooltip"
+              aria-label={language === 'nl' ? 'Sluit tooltip' : 'Close tooltip'}
             >
               ×
             </button>
@@ -588,7 +588,7 @@ export function WHOGrowthChart({ allEvents }) {
         <button
           className="who-unit-toggle-btn"
           onClick={() => setUnitOverride(isMetric ? 'imperial' : 'metric')}
-          title="Toggle Metric and Imperial units"
+          title={language === 'nl' ? 'Wissel tussen metrisch en imperiaal' : 'Toggle Metric and Imperial units'}
         >
           {language === 'nl'
             ? `Eenheden: ${isMetric ? (metricType === 'weight' ? 'kg' : 'cm') : (metricType === 'weight' ? 'lb' : 'in')} (Tik om te wisselen)`

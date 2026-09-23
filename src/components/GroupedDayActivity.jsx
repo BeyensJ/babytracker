@@ -190,21 +190,6 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
           renderItem={(ev) => <OtherItemRow key={ev.id} event={ev} preferences={preferences} language={language} onEdit={openModal} onDelete={deleteEvent} />}
         />
       )}
-
-      {/* 4. Other Activities Section */}
-      {others.length > 0 && (
-        <CategoryCard
-          categoryKey="other"
-          title="Other Activities"
-          icon={Layers}
-          colorClass="other"
-          count={others.length}
-          summaryText={`${others.length} Logged Item${others.length === 1 ? '' : 's'}`}
-          events={others}
-          defaultOpen={defaultExpanded}
-          renderItem={(ev) => <OtherItemRow key={ev.id} event={ev} preferences={preferences} onEdit={openModal} onDelete={deleteEvent} />}
-        />
-      )}
     </div>
   );
 }

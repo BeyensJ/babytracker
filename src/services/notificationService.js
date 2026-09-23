@@ -421,13 +421,15 @@ class NotificationService {
   async testNotification() {
     const diag = this.getDiagnostics();
     console.log('[Notification] Running diagnostic test:', diag);
+    const isDutch = this.currentLang === 'nl';
 
     if (!diag.isSecure) {
       return {
         success: false,
         reason: 'insecure',
-        message:
-          'Your browser disabled notifications because this connection is not HTTPS or localhost. See the home server notice above.',
+        message: isDutch
+          ? 'Je browser blokkeert meldingen omdat deze verbinding geen HTTPS of localhost is. Zie de thuisserver-melding hierboven.'
+          : 'Your browser disabled notifications because this connection is not HTTPS or localhost. See the home server notice above.',
       };
     }
 
@@ -436,14 +438,18 @@ class NotificationService {
       return {
         success: false,
         reason: 'denied',
-        message: `Notification permission is currently "${perm}". Please allow notifications in your browser or device settings.`,
+        message: isDutch
+          ? `Meldingsmachtiging staat momenteel op "${perm}". Geef toestemming voor meldingen in je browser- of toestelinstellingen.`
+          : `Notification permission is currently "${perm}". Please allow notifications in your browser or device settings.`,
       };
     }
 
     const delivered = await this.dispatchNotification({
-      title: '👶 Baby Tracker: Test Alert',
-      body: 'Notifications, In-App pop-ups, and Android tray timers are fully working!',
-      actions: [{ action: 'finish_timer', title: 'Got it ✓' }],
+      title: isDutch ? '👶 Baby Tracker: Testmelding' : '👶 Baby Tracker: Test Alert',
+      body: isDutch
+        ? 'Meldingen, pop-ups in de app en timers in het Android-paneel werken naar behoren!'
+        : 'Notifications, In-App pop-ups, and Android tray timers are fully working!',
+      actions: [{ action: 'finish_timer', title: isDutch ? 'Begrepen ✓' : 'Got it ✓' }],
       timerType: 'test',
       tag: 'nara-test-notification-' + Date.now(),
       ongoing: false,
@@ -458,7 +464,9 @@ class NotificationService {
     return {
       success: true,
       reason: 'ok',
-      message: 'Notification dispatched! Both an In-App popup and OS notification have been triggered.',
+      message: isDutch
+        ? 'Testmelding verstuurd! Zowel een pop-up in de app als een toestelmelding zijn geactiveerd.'
+        : 'Notification dispatched! Both an In-App popup and OS notification have been triggered.',
     };
   }
 }
