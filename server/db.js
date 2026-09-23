@@ -137,6 +137,9 @@ export function getState() {
   if (!state) initDb();
   const clone = JSON.parse(JSON.stringify(state));
   delete clone.auth;
+  if (clone.preferences) {
+    delete clone.preferences.theme;
+  }
   return clone;
 }
 
@@ -283,9 +286,11 @@ export function updateCaregiver(id, updates) {
  */
 export function updatePreferences(prefs) {
   if (!state) initDb();
-  state.preferences = { ...state.preferences, ...prefs };
+  const { theme: _ignored, ...sharedPrefs } = prefs || {};
+  state.preferences = { ...state.preferences, ...sharedPrefs };
+  delete state.preferences.theme;
   saveStateSync(state);
-  return state.preferences;
+  return { ...state.preferences };
 }
 
 /**
