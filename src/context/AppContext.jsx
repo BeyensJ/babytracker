@@ -16,6 +16,7 @@ const STORAGE_KEYS = {
   ACTIVE_TIMERS: 'babytracker_active_timers_v1',
   CAREGIVERS: 'babytracker_caregivers_v1',
   ACTIVE_CAREGIVER: 'babytracker_device_caregiver_id_v1',
+  DEVICE_THEME: 'babytracker_device_theme_v1',
 };
 
 function getSavedStorage(key) {
@@ -108,13 +109,32 @@ export function AppProvider({ children }) {
     return generateSampleEvents('child_1');
   });
 
-  // 4. User Preferences
+function mergePreferencesPreservingDeviceTheme(prev, incoming) {
+  if (!incoming) return prev;
+  let currentTheme = prev?.theme;
+  if (!currentTheme) {
+    try {
+      currentTheme = localStorage.getItem(STORAGE_KEYS.DEVICE_THEME);
+    } catch {}
+  }
+  if (!currentTheme) currentTheme = 'light';
+  const { theme: _ignoredTheme, ...sharedIncoming } = incoming;
+  return { ...prev, ...sharedIncoming, theme: currentTheme };
+}
+
+  // 4. User Preferences (Theme is strictly device-local and never synced between devices)
   const [preferences, setPreferences] = useState(() => {
+    let localTheme = 'light';
+    try {
+      localTheme = localStorage.getItem(STORAGE_KEYS.DEVICE_THEME) || 'light';
+    } catch {}
+
     try {
       const saved = getSavedStorage(STORAGE_KEYS.PREFERENCES);
-      return saved ? { ...DEFAULT_PREFERENCES, ...JSON.parse(saved) } : DEFAULT_PREFERENCES;
+      const parsed = saved ? JSON.parse(saved) : {};
+      return { ...DEFAULT_PREFERENCES, ...parsed, theme: localTheme };
     } catch {
-      return DEFAULT_PREFERENCES;
+      return { ...DEFAULT_PREFERENCES, theme: localTheme };
     }
   });
 
@@ -172,7 +192,7 @@ export function AppProvider({ children }) {
             if (serverState.caregivers && serverState.caregivers.length > 0) setCaregivers(serverState.caregivers);
             if (serverState.events && serverState.events.length > 0) setEvents(serverState.events);
             if (serverState.activeTimers) setActiveTimers(serverState.activeTimers);
-            if (serverState.preferences) setPreferences(prev => ({ ...prev, ...serverState.preferences }));
+            if (serverState.preferences) setPreferences(prev => mergePreferencesPreservingDeviceTheme(prev, serverState.preferences));
           }
         }).catch(() => {});
       } else {
@@ -228,7 +248,7 @@ export function AppProvider({ children }) {
       }),
 
       syncService.on('PREFERENCES_UPDATED', (prefs) => {
-        setPreferences(prev => ({ ...prev, ...prefs }));
+        setPreferences(prev => mergePreferencesPreservingDeviceTheme(prev, prefs));
       }),
 
       syncService.on('SYNC_STATE', (serverState) => {
@@ -237,7 +257,7 @@ export function AppProvider({ children }) {
         if (serverState.caregivers) setCaregivers(serverState.caregivers);
         if (serverState.events) setEvents(serverState.events);
         if (serverState.activeTimers) setActiveTimers(serverState.activeTimers);
-        if (serverState.preferences) setPreferences(prev => ({ ...prev, ...serverState.preferences }));
+        if (serverState.preferences) setPreferences(prev => mergePreferencesPreservingDeviceTheme(prev, serverState.preferences));
       }),
     ];
 
@@ -804,7 +824,7 @@ export function AppProvider({ children }) {
         if (serverState.caregivers && serverState.caregivers.length > 0) setCaregivers(serverState.caregivers);
         if (serverState.events && serverState.events.length > 0) setEvents(serverState.events);
         if (serverState.activeTimers) setActiveTimers(serverState.activeTimers);
-        if (serverState.preferences) setPreferences(prev => ({ ...prev, ...serverState.preferences }));
+        if (serverState.preferences) setPreferences(prev => mergePreferencesPreservingDeviceTheme(prev, serverState.preferences));
       }
     } catch (err) {
       console.warn('[Sync] Could not fetch state after login:', err);
@@ -855,8 +875,15 @@ export function AppProvider({ children }) {
     t,
     setPreferences: (prefsOrUpdater) => {
       setPreferences(prev => {
-        const next = typeof prefsOrUpdater === 'function' ? prefsOrUpdater(prev) : prefsOrUpdater;
-        syncService.updatePreferences(next).catch(() => {});
+        const next = typeof prefsOrUpdater === 'function' ? prefsOrUpdater(prev) : (typeof prefsOrUpdater === 'object' ? { ...prev, ...prefsOrUpdater } : prefsOrUpdater);
+        if (next && next.theme) {
+          try {
+            localStorage.setItem(STORAGE_KEYS.DEVICE_THEME, next.theme);
+          } catch {}
+        }
+        // Do NOT broadcast device-local theme to server
+        const { theme: _ignoredLocalTheme, ...sharedPrefs } = next || {};
+        syncService.updatePreferences(sharedPrefs).catch(() => {});
         return next;
       });
     },

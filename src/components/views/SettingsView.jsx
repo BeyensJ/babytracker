@@ -345,7 +345,7 @@ export function SettingsView() {
         </div>
 
         {/* Language Selection */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="setting-row">
           <div>
             <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.languageTitle')}</div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('settings.languageDesc')}</div>
@@ -375,7 +375,7 @@ export function SettingsView() {
         </div>
 
         {/* Volume Units */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="setting-row">
           <div>
             <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.volumeUnit')}</div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('settings.volumeUnitDesc')}</div>
@@ -399,7 +399,7 @@ export function SettingsView() {
         </div>
 
         {/* Weight Units */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="setting-row">
           <div>
             <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.weightUnit')}</div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('settings.weightUnitDesc')}</div>
@@ -423,7 +423,7 @@ export function SettingsView() {
         </div>
 
         {/* Theme Mode */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="setting-row">
           <div>
             <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.appearance')}</div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('settings.appearanceDesc')}</div>
@@ -455,7 +455,7 @@ export function SettingsView() {
         </div>
 
         {/* Haptic Vibration */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="setting-row">
           <div>
             <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.haptics')}</div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('settings.hapticsDesc')}</div>

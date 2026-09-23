@@ -465,25 +465,28 @@ export function CalendarView() {
             className={`calendar-toggle-btn ${viewMode === 'day' ? 'active' : ''}`}
             onClick={() => setViewMode('day')}
             id="view-toggle-day"
+            title={language === 'nl' ? '24-uurs dagritme' : '24-hour day schedule'}
           >
-            <Clock size={14} style={{ display: 'inline', marginRight: 5, verticalAlign: -1 }} />
-            {t('calendar.viewDay')}
+            <Clock size={14} />
+            <span>{language === 'nl' ? 'Dag' : 'Day'}</span>
           </button>
           <button
             className={`calendar-toggle-btn ${viewMode === 'week' ? 'active' : ''}`}
             onClick={() => setViewMode('week')}
             id="view-toggle-week"
+            title={language === 'nl' ? '7-daags weekschema' : '7-day week rhythm'}
           >
-            <Layers size={14} style={{ display: 'inline', marginRight: 5, verticalAlign: -1 }} />
-            {language === 'nl' ? 'Weekritme' : 'Week Rhythm'}
+            <Layers size={14} />
+            <span>{language === 'nl' ? 'Week' : 'Week'}</span>
           </button>
           <button
             className={`calendar-toggle-btn ${viewMode === 'month' ? 'active' : ''}`}
             onClick={() => setViewMode('month')}
             id="view-toggle-month"
+            title={language === 'nl' ? 'Volledig maandoverzicht' : 'Full month calendar'}
           >
-            <CalendarDays size={14} style={{ display: 'inline', marginRight: 5, verticalAlign: -1 }} />
-            {language === 'nl' ? 'Maandoverzicht' : 'Month Grid'}
+            <CalendarDays size={14} />
+            <span>{language === 'nl' ? 'Maand' : 'Month'}</span>
           </button>
         </div>
       </div>
