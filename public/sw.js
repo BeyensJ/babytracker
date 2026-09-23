@@ -1,9 +1,9 @@
 /**
- * Nara Baby - Service Worker
+ * Baby Tracker - Service Worker
  * Handles PWA offline shell caching and Android Notification Tray live timer updates.
  */
 
-const CACHE_NAME = 'nara-baby-v1';
+const CACHE_NAME = 'babytracker-v2';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
@@ -98,7 +98,7 @@ self.addEventListener('message', (event) => {
       body,
       actions = [],
       timerType,
-      tag = 'nara-active-timer',
+      tag = 'babytracker-active-timer',
       ongoing = true,
       timestamp = Date.now(),
       caregiver = 'Parent',
@@ -124,7 +124,7 @@ self.addEventListener('message', (event) => {
       }
     });
   } else if (type === 'CLEAR_TIMER_NOTIFICATION') {
-    self.registration.getNotifications({ tag: 'nara-active-timer' }).then((notifications) => {
+    self.registration.getNotifications().then((notifications) => {
       notifications.forEach((n) => n.close());
     });
   }

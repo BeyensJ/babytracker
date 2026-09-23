@@ -1,6 +1,5 @@
 /**
- * Computes advanced Nara Baby analytics and trends over 1d, 7d, 14d, and 30d windows.
- * Replicates the calculations used by Nara Baby's analytics engine.
+ * Computes advanced analytics and trends over 1d, 7d, 14d, and 30d windows.
  */
 
 export function calculateTrends(events, days = 7, childKey = null) {

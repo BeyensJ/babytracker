@@ -53,7 +53,7 @@ async function testPWAAndNotifications() {
     'notificationclick',
     'UPDATE_TIMER_NOTIFICATION',
     'CLEAR_TIMER_NOTIFICATION',
-    'nara-active-timer',
+    'babytracker-active-timer',
     'ongoing',
     '/api/timers/action'
   ];

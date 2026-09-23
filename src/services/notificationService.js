@@ -1,5 +1,5 @@
 /**
- * Nara Baby - Notification Service
+ * Baby Tracker - Notification Service
  * Manages Web Notifications, In-App Toasts, and Android Notification Tray Live Timers.
  */
 
@@ -210,7 +210,7 @@ class NotificationService {
       body,
       actions,
       timerType,
-      tag: 'nara-active-timer',
+      tag: 'babytracker-active-timer',
       ongoing: true,
       timestamp,
       caregiver: caregiverName,
@@ -252,7 +252,7 @@ class NotificationService {
       body,
       actions = [],
       timerType,
-      tag = 'nara-active-timer',
+      tag = 'babytracker-active-timer',
       ongoing = false,
       timestamp = Date.now(),
       caregiver,
@@ -278,7 +278,7 @@ class NotificationService {
       body,
       icon: '/icons/icon-192.png',
       badge: '/icons/badge-72.png',
-      tag: tag || 'nara-active-timer',
+      tag: tag || 'babytracker-active-timer',
       ongoing: isTimer ? true : Boolean(ongoing),
       renotify: isTest ? true : Boolean(renotify), // NEVER renotify on running timer updates
       silent: isSilent,
@@ -320,7 +320,7 @@ class NotificationService {
           const notif = new Notification(title, {
             body,
             icon: '/icons/icon-192.png',
-            tag: tag || 'nara-active-timer',
+            tag: tag || 'babytracker-active-timer',
             renotify: isTest ? true : Boolean(renotify),
             silent: isSilent,
             timestamp: timestamp || Date.now(),
@@ -388,7 +388,7 @@ class NotificationService {
           new Promise((_, reject) => setTimeout(() => reject(new Error('SW ready timeout')), 500)),
         ]);
         if (reg && typeof reg.getNotifications === 'function') {
-          const notifications = await reg.getNotifications({ tag: 'nara-active-timer' });
+          const notifications = await reg.getNotifications();
           notifications.forEach((n) => n.close());
         }
       } catch (err) {
@@ -451,7 +451,7 @@ class NotificationService {
         : 'Notifications, In-App pop-ups, and Android tray timers are fully working!',
       actions: [{ action: 'finish_timer', title: isDutch ? 'Begrepen ✓' : 'Got it ✓' }],
       timerType: 'test',
-      tag: 'nara-test-notification-' + Date.now(),
+      tag: 'babytracker-test-notification-' + Date.now(),
       ongoing: false,
       timestamp: Date.now(),
       caregiver: 'Test',

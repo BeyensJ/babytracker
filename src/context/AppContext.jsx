@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { generateSampleNaraEvents } from '../utils/sampleData';
-import { exportEventsToNaraCSV } from '../utils/csvParser';
+import { generateSampleEvents } from '../utils/sampleData';
+import { exportEventsToCSV } from '../utils/csvParser';
 import { syncService } from '../services/syncService';
 import { pwaService } from '../services/pwaService';
 import { notificationService } from '../services/notificationService';
@@ -9,14 +9,22 @@ import { triggerHaptic } from '../utils/haptics';
 const AppContext = createContext();
 
 const STORAGE_KEYS = {
-  CHILDREN: 'nara_children_v1',
-  ACTIVE_CHILD: 'nara_active_child_v1',
-  EVENTS: 'nara_events_v1',
-  PREFERENCES: 'nara_preferences_v1',
-  ACTIVE_TIMERS: 'nara_active_timers_v1',
-  CAREGIVERS: 'nara_caregivers_v1',
-  ACTIVE_CAREGIVER: 'nara_device_caregiver_id_v1',
+  CHILDREN: 'babytracker_children_v1',
+  ACTIVE_CHILD: 'babytracker_active_child_v1',
+  EVENTS: 'babytracker_events_v1',
+  PREFERENCES: 'babytracker_preferences_v1',
+  ACTIVE_TIMERS: 'babytracker_active_timers_v1',
+  CAREGIVERS: 'babytracker_caregivers_v1',
+  ACTIVE_CAREGIVER: 'babytracker_device_caregiver_id_v1',
 };
+
+function getSavedStorage(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
 
 import { getTranslation } from '../i18n/translations';
 
@@ -49,7 +57,7 @@ export function AppProvider({ children }) {
   // 1. Children state
   const [childList, setChildList] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.CHILDREN);
+      const saved = getSavedStorage(STORAGE_KEYS.CHILDREN);
       return saved ? JSON.parse(saved) : DEFAULT_CHILDREN;
     } catch {
       return DEFAULT_CHILDREN;
@@ -58,7 +66,7 @@ export function AppProvider({ children }) {
 
   const [activeChildId, setActiveChildId] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.ACTIVE_CHILD);
+      const saved = getSavedStorage(STORAGE_KEYS.ACTIVE_CHILD);
       return saved || (DEFAULT_CHILDREN[0] && DEFAULT_CHILDREN[0].id) || 'child_1';
     } catch {
       return 'child_1';
@@ -68,7 +76,7 @@ export function AppProvider({ children }) {
   // 2. Caregivers & Active Caregiver (Specific to this device/browser)
   const [caregivers, setCaregivers] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.CAREGIVERS);
+      const saved = getSavedStorage(STORAGE_KEYS.CAREGIVERS);
       return saved ? JSON.parse(saved) : DEFAULT_CAREGIVERS;
     } catch {
       return DEFAULT_CAREGIVERS;
@@ -77,7 +85,7 @@ export function AppProvider({ children }) {
 
   const [activeCaregiverId, setActiveCaregiverId] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.ACTIVE_CAREGIVER);
+      const saved = getSavedStorage(STORAGE_KEYS.ACTIVE_CAREGIVER);
       return saved || DEFAULT_CAREGIVERS[0].id;
     } catch {
       return DEFAULT_CAREGIVERS[0].id;
@@ -89,7 +97,7 @@ export function AppProvider({ children }) {
   // 3. Events state
   const [events, setEvents] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.EVENTS);
+      const saved = getSavedStorage(STORAGE_KEYS.EVENTS);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -97,13 +105,13 @@ export function AppProvider({ children }) {
     } catch (e) {
       console.warn('Could not read saved events:', e);
     }
-    return generateSampleNaraEvents('child_1');
+    return generateSampleEvents('child_1');
   });
 
   // 4. User Preferences
   const [preferences, setPreferences] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.PREFERENCES);
+      const saved = getSavedStorage(STORAGE_KEYS.PREFERENCES);
       return saved ? { ...DEFAULT_PREFERENCES, ...JSON.parse(saved) } : DEFAULT_PREFERENCES;
     } catch {
       return DEFAULT_PREFERENCES;
@@ -116,7 +124,7 @@ export function AppProvider({ children }) {
   // 5. Live Active Timers
   const [activeTimers, setActiveTimers] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.ACTIVE_TIMERS);
+      const saved = getSavedStorage(STORAGE_KEYS.ACTIVE_TIMERS);
       return saved ? JSON.parse(saved) : {};
     } catch {
       return {};
@@ -401,7 +409,7 @@ export function AppProvider({ children }) {
   };
 
   const resetToSample = () => {
-    const sample = generateSampleNaraEvents(activeChildId);
+    const sample = generateSampleEvents(activeChildId);
     setEvents(sample);
     syncService.importEvents(sample, 'replace').catch(() => {});
   };
@@ -762,12 +770,12 @@ export function AppProvider({ children }) {
 
   // --- Export Helpers ---
   const exportCSV = () => {
-    const csvContent = exportEventsToNaraCSV(events, activeChild.name);
+    const csvContent = exportEventsToCSV(events, activeChild.name);
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `nara_${activeChild.name.toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `babytracker_${activeChild.name.toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -778,7 +786,7 @@ export function AppProvider({ children }) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `nara_backup_${activeChild.name.toLowerCase()}_${new Date().toISOString().split('T')[0]}.json`;
+    link.download = `babytracker_backup_${activeChild.name.toLowerCase()}_${new Date().toISOString().split('T')[0]}.json`;
     link.click();
     URL.revokeObjectURL(url);
   };

@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
-import { parseCSVToRows, convertNaraRowsToEvents, convertNaraJsonToEvents } from '../../utils/csvParser';
+import { parseCSVToRows, convertCsvRowsToEvents, convertJsonToEvents } from '../../utils/csvParser';
 import { Upload, Download, FileSpreadsheet, Sparkles, Trash2, Baby, Sliders, Moon, Sun, Plus, Edit2, Heart, Lock, Key, LogOut, ShieldCheck, Bell, Send, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import { triggerHaptic } from '../../utils/haptics';
 import confetti from 'canvas-confetti';
@@ -64,7 +64,7 @@ export function SettingsView() {
 
         if (isJson) {
           const json = JSON.parse(content);
-          const res = convertNaraJsonToEvents(json, activeChildId);
+          const res = convertJsonToEvents(json, activeChildId);
           parsedEvents = res.events;
           detectedProfile = res.detectedProfile;
           detectedUnits = res.detectedUnits;
@@ -72,17 +72,17 @@ export function SettingsView() {
           // Parse CSV
           const rows = parseCSVToRows(content);
           if (rows.length === 0) {
-            setImportError('Could not find valid rows in this CSV file. Please make sure it is a valid export.');
+            setImportError(isDutch ? 'Geen geldige rijen gevonden in dit CSV-bestand.' : 'Could not find valid rows in this CSV file. Please make sure it is a valid export.');
             return;
           }
-          const res = convertNaraRowsToEvents(rows, activeChildId);
+          const res = convertCsvRowsToEvents(rows, activeChildId);
           parsedEvents = res.events;
           detectedProfile = res.detectedProfile;
           detectedUnits = res.detectedUnits;
         }
 
         if (parsedEvents.length === 0) {
-          setImportError('No recognizable Nara Baby tracking rows found in this file.');
+          setImportError(isDutch ? 'Geen herkenbare babyregistraties gevonden in dit bestand.' : 'No recognizable baby tracking rows found in this file.');
           return;
         }
 
@@ -124,13 +124,13 @@ export function SettingsView() {
   // 1-Click loader for the provided example export file
   const handleLoadBabyExport = async () => {
     try {
-      const res = await fetch('/example_nara_export.csv');
+      const res = await fetch('/example_export.csv');
       const csvText = await res.text();
       const rows = parseCSVToRows(csvText);
-      const parsed = convertNaraRowsToEvents(rows, activeChildId);
+      const parsed = convertCsvRowsToEvents(rows, activeChildId);
 
       openModal('IMPORT_PREVIEW', {
-        fileName: 'export_narababy_baby_20260922.csv',
+        fileName: 'export_baby_20260922.csv',
         parsedEvents: parsed.events,
         detectedProfile: parsed.detectedProfile,
         detectedUnits: parsed.detectedUnits,
@@ -173,7 +173,7 @@ export function SettingsView() {
         </span>
       </div>
 
-      {/* 1. Nara Baby Import Dropzone (Core feature!) */}
+      {/* 1. Data Import Dropzone (Core feature!) */}
       <div className="trend-card" style={{ gap: '1rem' }}>
         <div className="trend-card-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

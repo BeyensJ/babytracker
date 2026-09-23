@@ -2,14 +2,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { parseCSVToRows, convertNaraRowsToEvents } from '../src/utils/csvParser.js';
+import { parseCSVToRows, convertCsvRowsToEvents } from '../src/utils/csvParser.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const dataDir = process.env.DATA_DIR || path.join(rootDir, 'data');
-const dbFilePath = path.join(dataDir, 'narababy_db.json');
-const sampleCsvPath = path.join(rootDir, 'export_narababy_baby_20260922.csv');
+const dbFilePath = path.join(dataDir, 'babytracker_db.json');
+const sampleCsvPath = path.join(rootDir, 'export_baby_20260922.csv');
 
 let state = null;
 
@@ -78,7 +78,7 @@ export function initDb() {
     try {
       const csvText = fs.readFileSync(sampleCsvPath, 'utf-8');
       const rows = parseCSVToRows(csvText);
-      const parsed = convertNaraRowsToEvents(rows, 'child_1');
+      const parsed = convertCsvRowsToEvents(rows, 'child_1');
       seededEvents = parsed.events || [];
       if (parsed.detectedProfile) {
         detectedChild = {

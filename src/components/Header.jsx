@@ -63,7 +63,7 @@ export function Header({ onOpenSettings }) {
   const babyAge = calculateBabyAge(activeChild?.birthdate, language);
 
   return (
-    <header className="nara-header">
+    <header className="app-header">
       {/* Left: Child Switcher Button */}
       <div style={{ position: 'relative' }}>
         <button

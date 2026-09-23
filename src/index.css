@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Nara Baby Design System & Styles
+   Baby Tracker Design System & Styles
    Warm, serene, minimalist parenting aesthetic
    ========================================================================== */
 
@@ -19,7 +19,7 @@
   --text-tertiary: #9C948A;
   --text-inverse: #FFFFFF;
   
-  /* Nara Category Palette */
+  /* Category Palette */
   --color-terracotta: #CE6B4C;
   --color-terracotta-light: #FBF0EB;
   --color-terracotta-hover: #B85B3F;
@@ -239,7 +239,7 @@ input, select, textarea {
 /* ==========================================================================
    Header Component
    ========================================================================== */
-.nara-header {
+.app-header {
   padding: 1.25rem 1.25rem 0.75rem;
   display: flex;
   align-items: center;
@@ -252,17 +252,17 @@ input, select, textarea {
   transition: border-color var(--transition-fast);
 }
 
-.nara-header.scrolled {
+.app-header.scrolled {
   border-bottom-color: var(--border-subtle);
   background-color: rgba(250, 247, 242, 0.94);
   backdrop-filter: blur(12px);
 }
 
-[data-theme='dark'] .nara-header.scrolled {
+[data-theme='dark'] .app-header.scrolled {
   background-color: rgba(30, 27, 24, 0.94);
 }
 
-[data-theme='oled'] .nara-header.scrolled {
+[data-theme='oled'] .app-header.scrolled {
   background-color: rgba(0, 0, 0, 0.94);
 }
 

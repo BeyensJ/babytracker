@@ -101,7 +101,7 @@ export function TimelineFeed({ limitDays = null }) {
           <p>
             {isDutch
               ? 'Registreer een voeding, dutje of pamper hierboven, of importeer bestaande gegevens bij Instellingen!'
-              : "Log your baby's feeds, naps, or diapers above, or import your existing Nara Baby history in Settings!"}
+              : "Log your baby's feeds, naps, or diapers above, or import your existing history in Settings!"}
           </p>
           <button className="btn-primary" onClick={() => openModal('BREAST')}>
             {isDutch ? 'Eerste activiteit loggen' : 'Log First Feed'}

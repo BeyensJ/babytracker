@@ -1,6 +1,6 @@
 /**
- * Nara Baby CSV & JSON Data Parser
- * Intelligent multi-format importer supporting dynamic Nara Baby schemas,
+ * Baby Tracker CSV & JSON Data Parser
+ * Intelligent multi-format importer supporting dynamic baby tracking schemas,
  * bracketed columns (e.g. "[Sleep] Duration (Seconds)"), epoch timestamps,
  * caregiver tracking, and automatic profile extraction.
  */
@@ -251,10 +251,10 @@ function classifyActivityType(row) {
 }
 
 /**
- * Parses parsed CSV rows into standardized Nara AppEvent items
+ * Parses parsed CSV rows into standardized AppEvent items
  * Also extracts child profile info and preferred unit system.
  */
-export function convertNaraRowsToEvents(rows, defaultChildId = 'child_1') {
+export function convertCsvRowsToEvents(rows, defaultChildId = 'child_1') {
   const events = [];
   let detectedProfile = null;
   const detectedUnits = {
@@ -337,7 +337,7 @@ export function convertNaraRowsToEvents(rows, defaultChildId = 'child_1') {
         const beginSide = getField(row, '[Breastfeed] Begin Side', 'breastBeginSide', 'Side', 'Side Nursed');
         const endSide = getField(row, '[Breastfeed] End Side', 'breastEndSide');
 
-        // Check explicit seconds columns from Nara export
+        // Check explicit seconds columns from export
         const leftSec = getField(row, '[Breastfeed] Left Duration (Seconds)', 'breastLeftDuration (Seconds)');
         const rightSec = getField(row, '[Breastfeed] Right Duration (Seconds)', 'breastRightDuration (Seconds)');
 
@@ -376,7 +376,7 @@ export function convertNaraRowsToEvents(rows, defaultChildId = 'child_1') {
       } else if (type === 'DIAPER') {
         const rawDiaperType = String(getField(row, '[Diaper] Type', 'Diaper Type', 'diaperType', 'Contents', 'SubType') || '').toLowerCase();
         
-        // Exact handling for Nara export types: 'Dirty Wet', 'Dirty', 'Wet', 'Dry'
+        // Exact handling for export types: 'Dirty Wet', 'Dirty', 'Wet', 'Dry'
         const hasPee = rawDiaperType.includes('wet') || rawDiaperType.includes('pee') || Boolean(getField(row, 'diaperTypePee'));
         const hasPoop = rawDiaperType.includes('dirty') || rawDiaperType.includes('poop') || Boolean(getField(row, 'diaperTypePoop'));
         const isDry = rawDiaperType.includes('dry') || Boolean(getField(row, 'diaperTypeDry'));
@@ -484,9 +484,9 @@ export function convertNaraRowsToEvents(rows, defaultChildId = 'child_1') {
 }
 
 /**
- * Parses Nara JSON backup format (NaraGaiden / Firebase export)
+ * Parses JSON backup format (Firebase / REST export)
  */
-export function convertNaraJsonToEvents(jsonData, defaultChildId = 'child_1') {
+export function convertJsonToEvents(jsonData, defaultChildId = 'child_1') {
   if (!jsonData) return { events: [], detectedProfile: null, detectedUnits: {} };
   let rawEvents = [];
 
@@ -512,7 +512,7 @@ export function convertNaraJsonToEvents(jsonData, defaultChildId = 'child_1') {
     };
   });
 
-  return convertNaraRowsToEvents(mappedRows, defaultChildId);
+  return convertCsvRowsToEvents(mappedRows, defaultChildId);
 }
 
 /**
@@ -545,9 +545,9 @@ export function generateImportSummary(events) {
 }
 
 /**
- * Converts internal events to Nara-compatible CSV export string
+ * Converts internal events to standardized CSV export string
  */
-export function exportEventsToNaraCSV(events, childName = 'Baby') {
+export function exportEventsToCSV(events, childName = 'Baby') {
   if (!events || events.length === 0) return '';
 
   const headers = [

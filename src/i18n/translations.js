@@ -1,4 +1,4 @@
-// Flemish Dutch (nl) & English (en) Translation Dictionary for Nara Baby
+// Flemish Dutch (nl) & English (en) Translation Dictionary for Baby Tracker
 export const translations = {
   en: {
     // Navigation
@@ -106,7 +106,7 @@ export const translations = {
     // Trends View
     trends: {
       title: 'Trends & Insights',
-      subtitle: 'Nara patterns over time',
+      subtitle: 'Patterns & rhythms over time',
       rangeDay: 'Day',
       rangeWeek: 'Week',
       rangeMonth: 'Month',
@@ -204,10 +204,10 @@ export const translations = {
       hapticsDesc: 'Tactile vibrations on button clicks',
       hapticsOn: 'On',
       hapticsOff: 'Off',
-      subtitle: 'Import from Nara Baby, export backups, and configure preferences',
-      importTitle: 'Import From Nara Baby',
-      importDesc: 'Upload your exported CSV or JSON file from the Nara Baby app. Our smart parser accurately detects all nursing sessions, sleep stretches, wake windows, diapers, growth checkups, and baby firsts!',
-      dragDropTitle: 'Drag & Drop your Nara Baby CSV or JSON here',
+      subtitle: 'Import data, export backups, and configure preferences',
+      importTitle: 'Import Baby Data',
+      importDesc: 'Upload your exported CSV or JSON file. Our smart parser accurately detects all nursing sessions, sleep stretches, wake windows, diapers, growth checkups, and baby firsts!',
+      dragDropTitle: 'Drag & Drop your CSV or JSON here',
       dragDropSub: 'or click to browse your device files',
       loadBabyTitle: "Load Baby's Export (1,319 Events)",
       loadBabySub: 'Found your provided export file: 696 feeds, 383 sleeps, 180 diapers, 16 firsts',
@@ -218,7 +218,7 @@ export const translations = {
       exportTitle: 'Export & Backup',
       recordsCount: '{count} records',
       exportCsvBtn: 'Export CSV',
-      exportCsvSub: 'Nara-compatible CSV format',
+      exportCsvSub: 'Standard CSV format',
       exportJsonBtn: 'JSON Archive',
       exportJsonSub: 'Complete backup file',
       clearAllConfirm: 'Are you sure you want to clear all logged activities? This cannot be undone.',
@@ -231,8 +231,8 @@ export const translations = {
       syncStatus: 'Server status: Connected',
       syncNow: 'Sync Now',
       exportData: 'Export Data (CSV)',
-      importData: 'Import Nara Baby CSV',
-      importHint: 'Drag and drop or tap to select a Nara Baby CSV file',
+      importData: 'Import CSV Data',
+      importHint: 'Drag and drop or tap to select a CSV file',
       loadExample: 'Load Baby Demo Export',
       loadSample: 'Load Realistic Sample Data',
       clearData: 'Clear All Logged Data',
@@ -481,7 +481,7 @@ export const translations = {
 
     // Import Preview Modal
     importModal: {
-      title: 'Import Nara Baby Data',
+      title: 'Import Baby Data',
       recognized: 'Successfully Recognized {count} Activities!',
       mergeOption: 'Merge with existing data',
       mergeDesc: 'Keep current entries and append new ones without duplicates',
@@ -607,7 +607,7 @@ export const translations = {
     // Trends & Inzichten
     trends: {
       title: 'Trends & Inzichten',
-      subtitle: 'Nara patronen over de tijd',
+      subtitle: 'Patronen & ritmes doorheen de tijd',
       rangeDay: 'Dag',
       rangeWeek: 'Week',
       rangeMonth: 'Maand',
@@ -705,10 +705,10 @@ export const translations = {
       hapticsDesc: 'Trilsignaal bij tikken op knoppen',
       hapticsOn: 'Aan',
       hapticsOff: 'Uit',
-      subtitle: 'Importeer vanuit Nara Baby, bewaar back-ups en beheer instellingen',
-      importTitle: 'Importeren vanuit Nara Baby',
-      importDesc: 'Upload je geëxporteerde CSV- of JSON-bestand vanuit de Nara Baby app. Onze slimme parser herkent nauwkeurig alle borst- en flesvoedingen, slaapjes, wakkertijden, pampers, groeimetingen en mijlpalen!',
-      dragDropTitle: 'Sleep je Nara Baby CSV of JSON hierheen',
+      subtitle: 'Gegevens importeren, back-ups bewaren en instellingen beheren',
+      importTitle: 'Gegevens importeren',
+      importDesc: 'Upload je geëxporteerde CSV- of JSON-bestand. Onze slimme parser herkent nauwkeurig alle borst- en flesvoedingen, slaapjes, wakkertijden, pampers, groeimetingen en mijlpalen!',
+      dragDropTitle: 'Sleep je CSV of JSON hierheen',
       dragDropSub: 'of klik om bestanden op je apparaat te kiezen',
       loadBabyTitle: "Baby's export laden (1.319 items)",
       loadBabySub: 'Gevonden voorbeeldbestand: 696 voedingen, 383 slaapjes, 180 pampers, 16 mijlpalen',
@@ -719,7 +719,7 @@ export const translations = {
       exportTitle: 'Exporteren & Back-up',
       recordsCount: '{count} items',
       exportCsvBtn: 'CSV exporteren',
-      exportCsvSub: 'Nara-compatibel CSV-formaat',
+      exportCsvSub: 'Standaard CSV-formaat',
       exportJsonBtn: 'JSON archief',
       exportJsonSub: 'Volledig back-upbestand',
       clearAllConfirm: 'Ben je zeker dat je alle geregistreerde activiteiten wilt wissen? Dit kan niet ongedaan worden gemaakt.',
@@ -732,7 +732,7 @@ export const translations = {
       syncStatus: 'Serverstatus: Verbonden',
       syncNow: 'Nu synchroniseren',
       exportData: 'Gegevens exporteren (CSV)',
-      importData: 'Nara Baby CSV importeren',
+      importData: 'CSV-gegevens importeren',
       importHint: 'Sleep een bestand hierheen of tik om te kiezen',
       loadExample: 'Voorbeeld Baby importeren',
       loadSample: 'Realistische demogegevens laden',
@@ -982,7 +982,7 @@ export const translations = {
 
     // Import Dialoog
     importModal: {
-      title: 'Nara Baby Gegevens Importeren',
+      title: 'Gegevens Importeren',
       recognized: '{count} activiteiten succesvol herkend!',
       mergeOption: 'Samenvoegen met bestaande gegevens',
       mergeDesc: 'Bestaande logs behouden en nieuwe toevoegen zonder dubbels',

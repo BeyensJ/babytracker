@@ -29,7 +29,7 @@ export function ImportPreviewModal() {
   if (activeModal !== 'IMPORT_PREVIEW' || !modalInitialData?.parsedEvents) return null;
 
   const events = modalInitialData.parsedEvents;
-  const fileName = modalInitialData.fileName || 'Nara Baby Export.csv';
+  const fileName = modalInitialData.fileName || 'Baby Tracker Export.csv';
   const detectedProfile = modalInitialData.detectedProfile;
   const detectedUnits = modalInitialData.detectedUnits;
   const detectedCaregivers = modalInitialData.detectedCaregivers || [];
@@ -278,7 +278,7 @@ export function ImportPreviewModal() {
                     {language === 'nl' ? 'Volledige export laden (Vervang huidige demogegevens)' : 'Load Entire Export (Replace current demo data)'}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                    {language === 'nl' ? 'Aanbevolen: Vervang voorbeelddata door al je echte Nara Baby geschiedenis' : 'Recommended: Replace sample data with all your real Nara Baby history'}
+                    {language === 'nl' ? 'Aanbevolen: Vervang voorbeelddata door al je echte activiteitengeschiedenis' : 'Recommended: Replace sample data with all your real activity history'}
                   </div>
                 </div>
               </label>

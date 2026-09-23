@@ -3,7 +3,7 @@
  * Manages live multi-device synchronization and authentication between Mom and Dad
  */
 
-const AUTH_TOKEN_KEY = 'nara_auth_token_v1';
+const AUTH_TOKEN_KEY = 'babytracker_auth_token_v1';
 
 class SyncService {
   constructor() {

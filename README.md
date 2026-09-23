@@ -1,6 +1,6 @@
 # 🍼 Baby Tracker
 
-A calm, aesthetic baby tracking progressive web application with real-time multi-device sync, Android notification tray live timers, Nara Baby CSV import, visual schedules, and password protection.
+A calm, aesthetic baby tracking progressive web application with real-time multi-device sync, Android notification tray live timers, CSV/JSON data import, visual schedules, and password protection.
 
 ---
 
@@ -55,10 +55,10 @@ Open `http://<server-ip>:3001` in your browser.
 
 ## 💾 100% Data Persistence Guaranteed
 
-All application data is stored in the host directory `./data/` (`./data/narababy_db.json`).
+All application data is stored in the host directory `./data/` (`./data/babytracker_db.json`).
 - Recreating containers (`docker compose down && docker compose up -d`) preserves all data.
 - Upgrading to new versions or pulling updated images leaves `./data/` untouched.
-- Backing up is as simple as copying the `./data` directory or `./data/narababy_db.json`.
+- Backing up is as simple as copying the `./data` directory or `./data/babytracker_db.json`.
 
 ---
 
@@ -102,5 +102,5 @@ npm run dev
 - **PWA & Android Notification Tray**: Active feeding and sleep timers persist in the Android notification drawer with live countdowns and Stop buttons.
 - **Real-Time WebSocket Sync**: Instant two-way synchronization between Mom and Dad.
 - **Visual Schedules**: 7-day multi-day week overview with cross-midnight sleep slices and month calendar.
-- **Nara Baby Importer**: Automatic CSV parser preserving historical logs, units, notes, and caregiver attribution.
+- **Data Importer**: Automatic CSV & JSON parser preserving historical logs, units, notes, and caregiver attribution.
 - **Secure Password Protection**: Family-wide authentication with persistent remembered sessions.

@@ -1,9 +1,9 @@
 /**
- * Generates realistic historical baby tracking data matching Nara Baby export structure
+ * Generates realistic historical baby tracking data
  * spanning the last 14 days for instant testing and demonstration.
  */
 
-export function generateSampleNaraEvents(childKey = 'child_1') {
+export function generateSampleEvents(childKey = 'child_1') {
   const events = [];
   const now = Date.now();
   const dayMs = 24 * 60 * 60 * 1000;

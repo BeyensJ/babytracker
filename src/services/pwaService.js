@@ -1,5 +1,5 @@
 /**
- * Nara Baby - PWA Service
+ * Baby Tracker - PWA Service
  * Handles Service Worker registration and PWA installation prompts.
  */
 
