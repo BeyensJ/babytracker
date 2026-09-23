@@ -217,11 +217,27 @@ class NotificationService {
       isTimer: true,
       isTest: false,
       isTickUpdate,
-      silent: true,
+      silent: isTickUpdate ? true : false,
       renotify: false,
     };
 
     await this.dispatchNotification(payload);
+
+    // On initial timer start (!isTickUpdate), show in-app toast to confirm active tracking
+    if (!isTickUpdate) {
+      const startMsg = timerType === 'breast'
+        ? (lang === 'nl' ? 'Borstvoeding gestart' : 'Nursing timer started')
+        : timerType === 'sleep'
+        ? (lang === 'nl' ? 'Slaaptimer gestart' : 'Sleep timer started')
+        : (lang === 'nl' ? 'Afkolfsessie gestart' : 'Pumping session started');
+
+      this.showToast({
+        title: `⏱️ ${startMsg}`,
+        body: `${title.split('—')[0].trim()} • ${lang === 'nl' ? 'Vastgezet in meldingenpaneel' : 'Pinned in notification shade'}`,
+        type: timerType,
+        timestamp,
+      });
+    }
 
     // Start recurring update ticker if not already running (refreshes elapsed time every 15s)
     this.startTicker();
@@ -242,18 +258,22 @@ class NotificationService {
       caregiver,
       isTimer = false,
       isTest = false,
-      silent = true,
+      isTickUpdate = false,
+      silent = false,
       renotify = false,
     } = payload;
     let delivered = false;
 
-    // 1. Play gentle audio chime and show in-app popup toast ONLY for explicit tests, never for running timer ticks
+    // 1. Play gentle audio chime and show in-app popup toast ONLY for explicit tests
     if (isTest) {
       playNotificationChime();
       this.showToast({ title, body, type: timerType, timestamp });
     }
 
-    // Common notification options: silent persistent notification without renotify or vibrations
+    // Common notification options:
+    // Background tick updates (every 15s) MUST be silent with zero vibration and renotify: false.
+    // Initial start (!isTickUpdate) is active so Android pins it with a status bar icon and desktop shows the card.
+    const isSilent = isTickUpdate ? true : Boolean(silent);
     const notificationOptions = {
       body,
       icon: '/icons/icon-192.png',
@@ -261,8 +281,8 @@ class NotificationService {
       tag: tag || 'nara-active-timer',
       ongoing: isTimer ? true : Boolean(ongoing),
       renotify: isTest ? true : Boolean(renotify), // NEVER renotify on running timer updates
-      silent: isTest ? false : Boolean(silent),    // Completely silent for running timers
-      vibrate: (isTimer || silent || !isTest) ? [] : [200, 100, 200], // Empty pattern guarantees no vibration
+      silent: isSilent,
+      vibrate: isSilent ? [] : (isTest ? [200, 100, 200] : [80]),
       timestamp: timestamp || Date.now(),
       actions: actions || [],
       data: {
@@ -275,15 +295,18 @@ class NotificationService {
     // 2. Service Worker Registration (Primary for Android & PWAs)
     if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
       try {
-        const reg = await Promise.race([
-          navigator.serviceWorker.ready,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('SW ready timeout')), 800)),
-        ]);
+        let reg = await navigator.serviceWorker.getRegistration();
+        if (!reg || typeof reg.showNotification !== 'function') {
+          reg = await Promise.race([
+            navigator.serviceWorker.ready,
+            new Promise((_, reject) => setTimeout(() => reject(new Error('SW ready timeout')), 2500)),
+          ]);
+        }
 
         if (reg && typeof reg.showNotification === 'function') {
           await reg.showNotification(title, notificationOptions);
           delivered = true;
-          // console.log('[Notification] Displayed via ServiceWorkerRegistration in Android Tray:', title);
+          // console.log('[Notification] Displayed via ServiceWorkerRegistration:', title);
         }
       } catch (swErr) {
         console.warn('[Notification] Service Worker showNotification skipped:', swErr.message);
@@ -291,26 +314,35 @@ class NotificationService {
     }
 
     // 3. Fallback to Direct Window Notification ONLY if Service Worker was unavailable (e.g. desktop standalone without SW)
-    if (!delivered && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
       try {
-        const notif = new Notification(title, {
-          body,
-          icon: '/icons/icon-192.png',
-          tag: tag || 'nara-active-timer',
-          renotify: isTest ? true : Boolean(renotify),
-          silent: isTest ? false : Boolean(silent),
-          timestamp: timestamp || Date.now(),
-        });
-        this.activeWindowNotification = notif;
-        notif.onclick = () => {
-          if (typeof window !== 'undefined') window.focus();
-          notif.close();
-        };
-        delivered = true;
+        if (!delivered) {
+          const notif = new Notification(title, {
+            body,
+            icon: '/icons/icon-192.png',
+            tag: tag || 'nara-active-timer',
+            renotify: isTest ? true : Boolean(renotify),
+            silent: isSilent,
+            timestamp: timestamp || Date.now(),
+          });
+          this.activeWindowNotification = notif;
+          notif.onclick = () => {
+            if (typeof window !== 'undefined') window.focus();
+            notif.close();
+          };
+          delivered = true;
+        }
       } catch (winErr) {
         // On Android Chrome, new Notification() throws; it requires ServiceWorkerRegistration
       }
     }
+
+    // 4. Background sync message to Service Worker with deliveredByClient flag to prevent duplicate notifications
+    this.sendToServiceWorker('UPDATE_TIMER_NOTIFICATION', {
+      ...payload,
+      silent: isSilent,
+      deliveredByClient: delivered,
+    });
 
     return delivered;
   }

@@ -88,6 +88,11 @@ self.addEventListener('message', (event) => {
   const { type, payload } = event.data;
 
   if (type === 'UPDATE_TIMER_NOTIFICATION') {
+    if (payload.deliveredByClient) {
+      // Notification was already dispatched directly by client window thread
+      return;
+    }
+
     const {
       title,
       body,
@@ -96,7 +101,9 @@ self.addEventListener('message', (event) => {
       tag = 'nara-active-timer',
       ongoing = true,
       timestamp = Date.now(),
-      caregiver = 'Parent'
+      caregiver = 'Parent',
+      silent = true,
+      renotify = false,
     } = payload;
 
     self.registration.showNotification(title, {
@@ -105,9 +112,9 @@ self.addEventListener('message', (event) => {
       badge: '/icons/badge-72.png',
       tag,
       ongoing: true, // Keeps pinned in Android notification shade
-      renotify: false, // Prevents continuous vibrations on tick updates
-      silent: true, // Ensures silent update without alerts/chimes
-      vibrate: [], // Ensures zero vibration on periodic updates
+      renotify: Boolean(renotify),
+      silent: Boolean(silent),
+      vibrate: silent ? [] : [80],
       timestamp,
       actions,
       data: {
