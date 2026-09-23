@@ -428,10 +428,10 @@ export function SettingsView() {
             <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.appearance')}</div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('settings.appearanceDesc')}</div>
           </div>
-          <div className="segmented-control" style={{ width: 220 }}>
+          <div className="segmented-control" style={{ width: 170 }}>
             <button
               type="button"
-              className={`segmented-btn ${preferences.theme === 'light' ? 'active' : ''}`}
+              className={`segmented-btn ${preferences.theme === 'light' || (!preferences.theme) ? 'active' : ''}`}
               onClick={() => {
                 setPreferences(p => ({ ...p, theme: 'light' }));
                 triggerHaptic('light', preferences?.haptics);
@@ -442,25 +442,14 @@ export function SettingsView() {
             </button>
             <button
               type="button"
-              className={`segmented-btn ${preferences.theme === 'dark' ? 'active' : ''}`}
+              className={`segmented-btn ${preferences.theme === 'dark' || preferences.theme === 'oled' ? 'active' : ''}`}
               onClick={() => {
                 setPreferences(p => ({ ...p, theme: 'dark' }));
                 triggerHaptic('light', preferences?.haptics);
               }}
-              title={t('header.themeMocha')}
+              title={t('header.themeDark')}
             >
               <Moon size={13} style={{ marginRight: 4 }} /> {t('settings.themeDark')}
-            </button>
-            <button
-              type="button"
-              className={`segmented-btn ${preferences.theme === 'oled' ? 'active' : ''}`}
-              onClick={() => {
-                setPreferences(p => ({ ...p, theme: 'oled' }));
-                triggerHaptic('light', preferences?.haptics);
-              }}
-              title={t('header.themeOled')}
-            >
-              <Sparkles size={13} style={{ marginRight: 4 }} /> {t('settings.themeOled')}
             </button>
           </div>
         </div>

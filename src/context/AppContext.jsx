@@ -48,7 +48,7 @@ const DEFAULT_PREFERENCES = {
   weightUnit: 'kg', // 'lb' or 'kg'
   lengthUnit: 'cm', // 'in' or 'cm'
   tempUnit: 'C',    // 'F' or 'C'
-  theme: 'light',   // 'light', 'dark', or 'oled'
+  theme: 'light',   // 'light' or 'dark' (pure pitch-black OLED)
   haptics: true,    // subtle vibration feedback
   language: 'nl',   // 'nl' (Nederlands / Vlaams) or 'en' (English)
 };
@@ -301,7 +301,7 @@ export function AppProvider({ children }) {
       localStorage.setItem(STORAGE_KEYS.PREFERENCES, JSON.stringify(preferences));
       const currentTheme = preferences.theme || 'light';
       if (currentTheme === 'dark' || currentTheme === 'oled') {
-        document.documentElement.setAttribute('data-theme', currentTheme);
+        document.documentElement.setAttribute('data-theme', 'dark');
       } else {
         document.documentElement.removeAttribute('data-theme');
       }
@@ -314,10 +314,8 @@ export function AppProvider({ children }) {
         document.head.appendChild(metaThemeColor);
       }
 
-      if (currentTheme === 'oled') {
+      if (currentTheme === 'dark' || currentTheme === 'oled') {
         metaThemeColor.setAttribute('content', '#000000');
-      } else if (currentTheme === 'dark') {
-        metaThemeColor.setAttribute('content', '#1E1B18');
       } else {
         metaThemeColor.setAttribute('content', '#FAF7F2');
       }

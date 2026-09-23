@@ -187,34 +187,24 @@ export function Header({ onOpenSettings }) {
         <button
           className="header-theme-toggle-btn"
           onClick={() => {
-            const current = preferences?.theme || 'light';
-            let next = 'dark';
-            if (current === 'light') next = 'dark';
-            else if (current === 'dark') next = 'oled';
-            else next = 'light';
-            setPreferences(p => ({ ...p, theme: next }));
+            const isDark = preferences?.theme === 'dark' || preferences?.theme === 'oled';
+            setPreferences(p => ({ ...p, theme: isDark ? 'light' : 'dark' }));
             triggerHaptic('light', preferences?.haptics);
           }}
           title={
             language === 'nl'
-              ? (preferences?.theme === 'oled'
-                ? 'Huidig: Nachtelijk OLED (Tik voor Warm linnen)'
-                : preferences?.theme === 'dark'
-                ? 'Huidig: Gezellige mokka (Tik voor Nachtelijk OLED)'
-                : 'Huidig: Warm linnen (Tik voor Gezellige mokka)')
-              : (preferences?.theme === 'oled'
-                ? 'Current: Midnight OLED (Tap for Warm Linen)'
-                : preferences?.theme === 'dark'
-                ? 'Current: Cozy Mocha (Tap for Midnight OLED)'
-                : 'Current: Warm Linen (Tap for Cozy Mocha)')
+              ? (preferences?.theme === 'dark' || preferences?.theme === 'oled'
+                ? 'Huidig: Nachtelijk OLED (Tik voor Licht)'
+                : 'Huidig: Licht (Tik voor Donker OLED)')
+              : (preferences?.theme === 'dark' || preferences?.theme === 'oled'
+                ? 'Current: Dark OLED (Tap for Light)'
+                : 'Current: Light (Tap for Dark OLED)')
           }
           aria-label={language === 'nl' ? 'Thema wisselen' : 'Toggle theme appearance'}
           id="quick-theme-btn"
         >
-          {preferences?.theme === 'oled' ? (
-            <Sparkles size={16} color="var(--color-caramel)" />
-          ) : preferences?.theme === 'dark' ? (
-            <Moon size={16} color="var(--color-slate)" />
+          {preferences?.theme === 'dark' || preferences?.theme === 'oled' ? (
+            <Moon size={16} color="var(--color-caramel)" />
           ) : (
             <Sun size={16} color="var(--color-terracotta)" />
           )}

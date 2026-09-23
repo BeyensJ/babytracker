@@ -62,7 +62,7 @@ export function TimelineFeed({ limitDays = null }) {
               onClick={() => setViewMode('grouped')}
               title={isDutch ? 'Groepeer per type (Voeding, Slaap, Pampers, Overige)' : 'Group entries by type (Feeds, Sleep, Diapers, Other)'}
             >
-              <Layers size={13} />
+              <Layers size={14} />
               <span>{isDutch ? 'Gegroepeerd' : 'Grouped'}</span>
             </button>
             <button
@@ -70,7 +70,7 @@ export function TimelineFeed({ limitDays = null }) {
               onClick={() => setViewMode('stream')}
               title={isDutch ? 'Chronologische tijdlijnweergave' : 'Chronological timeline stream'}
             >
-              <Clock size={13} />
+              <Clock size={14} />
               <span>{isDutch ? 'Tijdlijn' : 'Stream'}</span>
             </button>
           </div>
