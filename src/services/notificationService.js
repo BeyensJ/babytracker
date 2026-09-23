@@ -46,6 +46,7 @@ class NotificationService {
     this.currentBaby = 'Baby';
     this.currentLang = 'nl';
     this.toastListeners = new Set();
+    this.activeWindowNotification = null;
   }
 
   onToast(callback) {
@@ -127,9 +128,9 @@ class NotificationService {
   }
 
   /**
-   * Sync active timers to the Android Notification Tray and In-App Toast.
+   * Sync active timers to the Android Notification Tray.
    */
-  async syncTimerNotification(activeTimers, caregiverName = 'Parent', babyName = 'Baby', lang = 'nl') {
+  async syncTimerNotification(activeTimers, caregiverName = 'Parent', babyName = 'Baby', lang = 'nl', isTickUpdate = false) {
     this.currentTimers = activeTimers;
     this.currentCaregiver = caregiverName;
     this.currentBaby = babyName;
@@ -149,20 +150,6 @@ class NotificationService {
     const permission = this.getPermission();
     if (permission !== 'granted') {
       console.log(`[Notification] Timer active but notification permission is '${permission}'.`);
-      // Even if OS permission is not granted, still display the in-app toast banner!
-      const fallbackTitle = breast
-        ? `🤱 ${lang === 'nl' ? 'Borstvoeding' : 'Nursing'} (${breast.activeSide === 'LEFT' ? (lang === 'nl' ? 'Links' : 'Left') : (lang === 'nl' ? 'Rechts' : 'Right')}) — ${babyName}`
-        : sleep
-        ? `🌙 ${babyName} ${lang === 'nl' ? 'slaapt' : 'is Sleeping'}`
-        : `🍼 ${lang === 'nl' ? 'Kolfsessie' : 'Pumping Session'}`;
-      this.showToast({
-        title: fallbackTitle,
-        body: lang === 'nl'
-          ? 'Timer loopt actief. Schakel meldingen in bij Instellingen voor live weergave in het meldingenpaneel.'
-          : 'Active timer is running. Tap "Enable Tray" in Settings for Android notification drawer tracking.',
-        type: breast ? 'breast' : sleep ? 'sleep' : 'pump',
-        timestamp: Date.now(),
-      });
       return;
     }
 
@@ -227,6 +214,11 @@ class NotificationService {
       ongoing: true,
       timestamp,
       caregiver: caregiverName,
+      isTimer: true,
+      isTest: false,
+      isTickUpdate,
+      silent: true,
+      renotify: false,
     };
 
     await this.dispatchNotification(payload);
@@ -236,73 +228,89 @@ class NotificationService {
   }
 
   /**
-   * Primary dispatcher: Triggers In-App Toast, Native OS Notification, and ServiceWorker Android Tray
+   * Primary dispatcher: Triggers Native OS Notification and ServiceWorker Android Tray
    */
   async dispatchNotification(payload) {
-    const { title, body, actions, timerType, tag, ongoing, timestamp, caregiver } = payload;
+    const {
+      title,
+      body,
+      actions = [],
+      timerType,
+      tag = 'nara-active-timer',
+      ongoing = false,
+      timestamp = Date.now(),
+      caregiver,
+      isTimer = false,
+      isTest = false,
+      silent = true,
+      renotify = false,
+    } = payload;
     let delivered = false;
 
-    // 1. Play gentle audio chime and show in-app popup toast
-    playNotificationChime();
-    this.showToast({ title, body, type: timerType, timestamp });
-
-    // 2. Direct Window Notification (Instant OS pop-up on Desktop Chrome/Firefox/Safari/Linux)
-    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      try {
-        const notif = new Notification(title, {
-          body,
-          icon: '/icons/icon-192.png',
-          tag: tag || 'nara-active-timer',
-          renotify: true, // Key: forces the operating system to show a heads-up pop-up alert
-          timestamp: timestamp || Date.now(),
-        });
-        notif.onclick = () => {
-          if (typeof window !== 'undefined') window.focus();
-          notif.close();
-        };
-        delivered = true;
-        console.log('[Notification] OS Notification pop-up dispatched:', title);
-      } catch (winErr) {
-        // On Android Chrome, new Notification() throws; it requires ServiceWorkerRegistration
-        console.log('[Notification] Window notification not available, proceeding to Service Worker:', winErr?.message);
-      }
+    // 1. Play gentle audio chime and show in-app popup toast ONLY for explicit tests, never for running timer ticks
+    if (isTest) {
+      playNotificationChime();
+      this.showToast({ title, body, type: timerType, timestamp });
     }
 
-    // 3. Service Worker Registration (Android Notification Tray + Action buttons)
+    // Common notification options: silent persistent notification without renotify or vibrations
+    const notificationOptions = {
+      body,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/badge-72.png',
+      tag: tag || 'nara-active-timer',
+      ongoing: isTimer ? true : Boolean(ongoing),
+      renotify: isTest ? true : Boolean(renotify), // NEVER renotify on running timer updates
+      silent: isTest ? false : Boolean(silent),    // Completely silent for running timers
+      vibrate: (isTimer || silent || !isTest) ? [] : [200, 100, 200], // Empty pattern guarantees no vibration
+      timestamp: timestamp || Date.now(),
+      actions: actions || [],
+      data: {
+        timerType,
+        caregiver,
+        url: '/',
+      },
+    };
+
+    // 2. Service Worker Registration (Primary for Android & PWAs)
     if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
       try {
-        // Use Promise.race with 800ms timeout so we never hang if SW is activating
         const reg = await Promise.race([
           navigator.serviceWorker.ready,
           new Promise((_, reject) => setTimeout(() => reject(new Error('SW ready timeout')), 800)),
         ]);
 
         if (reg && typeof reg.showNotification === 'function') {
-          await reg.showNotification(title, {
-            body,
-            icon: '/icons/icon-192.png',
-            badge: '/icons/badge-72.png',
-            tag: tag || 'nara-active-timer',
-            ongoing: ongoing ?? true,
-            renotify: true,
-            timestamp: timestamp || Date.now(),
-            actions: actions || [],
-            data: {
-              timerType,
-              caregiver,
-              url: '/',
-            },
-          });
+          await reg.showNotification(title, notificationOptions);
           delivered = true;
-          console.log('[Notification] Displayed via ServiceWorkerRegistration in Android Tray:', title);
+          // console.log('[Notification] Displayed via ServiceWorkerRegistration in Android Tray:', title);
         }
       } catch (swErr) {
         console.warn('[Notification] Service Worker showNotification skipped:', swErr.message);
       }
     }
 
-    // 4. Also postMessage to active service worker for background state sync
-    this.sendToServiceWorker('UPDATE_TIMER_NOTIFICATION', payload);
+    // 3. Fallback to Direct Window Notification ONLY if Service Worker was unavailable (e.g. desktop standalone without SW)
+    if (!delivered && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      try {
+        const notif = new Notification(title, {
+          body,
+          icon: '/icons/icon-192.png',
+          tag: tag || 'nara-active-timer',
+          renotify: isTest ? true : Boolean(renotify),
+          silent: isTest ? false : Boolean(silent),
+          timestamp: timestamp || Date.now(),
+        });
+        this.activeWindowNotification = notif;
+        notif.onclick = () => {
+          if (typeof window !== 'undefined') window.focus();
+          notif.close();
+        };
+        delivered = true;
+      } catch (winErr) {
+        // On Android Chrome, new Notification() throws; it requires ServiceWorkerRegistration
+      }
+    }
 
     return delivered;
   }
@@ -311,7 +319,13 @@ class NotificationService {
     if (this.tickerInterval) return;
     this.tickerInterval = setInterval(() => {
       if (this.currentTimers) {
-        this.syncTimerNotification(this.currentTimers, this.currentCaregiver, this.currentBaby, this.currentLang);
+        this.syncTimerNotification(
+          this.currentTimers,
+          this.currentCaregiver,
+          this.currentBaby,
+          this.currentLang,
+          true // isTickUpdate
+        );
       }
     }, 15000);
   }
@@ -326,6 +340,13 @@ class NotificationService {
   async clearNotification() {
     this.stopTicker();
     this.currentTimers = null;
+
+    if (this.activeWindowNotification) {
+      try {
+        this.activeWindowNotification.close();
+      } catch (e) {}
+      this.activeWindowNotification = null;
+    }
 
     // Clear via Service Worker registration
     if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
@@ -348,7 +369,7 @@ class NotificationService {
   }
 
   async sendToServiceWorker(type, payload) {
-    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+    if (typeof navigator !== 'undefined' || !('serviceWorker' in navigator)) return;
     try {
       const reg = await Promise.race([
         navigator.serviceWorker.ready,
@@ -396,6 +417,10 @@ class NotificationService {
       ongoing: false,
       timestamp: Date.now(),
       caregiver: 'Test',
+      isTimer: false,
+      isTest: true,
+      silent: false,
+      renotify: true,
     });
 
     return {

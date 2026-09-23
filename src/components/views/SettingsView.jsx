@@ -151,7 +151,7 @@ export function SettingsView() {
         spread: 60,
         origin: { y: 0.6 },
       });
-    } catch {}
+    } catch { }
     alert(t('settings.sampleSuccess'));
   };
 
@@ -221,45 +221,6 @@ export function SettingsView() {
           </div>
         )}
 
-        {/* Direct 1-Click Button for Provided Baby Export */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.85rem 1rem', backgroundColor: 'var(--color-terracotta-light)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(206, 107, 76, 0.2)' }}>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--color-terracotta)' }}>
-              {t('settings.loadBabyTitle')}
-            </span>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-              {t('settings.loadBabySub')}
-            </span>
-          </div>
-          <button
-            className="btn-primary"
-            style={{ padding: '0.5rem 1rem', fontSize: '0.84rem' }}
-            onClick={handleLoadBabyExport}
-            id="load-baby-export-btn"
-          >
-            <Heart size={14} style={{ marginRight: 4 }} />
-            {t('settings.loadBabyBtn')}
-          </button>
-        </div>
-
-        {/* Generic Demo Data Button */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', backgroundColor: 'var(--bg-card-subtle)', borderRadius: 'var(--radius-md)' }}>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>{t('settings.needSampleTitle')}</span>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-              {t('settings.needSampleSub')}
-            </span>
-          </div>
-          <button
-            className="btn-secondary"
-            style={{ padding: '0.4rem 0.8rem', fontSize: '0.78rem' }}
-            onClick={handleLoadDemoData}
-            id="load-sample-data-btn"
-          >
-            <Sparkles size={13} style={{ marginRight: 3 }} />
-            {t('settings.loadSampleBtn')}
-          </button>
-        </div>
       </div>
 
       {/* 2. Export & Backup Section */}
@@ -569,23 +530,23 @@ export function SettingsView() {
                 notificationPermission === 'granted'
                   ? 'rgba(46, 125, 50, 0.12)'
                   : notificationPermission === 'insecure-context'
-                  ? 'rgba(237, 108, 2, 0.12)'
-                  : 'rgba(0, 0, 0, 0.06)',
+                    ? 'rgba(237, 108, 2, 0.12)'
+                    : 'rgba(0, 0, 0, 0.06)',
               color:
                 notificationPermission === 'granted'
                   ? '#2E7D32'
                   : notificationPermission === 'insecure-context'
-                  ? '#ED6C02'
-                  : 'var(--text-secondary)',
+                    ? '#ED6C02'
+                    : 'var(--text-secondary)',
             }}
           >
             {notificationPermission === 'granted'
               ? t('settings.notifActive')
               : notificationPermission === 'insecure-context'
-              ? t('settings.notifInsecure')
-              : notificationPermission === 'denied'
-              ? t('settings.notifDenied')
-              : t('settings.notifDisabled')}
+                ? t('settings.notifInsecure')
+                : notificationPermission === 'denied'
+                  ? t('settings.notifDenied')
+                  : t('settings.notifDisabled')}
           </span>
         </div>
 

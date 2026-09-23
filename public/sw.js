@@ -104,9 +104,10 @@ self.addEventListener('message', (event) => {
       icon: '/icons/icon-192.png',
       badge: '/icons/badge-72.png',
       tag,
-      ongoing, // Keeps pinned in Android notification shade
+      ongoing: true, // Keeps pinned in Android notification shade
       renotify: false, // Prevents continuous vibrations on tick updates
-      silent: false,
+      silent: true, // Ensures silent update without alerts/chimes
+      vibrate: [], // Ensures zero vibration on periodic updates
       timestamp,
       actions,
       data: {

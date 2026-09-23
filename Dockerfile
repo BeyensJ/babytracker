@@ -29,7 +29,6 @@ RUN npm ci --omit=dev && npm cache clean --force
 # Copy backend application, utility modules, seed CSV, and compiled frontend
 COPY server ./server
 COPY src/utils ./src/utils
-COPY export_narababy_baby_20260922.csv ./
 COPY --from=builder /app/dist ./dist
 
 # Create directory for persistent JSON database
