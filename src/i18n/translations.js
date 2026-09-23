@@ -158,10 +158,12 @@ export const translations = {
 
     // Calendar View
     calendar: {
-      title: 'Activity Calendar',
+      title: 'Calendar & Timeline',
+      subtitle: 'Schedules & activity history for {name}',
       viewDay: 'Day',
       viewWeek: 'Week',
       viewMonth: 'Month',
+      viewTimeline: 'Timeline',
       selectDayHint: 'Tap any day to see its full chronological log',
       weekSummary: 'Week Summary',
       monthSummary: 'Month Summary',
@@ -662,10 +664,12 @@ export const translations = {
 
     // Kalender
     calendar: {
-      title: 'Activiteitenkalender',
+      title: 'Kalender & Tijdlijn',
+      subtitle: 'Schema & activiteitenhistoriek voor {name}',
       viewDay: 'Dag',
       viewWeek: 'Week',
       viewMonth: 'Maand',
+      viewTimeline: 'Tijdlijn',
       selectDayHint: 'Tik op een dag om het volledige overzicht te bekijken',
       weekSummary: 'Weekoverzicht',
       monthSummary: 'Maandoverzicht',

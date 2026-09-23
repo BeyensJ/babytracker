@@ -5,7 +5,6 @@ import { Navigation } from './components/Navigation';
 import { TodayView } from './components/views/TodayView';
 import { CalendarView } from './components/views/CalendarView';
 import { TrendsView } from './components/views/TrendsView';
-import { HistoryView } from './components/views/HistoryView';
 import { SettingsView } from './components/views/SettingsView';
 import { ModalManager } from './components/modals/ModalManager';
 import { LoginScreen } from './components/LoginScreen';
@@ -73,7 +72,6 @@ function AppContent() {
         {activeTab === 'today' && <TodayView />}
         {activeTab === 'calendar' && <CalendarView />}
         {activeTab === 'trends' && <TrendsView />}
-        {activeTab === 'history' && <HistoryView />}
         {activeTab === 'settings' && <SettingsView />}
       </main>
 

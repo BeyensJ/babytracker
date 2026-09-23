@@ -14,13 +14,23 @@ import {
   Layers,
   CalendarDays,
   Info,
+  Search,
+  ListFilter,
+  FileText,
+  X,
 } from 'lucide-react';
 
 export function CalendarView() {
   const { events, activeChild, activeChildId, preferences, openModal, t, language } = useApp();
 
-  // Mode: 'week' (multi-day rhythm schedule) or 'month' (month calendar grid)
+  // Mode: 'week' (multi-day rhythm), 'month' (calendar grid), 'day' (24h rhythm), or 'timeline' (complete activity stream)
   const [viewMode, setViewMode] = useState('week');
+
+  // Timeline Search and Filter State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [timelineCategoryFilter, setTimelineCategoryFilter] = useState('ALL');
+  const [timelineDateFilter, setTimelineDateFilter] = useState('');
+  const [dayCategoryFilter, setDayCategoryFilter] = useState('ALL');
 
   // Filter events by active child
   const childEvents = useMemo(() => {
@@ -334,10 +344,82 @@ export function CalendarView() {
     return days;
   }, [monthYear, monthIdx, eventsByDate]);
 
-  // Selected Day's events
-  const selectedEvents = useMemo(() => {
+  // --- Complete Timeline Stream Data (Search, Filter, Group by Day) ---
+  const timelineFilteredEvents = useMemo(() => {
+    return childEvents.filter(ev => {
+      // Category filter
+      if (timelineCategoryFilter === 'FEEDS' && !['BREAST', 'BOTTLE', 'SOLIDS', 'COMBO'].includes(ev.type)) return false;
+      if (timelineCategoryFilter === 'SLEEP' && ev.type !== 'SLEEP') return false;
+      if (timelineCategoryFilter === 'DIAPER' && ev.type !== 'DIAPER') return false;
+      if (timelineCategoryFilter === 'PUMP' && ev.type !== 'PUMP') return false;
+      if (timelineCategoryFilter === 'GROWTH' && ev.type !== 'GROWTH') return false;
+      if (timelineCategoryFilter === 'HEALTH' && ev.type !== 'HEALTH') return false;
+      if (timelineCategoryFilter === 'MILESTONE' && ev.type !== 'MILESTONE') return false;
+
+      // Date filter
+      if (timelineDateFilter) {
+        const evDateKey = toDateKey(ev.beginDt);
+        if (evDateKey !== timelineDateFilter) return false;
+      }
+
+      // Search query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const detStr = JSON.stringify(ev.details || {}).toLowerCase();
+        const noteStr = (ev.note || '').toLowerCase();
+        const typeStr = (ev.type || '').toLowerCase();
+        if (!detStr.includes(q) && !noteStr.includes(q) && !typeStr.includes(q)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [childEvents, timelineCategoryFilter, timelineDateFilter, searchQuery]);
+
+  // Group timeline stream by day
+  const timelineGroupedByDay = useMemo(() => {
+    const map = {};
+    timelineFilteredEvents.forEach(ev => {
+      const key = toDateKey(ev.beginDt);
+      if (!map[key]) map[key] = [];
+      map[key].push(ev);
+    });
+    return map;
+  }, [timelineFilteredEvents]);
+
+  const timelineDayKeys = useMemo(() => {
+    return Object.keys(timelineGroupedByDay).sort().reverse();
+  }, [timelineGroupedByDay]);
+
+  const categoryFilters = [
+    { id: 'ALL', label: t('history.filterAll') },
+    { id: 'FEEDS', label: t('categories.feeding') },
+    { id: 'SLEEP', label: t('categories.SLEEP') },
+    { id: 'DIAPER', label: t('categories.DIAPER') },
+    { id: 'PUMP', label: t('categories.PUMP') },
+    { id: 'GROWTH', label: t('categories.GROWTH') },
+    { id: 'HEALTH', label: t('categories.HEALTH') },
+    { id: 'MILESTONE', label: t('categories.firsts') },
+  ];
+
+  // Selected Day's unfiltered events (used for accurate daily statistics)
+  const rawSelectedDayEvents = useMemo(() => {
     return (eventsByDate[selectedDateKey] || []).sort((a, b) => b.beginDt - a.beginDt);
   }, [eventsByDate, selectedDateKey]);
+
+  // Selected Day's displayed events (with optional category filter)
+  const selectedEvents = useMemo(() => {
+    if (dayCategoryFilter === 'ALL') return rawSelectedDayEvents;
+    if (dayCategoryFilter === 'FEEDS') return rawSelectedDayEvents.filter(ev => ['BREAST', 'BOTTLE', 'SOLIDS', 'COMBO'].includes(ev.type));
+    if (dayCategoryFilter === 'SLEEP') return rawSelectedDayEvents.filter(ev => ev.type === 'SLEEP');
+    if (dayCategoryFilter === 'DIAPER') return rawSelectedDayEvents.filter(ev => ev.type === 'DIAPER');
+    if (dayCategoryFilter === 'PUMP') return rawSelectedDayEvents.filter(ev => ev.type === 'PUMP');
+    if (dayCategoryFilter === 'GROWTH') return rawSelectedDayEvents.filter(ev => ev.type === 'GROWTH');
+    if (dayCategoryFilter === 'HEALTH') return rawSelectedDayEvents.filter(ev => ev.type === 'HEALTH');
+    if (dayCategoryFilter === 'MILESTONE') return rawSelectedDayEvents.filter(ev => ev.type === 'MILESTONE');
+    return rawSelectedDayEvents;
+  }, [rawSelectedDayEvents, dayCategoryFilter]);
 
   // Daily statistics for selected day
   const dayStats = useMemo(() => {
@@ -349,7 +431,7 @@ export function CalendarView() {
     let wetDiapers = 0;
     let dirtyDiapers = 0;
 
-    selectedEvents.forEach(ev => {
+    rawSelectedDayEvents.forEach(ev => {
       const det = ev.details || {};
       if (ev.type === 'SLEEP') {
         const dur = ev.durationMs || (ev.endDt ? ev.endDt - ev.beginDt : 0);
@@ -379,7 +461,7 @@ export function CalendarView() {
       wetDiapers,
       dirtyDiapers,
     };
-  }, [selectedEvents]);
+  }, [rawSelectedDayEvents]);
 
   // 24-Hour Day Rhythm calculations for selected date (used in Month view)
   const selectedDayRhythm = useMemo(() => {
@@ -453,40 +535,59 @@ export function CalendarView() {
       {/* Top Header & View Mode Switcher */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
-          <h2>{language === 'nl' ? 'Kalender & Slaapritme' : 'Calendar & Rhythm'}</h2>
+          <h2>{language === 'nl' ? 'Kalender & Tijdlijn' : 'Calendar & Timeline'}</h2>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            {language === 'nl' ? `Schema & meerdaags slaapritme voor ${activeChild?.name || 'baby'}` : `Schedule & multi-day sleep rhythm for ${activeChild?.name || 'Baby'}`}
+            {viewMode === 'timeline'
+              ? (language === 'nl'
+                ? `Volledig doorzoekbaar activiteitenlogboek (${timelineFilteredEvents.length} items)`
+                : `Complete searchable activity history (${timelineFilteredEvents.length} records)`)
+              : (language === 'nl'
+                ? `Schema & meerdaags ritme voor ${activeChild?.name || 'baby'}`
+                : `Schedule & multi-day rhythm for ${activeChild?.name || 'Baby'}`)}
           </span>
         </div>
 
-        {/* View Mode Toggle: Day, Week, Month */}
+        {/* View Mode Toggle: Day, Week, Month, Timeline */}
         <div className="calendar-view-toggle">
           <button
+            type="button"
             className={`calendar-toggle-btn ${viewMode === 'day' ? 'active' : ''}`}
             onClick={() => setViewMode('day')}
             id="view-toggle-day"
             title={language === 'nl' ? '24-uurs dagritme' : '24-hour day schedule'}
           >
-            <Clock size={14} />
-            <span>{language === 'nl' ? 'Dag' : 'Day'}</span>
+            <Clock size={13} />
+            <span>{t('calendar.viewDay')}</span>
           </button>
           <button
+            type="button"
             className={`calendar-toggle-btn ${viewMode === 'week' ? 'active' : ''}`}
             onClick={() => setViewMode('week')}
             id="view-toggle-week"
             title={language === 'nl' ? '7-daags weekschema' : '7-day week rhythm'}
           >
-            <Layers size={14} />
-            <span>{language === 'nl' ? 'Week' : 'Week'}</span>
+            <Layers size={13} />
+            <span>{t('calendar.viewWeek')}</span>
           </button>
           <button
+            type="button"
             className={`calendar-toggle-btn ${viewMode === 'month' ? 'active' : ''}`}
             onClick={() => setViewMode('month')}
             id="view-toggle-month"
             title={language === 'nl' ? 'Volledig maandoverzicht' : 'Full month calendar'}
           >
-            <CalendarDays size={14} />
-            <span>{language === 'nl' ? 'Maand' : 'Month'}</span>
+            <CalendarDays size={13} />
+            <span>{t('calendar.viewMonth')}</span>
+          </button>
+          <button
+            type="button"
+            className={`calendar-toggle-btn ${viewMode === 'timeline' ? 'active' : ''}`}
+            onClick={() => setViewMode('timeline')}
+            id="view-toggle-timeline"
+            title={language === 'nl' ? 'Chronologisch activiteitenlogboek met zoekfunctie' : 'Searchable chronological timeline feed'}
+          >
+            <ListFilter size={13} />
+            <span>{t('calendar.viewTimeline')}</span>
           </button>
         </div>
       </div>
@@ -884,98 +985,240 @@ export function CalendarView() {
       )}
 
       {/* ========================================================
-          SELECTED DAY INSPECTOR & CHRONOLOGICAL ACTIVITY FEED
+          MODE 4: COMPLETE SEARCHABLE CHRONOLOGICAL TIMELINE
           ======================================================== */}
-      {/* 1. Daily Summary Cards for Selected Date */}
-      <div className="day-stats-grid">
-        {/* Sleep Card */}
-        <div className="trend-card" style={{ padding: '0.85rem 1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-slate)', fontSize: '0.78rem', fontWeight: 600 }}>
-            <Moon size={15} />
-            <span>{language === 'nl' ? `Slaap op ${formatDateHeading(selectedDateKey, language)}` : `Sleep on ${formatDateHeading(selectedDateKey)}`}</span>
-          </div>
-          <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: '0.25rem', color: 'var(--text-primary)' }}>
-            {dayStats.totalSleepMs > 0 ? formatDurationMs(dayStats.totalSleepMs, language, { showSeconds: false }) : '0m'}
-          </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-            {dayStats.napCount} {language === 'nl' ? (dayStats.napCount === 1 ? 'slaapblok' : 'slaapblokken') : (dayStats.napCount === 1 ? 'sleep stretch' : 'sleep stretches')}
-          </div>
-        </div>
-
-        {/* Feeding Card */}
-        <div className="trend-card" style={{ padding: '0.85rem 1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-terracotta)', fontSize: '0.78rem', fontWeight: 600 }}>
-            <Utensils size={15} />
-            <span>{t('categories.feeding')}</span>
-          </div>
-          <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: '0.25rem', color: 'var(--text-primary)' }}>
-            {dayStats.totalNursingMs > 0
-              ? formatDurationMs(dayStats.totalNursingMs, language, { showSeconds: false })
-              : dayStats.totalBottleFloz > 0
-              ? formatVolume(dayStats.totalBottleFloz, preferences.volumeUnit)
-              : '0m'}
-          </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-            {dayStats.feedCount} {language === 'nl' ? (dayStats.feedCount === 1 ? 'voeding' : 'voedingen') : (dayStats.feedCount === 1 ? 'session' : 'sessions')}
-          </div>
-        </div>
-
-        {/* Diapers Card */}
-        <div className="trend-card" style={{ padding: '0.85rem 1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-caramel)', fontSize: '0.78rem', fontWeight: 600 }}>
-            <Sparkles size={15} />
-            <span>{t('categories.diaper')}</span>
-          </div>
-          <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: '0.25rem', color: 'var(--text-primary)' }}>
-            {dayStats.diaperTotal}
-          </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-            {dayStats.wetDiapers} {language === 'nl' ? 'nat' : 'wet'} • {dayStats.dirtyDiapers} {language === 'nl' ? 'kaka' : 'dirty'}
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Selected Day's Chronological Feed */}
-      <section className="timeline-section" style={{ marginTop: '0.5rem' }}>
-        <div className="timeline-header">
-          <div className="section-label" style={{ margin: 0 }}>
-            <span>{formatDateHeading(selectedDateKey, language)} ({selectedEvents.length} {language === 'nl' ? 'activiteiten' : 'activities'})</span>
-          </div>
-
-          <button
-            className="btn-primary"
-            style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
-            onClick={() => {
-              const [y, m, d] = selectedDateKey.split('-').map(Number);
-              const customDate = new Date(y, m - 1, d, 12, 0).getTime();
-              openModal('BREAST', { beginDt: customDate });
-            }}
-          >
-            <Plus size={14} style={{ marginRight: 4 }} />
-            {language === 'nl' ? 'Op deze datum loggen' : 'Log on this Date'}
-          </button>
-        </div>
-
-        {selectedEvents.length === 0 ? (
-          <div className="timeline-empty" style={{ padding: '2rem 1rem' }}>
-            <div className="empty-icon-wrap" style={{ width: 44, height: 44 }}>
-              <CalendarIcon size={20} />
+      {viewMode === 'timeline' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.25rem' }}>
+          {/* Search and Date Filter Bar */}
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
+              <Search
+                size={16}
+                color="var(--text-tertiary)"
+                style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }}
+              />
+              <input
+                type="text"
+                className="form-input"
+                style={{ paddingLeft: '2.2rem', paddingRight: searchQuery ? '2rem' : '0.8rem' }}
+                placeholder={t('history.searchPlaceholder')}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  style={{
+                    position: 'absolute',
+                    right: 8,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--text-tertiary)',
+                    padding: 4,
+                  }}
+                  title="Clear search"
+                >
+                  <X size={14} />
+                </button>
+              )}
             </div>
-            <h3 style={{ fontSize: '0.95rem' }}>{language === 'nl' ? 'Geen activiteiten geregistreerd op deze datum' : 'No activities logged on this date'}</h3>
-            <p style={{ fontSize: '0.8rem' }}>
-              {language === 'nl'
-                ? 'Kies een andere dag op het schema of tik op "Op deze datum loggen" om te beginnen.'
-                : 'Select another day on the schedule or tap "Log on this Date" to add an entry.'}
-            </p>
+
+            <input
+              type="date"
+              className="form-input"
+              style={{ width: 'auto' }}
+              value={timelineDateFilter}
+              onChange={e => setTimelineDateFilter(e.target.value)}
+            />
+
+            {timelineDateFilter && (
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{ padding: '0.45rem 0.85rem', fontSize: '0.8rem' }}
+                onClick={() => setTimelineDateFilter('')}
+              >
+                {t('history.clearDate')}
+              </button>
+            )}
           </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {selectedEvents.map(ev => (
-              <TimelineItem key={ev.id} event={ev} />
+
+          {/* Category Filter Chips */}
+          <div className="timeline-filters">
+            {categoryFilters.map(f => (
+              <button
+                key={f.id}
+                type="button"
+                className={`filter-chip ${timelineCategoryFilter === f.id ? 'active' : ''}`}
+                onClick={() => setTimelineCategoryFilter(f.id)}
+              >
+                {f.label}
+              </button>
             ))}
           </div>
-        )}
-      </section>
+
+          {/* Chronological Stream */}
+          {timelineDayKeys.length === 0 ? (
+            <div className="timeline-empty">
+              <FileText size={32} color="var(--text-tertiary)" />
+              <h3>{t('history.noEventsTitle')}</h3>
+              <p>{t('history.noEventsDesc')}</p>
+            </div>
+          ) : (
+            timelineDayKeys.map(dateKey => (
+              <div key={dateKey} className="timeline-day-group">
+                <div className="timeline-day-label">
+                  <CalendarIcon size={14} color="var(--text-tertiary)" />
+                  <span>{formatDateHeading(dateKey, language)}</span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', fontWeight: 400 }}>
+                    {t('history.entriesCount', { count: timelineGroupedByDay[dateKey].length })}
+                  </span>
+                </div>
+
+                {timelineGroupedByDay[dateKey].map(ev => (
+                  <TimelineItem key={ev.id} event={ev} />
+                ))}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* ========================================================
+          MODES 1, 2, 3: SELECTED DAY INSPECTOR & CHRONOLOGICAL ACTIVITY FEED
+          ======================================================== */}
+      {viewMode !== 'timeline' && (
+        <>
+          {/* 1. Daily Summary Cards for Selected Date */}
+          <div className="day-stats-grid">
+            {/* Sleep Card */}
+            <div className="trend-card" style={{ padding: '0.85rem 1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-slate)', fontSize: '0.78rem', fontWeight: 600 }}>
+                <Moon size={15} />
+                <span>{language === 'nl' ? `Slaap op ${formatDateHeading(selectedDateKey, language)}` : `Sleep on ${formatDateHeading(selectedDateKey)}`}</span>
+              </div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: '0.25rem', color: 'var(--text-primary)' }}>
+                {dayStats.totalSleepMs > 0 ? formatDurationMs(dayStats.totalSleepMs, language, { showSeconds: false }) : '0m'}
+              </div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                {dayStats.napCount} {language === 'nl' ? (dayStats.napCount === 1 ? 'slaapblok' : 'slaapblokken') : (dayStats.napCount === 1 ? 'sleep stretch' : 'sleep stretches')}
+              </div>
+            </div>
+
+            {/* Feeding Card */}
+            <div className="trend-card" style={{ padding: '0.85rem 1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-terracotta)', fontSize: '0.78rem', fontWeight: 600 }}>
+                <Utensils size={15} />
+                <span>{t('categories.feeding')}</span>
+              </div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: '0.25rem', color: 'var(--text-primary)' }}>
+                {dayStats.totalNursingMs > 0
+                  ? formatDurationMs(dayStats.totalNursingMs, language, { showSeconds: false })
+                  : dayStats.totalBottleFloz > 0
+                  ? formatVolume(dayStats.totalBottleFloz, preferences.volumeUnit)
+                  : '0m'}
+              </div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                {dayStats.feedCount} {language === 'nl' ? (dayStats.feedCount === 1 ? 'voeding' : 'voedingen') : (dayStats.feedCount === 1 ? 'session' : 'sessions')}
+              </div>
+            </div>
+
+            {/* Diapers Card */}
+            <div className="trend-card" style={{ padding: '0.85rem 1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-caramel)', fontSize: '0.78rem', fontWeight: 600 }}>
+                <Sparkles size={15} />
+                <span>{t('categories.diaper')}</span>
+              </div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: '0.25rem', color: 'var(--text-primary)' }}>
+                {dayStats.diaperTotal}
+              </div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                {dayStats.wetDiapers} {language === 'nl' ? 'nat' : 'wet'} • {dayStats.dirtyDiapers} {language === 'nl' ? 'kaka' : 'dirty'}
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Selected Day's Chronological Feed */}
+          <section className="timeline-section" style={{ marginTop: '0.5rem' }}>
+            <div className="timeline-header">
+              <div className="section-label" style={{ margin: 0 }}>
+                <span>{formatDateHeading(selectedDateKey, language)} ({selectedEvents.length} {language === 'nl' ? 'activiteiten' : 'activities'})</span>
+              </div>
+
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
+                onClick={() => {
+                  const [y, m, d] = selectedDateKey.split('-').map(Number);
+                  const customDate = new Date(y, m - 1, d, 12, 0).getTime();
+                  openModal('BREAST', { beginDt: customDate });
+                }}
+              >
+                <Plus size={14} style={{ marginRight: 4 }} />
+                {language === 'nl' ? 'Op deze datum loggen' : 'Log on this Date'}
+              </button>
+            </div>
+
+            {/* Category Filter Chips for Selected Day if day has events */}
+            {rawSelectedDayEvents.length > 3 && (
+              <div className="timeline-filters" style={{ marginTop: '0.25rem' }}>
+                {categoryFilters.map(f => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    className={`filter-chip ${dayCategoryFilter === f.id ? 'active' : ''}`}
+                    onClick={() => setDayCategoryFilter(f.id)}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {selectedEvents.length === 0 ? (
+              <div className="timeline-empty" style={{ padding: '2rem 1rem' }}>
+                <div className="empty-icon-wrap" style={{ width: 44, height: 44 }}>
+                  <CalendarIcon size={20} />
+                </div>
+                <h3 style={{ fontSize: '0.95rem' }}>{language === 'nl' ? 'Geen activiteiten geregistreerd op deze datum' : 'No activities logged on this date'}</h3>
+                <p style={{ fontSize: '0.8rem' }}>
+                  {language === 'nl'
+                    ? 'Kies een andere dag op het schema of tik op "Op deze datum loggen" om te beginnen.'
+                    : 'Select another day on the schedule or tap "Log on this Date" to add an entry.'}
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {selectedEvents.map(ev => (
+                  <TimelineItem key={ev.id} event={ev} />
+                ))}
+              </div>
+            )}
+
+            {/* Jump to Full Timeline Stream Footer Button */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.25rem', marginBottom: '0.75rem' }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{ padding: '0.55rem 1.15rem', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '0.45rem', borderRadius: 'var(--radius-full)' }}
+                onClick={() => {
+                  setTimelineDateFilter(selectedDateKey);
+                  setViewMode('timeline');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              >
+                <ListFilter size={14} />
+                <span>{language === 'nl' ? `Bekijk alle activiteiten in tijdlijn` : `View all activities in Timeline`}</span>
+              </button>
+            </div>
+          </section>
+        </>
+      )}
     </div>
   );
 }
