@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Clock, Play } from 'lucide-react';
+import { formatTimerClock } from '../utils/formatters';
 
 /**
  * Reusable component for starting a live timer with custom start time options:
- * - "Now" (default 0m offset)
- * - Quick presets: 5m ago, 10m ago, 15m ago, 30m ago
- * - Exact time input (HH:MM)
+ * - "Now" (default 0m offset, starts at exact current second)
+ * - Quick presets: 5m ago, 10m ago, 15m ago, 30m ago (accurate to the second)
+ * - Exact time input (HH:MM or HH:MM:SS)
  */
 export function TimerStartCard({
   title,
@@ -23,39 +24,46 @@ export function TimerStartCard({
   const defaultTitle = isDutch ? 'Live timer starten' : 'Start Live Timer';
   const defaultSubtitle = isDutch ? 'Volg in real-time' : 'Track in real time';
 
+  const formatCurrentTime = (date = new Date()) => {
+    const h = String(date.getHours()).padStart(2, '0');
+    const m = String(date.getMinutes()).padStart(2, '0');
+    const s = String(date.getSeconds()).padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  };
+
   const [offsetMinutes, setOffsetMinutes] = useState(0);
-  const [timeStr, setTimeStr] = useState(() => {
-    const d = new Date();
-    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-  });
+  const [timeStr, setTimeStr] = useState(() => formatCurrentTime());
 
   const handleSelectOffset = (mins) => {
     setOffsetMinutes(mins);
-    const target = new Date(Date.now() - mins * 60000);
-    const h = String(target.getHours()).padStart(2, '0');
-    const m = String(target.getMinutes()).padStart(2, '0');
-    setTimeStr(`${h}:${m}`);
+    if (mins === 0) {
+      setTimeStr(formatCurrentTime());
+    } else {
+      const target = new Date(Date.now() - mins * 60000);
+      setTimeStr(formatCurrentTime(target));
+    }
   };
 
   const handleManualTimeChange = (e) => {
     const val = e.target.value;
     setTimeStr(val);
-    if (!val) return;
-    const [h, m] = val.split(':').map(Number);
-    const d = new Date();
-    d.setHours(h, m, 0, 0);
-    if (d.getTime() > Date.now() + 60000) {
-      d.setDate(d.getDate() - 1);
-    }
-    const diffMins = Math.round((Date.now() - d.getTime()) / 60000);
-    setOffsetMinutes(diffMins >= 0 ? diffMins : 0);
+    setOffsetMinutes(null);
   };
 
   const getComputedStartTs = () => {
+    if (offsetMinutes === 0) {
+      return Date.now();
+    }
+    if (offsetMinutes !== null && offsetMinutes > 0) {
+      return Date.now() - offsetMinutes * 60000;
+    }
     if (!timeStr) return Date.now();
-    const [h, m] = timeStr.split(':').map(Number);
+    const parts = timeStr.split(':').map(Number);
+    const h = parts[0] || 0;
+    const m = parts[1] || 0;
+    const s = parts.length > 2 ? parts[2] : 0;
     const d = new Date();
-    d.setHours(h, m, 0, 0);
+    d.setHours(h, m, s, 0);
     if (d.getTime() > Date.now() + 60000) {
       d.setDate(d.getDate() - 1);
     }
@@ -69,7 +77,7 @@ export function TimerStartCard({
     }
   };
 
-  const elapsedPreviewMinutes = Math.max(0, Math.round((Date.now() - getComputedStartTs()) / 60000));
+  const elapsedMs = Math.max(0, Date.now() - getComputedStartTs());
 
   return (
     <div className="timer-start-card">
@@ -96,17 +104,18 @@ export function TimerStartCard({
             <span>{isDutch ? 'Gestart om:' : 'Started at:'}</span>
             <input
               type="time"
+              step="1"
               className="timer-time-input"
               value={timeStr}
               onChange={handleManualTimeChange}
-              title={isDutch ? 'Exacte starttijd instellen' : 'Set exact start time'}
+              title={isDutch ? 'Exacte starttijd instellen (uu:mm:ss)' : 'Set exact start time (hh:mm:ss)'}
               id="timer-start-time-input"
             />
           </div>
 
-          {elapsedPreviewMinutes > 0 ? (
+          {elapsedMs >= 1000 ? (
             <span className="timer-start-preview-pill active">
-              {isDutch ? `Start met ${elapsedPreviewMinutes}m verstreken` : `Starts with ${elapsedPreviewMinutes}m elapsed`}
+              {isDutch ? `Start met ${formatTimerClock(elapsedMs)} verstreken` : `Starts with ${formatTimerClock(elapsedMs)} elapsed`}
             </span>
           ) : (
             <span className="timer-start-preview-pill">

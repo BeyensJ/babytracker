@@ -4,15 +4,16 @@
  */
 
 /**
- * Format timestamp in ms to time string e.g. "14:30" (nl) or "2:30 PM" (en)
+ * Format timestamp in ms to time string e.g. "14:30" or "14:30:15" (nl) or "2:30 PM" / "2:30:15 PM" (en)
  */
-export function formatTime(ts, lang = 'nl') {
+export function formatTime(ts, lang = 'nl', includeSeconds = false) {
   if (!ts) return '';
   const date = new Date(ts);
   const isDutch = lang === 'nl';
   return date.toLocaleTimeString(isDutch ? 'nl-BE' : 'en-US', {
     hour: 'numeric',
     minute: '2-digit',
+    ...(includeSeconds ? { second: '2-digit' } : {}),
     hour12: !isDutch,
   });
 }
@@ -44,20 +45,42 @@ export function formatRelative(ts, nowMs = Date.now(), lang = 'nl') {
 }
 
 /**
- * Format duration in milliseconds e.g. "1u 45m" (nl) or "1h 45m" (en)
+ * Format duration in milliseconds with second-level accuracy
+ * e.g. "45s", "8m 24s", "1u 45m 12s" (nl) or "45s", "8m 24s", "1h 45m 12s" (en)
  */
-export function formatDurationMs(ms, lang = 'nl') {
-  if (!ms || ms <= 0) return '0 min';
-  const totalSeconds = Math.floor(ms / 1000);
+export function formatDurationMs(ms, lang = 'nl', options = {}) {
+  if (!ms || ms <= 0) {
+    return options.showSeconds === false ? '0m' : '0s';
+  }
+  const totalSeconds = Math.round(ms / 1000);
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
   const isDutch = lang === 'nl';
   const hUnit = isDutch ? 'u' : 'h';
 
-  if (hours > 0) {
-    return minutes > 0 ? `${hours}${hUnit} ${minutes}m` : `${hours}${hUnit}`;
+  if (options.showSeconds === false) {
+    if (hours > 0) {
+      return minutes > 0 ? `${hours}${hUnit} ${minutes}m` : `${hours}${hUnit}`;
+    }
+    return `${minutes}m`;
   }
-  return `${minutes} min`;
+
+  // Under 1 minute: display exact seconds e.g. "45s"
+  if (totalSeconds < 60) {
+    return `${totalSeconds}s`;
+  }
+
+  // Under 1 hour: display "8m 24s" or "8m"
+  if (hours === 0) {
+    return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
+  }
+
+  // 1 hour or more: display "1u 24m 15s", "1u 24m", or "1u"
+  if (seconds > 0) {
+    return `${hours}${hUnit} ${minutes}m ${seconds}s`;
+  }
+  return minutes > 0 ? `${hours}${hUnit} ${minutes}m` : `${hours}${hUnit}`;
 }
 
 /**

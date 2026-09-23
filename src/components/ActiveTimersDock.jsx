@@ -113,7 +113,7 @@ function BreastTimerRow({ timer, now, onSwitch, onPause, onResume, onFinish, onU
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.2rem' }}>
             <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.7)' }}>
-              {t('timers.startedAt', { time: formatTime(sessionStart, language) })}
+              {t('timers.startedAt', { time: formatTime(sessionStart, language, true) })}
             </span>
             <button
               type="button"
@@ -180,7 +180,7 @@ function SleepTimerRow({ timer, now, onFinish, onUpdateStartTime, t, language })
           <div className="timer-title">{language === 'nl' ? 'Slaapt nu' : 'Sleeping Now'}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.15rem' }}>
             <span className="timer-subtitle">
-              {t('timers.startedAt', { time: formatTime(timer.startMs, language) })}
+              {t('timers.startedAt', { time: formatTime(timer.startMs, language, true) })}
             </span>
             <button
               type="button"
@@ -228,7 +228,7 @@ function PumpTimerRow({ timer, now, onFinish, onUpdateStartTime, t, language }) 
           <div className="timer-title">{language === 'nl' ? 'Afkolftimer' : 'Pumping Session'}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.15rem' }}>
             <span className="timer-subtitle">
-              {t('timers.startedAt', { time: formatTime(timer.startMs, language) })}
+              {t('timers.startedAt', { time: formatTime(timer.startMs, language, true) })}
             </span>
             <button
               type="button"

@@ -254,7 +254,6 @@ export const translations = {
       insecureOptB: 'Option B (Chrome on Android/Desktop): Open {flagUrl}, add this exact URL ({url}), set to Enabled, and restart Chrome.',
     },
 
-    // Modals Common
     common: {
       cancel: 'Cancel',
       save: 'Save Changes',
@@ -265,6 +264,10 @@ export const translations = {
       duration: 'Duration',
       quickPresets: 'Quick Presets',
       close: 'Close',
+      min: 'min',
+      sec: 'sec',
+      minutes: 'Minutes',
+      seconds: 'Seconds',
     },
 
     // Bottle Modal
@@ -766,6 +769,10 @@ export const translations = {
       duration: 'Duur',
       quickPresets: 'Snelle keuzes',
       close: 'Sluiten',
+      min: 'min',
+      sec: 'sec',
+      minutes: 'Minuten',
+      seconds: 'Seconden',
     },
 
     // Flesje Dialoog

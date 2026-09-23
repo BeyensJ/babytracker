@@ -13,14 +13,21 @@ export function SleepModal() {
     return modalInitialData?.details?.sleepType || 'NAP';
   });
 
+  const formatTimeStr = (ts) => {
+    const d = new Date(ts);
+    const h = String(d.getHours()).padStart(2, '0');
+    const m = String(d.getMinutes()).padStart(2, '0');
+    const s = String(d.getSeconds()).padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  };
+
   const [startDate, setStartDate] = useState(() => {
     const d = new Date(modalInitialData?.beginDt || Date.now() - 60 * 60 * 1000);
     return d.toISOString().split('T')[0];
   });
 
   const [startTime, setStartTime] = useState(() => {
-    const d = new Date(modalInitialData?.beginDt || Date.now() - 60 * 60 * 1000);
-    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    return formatTimeStr(modalInitialData?.beginDt || (Date.now() - 60 * 60 * 1000));
   });
 
   const [endDate, setEndDate] = useState(() => {
@@ -29,17 +36,25 @@ export function SleepModal() {
   });
 
   const [endTime, setEndTime] = useState(() => {
-    const d = new Date(modalInitialData?.endDt || Date.now());
-    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    return formatTimeStr(modalInitialData?.endDt || Date.now());
   });
 
   const [note, setNote] = useState(modalInitialData?.note || '');
 
   if (activeModal !== 'SLEEP') return null;
 
-  // Calculate duration preview
-  const startTs = new Date(`${startDate}T${startTime}`).getTime();
-  const endTs = new Date(`${endDate}T${endTime}`).getTime();
+  // Calculate duration preview with second precision
+  const parseTimeOnDate = (dateStr, timeStr) => {
+    const [y, mon, day] = dateStr.split('-').map(Number);
+    const parts = (timeStr || '').split(':').map(Number);
+    const h = parts[0] || 0;
+    const m = parts[1] || 0;
+    const s = parts.length > 2 ? parts[2] : 0;
+    return new Date(y, mon - 1, day, h, m, s, 0).getTime();
+  };
+
+  const startTs = parseTimeOnDate(startDate, startTime);
+  const endTs = parseTimeOnDate(endDate, endTime);
   const durationMs = Math.max(0, endTs - startTs);
 
   const handleSave = (e) => {
@@ -49,7 +64,10 @@ export function SleepModal() {
       beginDt: startTs,
       endDt: endTs,
       durationMs,
-      details: { sleepType },
+      details: {
+        sleepType,
+        durationSeconds: Math.round(durationMs / 1000),
+      },
       note,
     };
 
@@ -137,6 +155,7 @@ export function SleepModal() {
                 <label className="form-label">{t('sleepModal.fellAsleep')}</label>
                 <input
                   type="time"
+                  step="1"
                   className="form-input"
                   value={startTime}
                   onChange={e => setStartTime(e.target.value)}
@@ -147,6 +166,7 @@ export function SleepModal() {
                 <label className="form-label">{t('sleepModal.wokeUp')}</label>
                 <input
                   type="time"
+                  step="1"
                   className="form-input"
                   value={endTime}
                   onChange={e => setEndTime(e.target.value)}

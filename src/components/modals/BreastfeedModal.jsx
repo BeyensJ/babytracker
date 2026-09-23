@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Heart, X, Clock } from 'lucide-react';
 import { TimerStartCard } from '../TimerStartCard';
+import { formatDurationMs } from '../../utils/formatters';
 
 export function BreastfeedModal() {
   const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, startBreastTimer, t, language } = useApp();
@@ -11,30 +12,48 @@ export function BreastfeedModal() {
   const [side, setSide] = useState(modalInitialData?.details?.side || modalInitialData?.side || 'LEFT');
   const [leftMinutes, setLeftMinutes] = useState(() => {
     const ms = modalInitialData?.details?.leftDurationMs || modalInitialData?.leftDurationMs || 0;
-    return ms > 0 ? Math.round(ms / 60000) : (side === 'LEFT' || side === 'BOTH' ? 10 : 0);
+    if (ms > 0) return Math.floor(ms / 60000);
+    return (side === 'LEFT' || side === 'BOTH') ? 10 : 0;
+  });
+  const [leftSeconds, setLeftSeconds] = useState(() => {
+    const ms = modalInitialData?.details?.leftDurationMs || modalInitialData?.leftDurationMs || 0;
+    if (ms > 0) return Math.round((ms % 60000) / 1000);
+    return 0;
   });
   const [rightMinutes, setRightMinutes] = useState(() => {
     const ms = modalInitialData?.details?.rightDurationMs || modalInitialData?.rightDurationMs || 0;
-    return ms > 0 ? Math.round(ms / 60000) : (side === 'RIGHT' || side === 'BOTH' ? 10 : 0);
+    if (ms > 0) return Math.floor(ms / 60000);
+    return (side === 'RIGHT' || side === 'BOTH') ? 10 : 0;
+  });
+  const [rightSeconds, setRightSeconds] = useState(() => {
+    const ms = modalInitialData?.details?.rightDurationMs || modalInitialData?.rightDurationMs || 0;
+    if (ms > 0) return Math.round((ms % 60000) / 1000);
+    return 0;
   });
   const [note, setNote] = useState(modalInitialData?.note || '');
   const [timeStr, setTimeStr] = useState(() => {
     const d = new Date(modalInitialData?.beginDt || Date.now());
-    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    const h = String(d.getHours()).padStart(2, '0');
+    const m = String(d.getMinutes()).padStart(2, '0');
+    const s = String(d.getSeconds()).padStart(2, '0');
+    return `${h}:${m}:${s}`;
   });
 
   if (activeModal !== 'BREAST') return null;
 
+  const leftMs = (Math.max(0, Number(leftMinutes) || 0) * 60 + Math.max(0, Number(leftSeconds) || 0)) * 1000;
+  const rightMs = (Math.max(0, Number(rightMinutes) || 0) * 60 + Math.max(0, Number(rightSeconds) || 0)) * 1000;
+  const totalDurationMs = leftMs + rightMs;
+
   const handleSave = (e) => {
     e.preventDefault();
-    const [h, m] = timeStr.split(':').map(Number);
+    const parts = timeStr.split(':').map(Number);
+    const h = parts[0] || 0;
+    const m = parts[1] || 0;
+    const s = parts.length > 2 ? parts[2] : 0;
     const dateObj = new Date(modalInitialData?.beginDt || Date.now());
-    dateObj.setHours(h, m, 0, 0);
+    dateObj.setHours(h, m, s, 0);
     const beginDt = dateObj.getTime();
-
-    const leftMs = Number(leftMinutes) * 60000;
-    const rightMs = Number(rightMinutes) * 60000;
-    const totalDurationMs = leftMs + rightMs;
 
     const eventPayload = {
       type: 'BREAST',
@@ -45,6 +64,9 @@ export function BreastfeedModal() {
         side,
         leftDurationMs: leftMs,
         rightDurationMs: rightMs,
+        leftDurationSeconds: Math.round(leftMs / 1000),
+        rightDurationSeconds: Math.round(rightMs / 1000),
+        totalDurationSeconds: Math.round(totalDurationMs / 1000),
       },
       note,
     };
@@ -117,8 +139,18 @@ export function BreastfeedModal() {
                     className={`segmented-btn ${side === s ? 'active' : ''}`}
                     onClick={() => {
                       setSide(s);
-                      if (s === 'LEFT' && rightMinutes > 0) setRightMinutes(0);
-                      if (s === 'RIGHT' && leftMinutes > 0) setLeftMinutes(0);
+                      if (s === 'LEFT') {
+                        setRightMinutes(0);
+                        setRightSeconds(0);
+                        if (Number(leftMinutes) === 0 && Number(leftSeconds) === 0) setLeftMinutes(10);
+                      } else if (s === 'RIGHT') {
+                        setLeftMinutes(0);
+                        setLeftSeconds(0);
+                        if (Number(rightMinutes) === 0 && Number(rightSeconds) === 0) setRightMinutes(10);
+                      } else if (s === 'BOTH') {
+                        if (Number(leftMinutes) === 0 && Number(leftSeconds) === 0) setLeftMinutes(10);
+                        if (Number(rightMinutes) === 0 && Number(rightSeconds) === 0) setRightMinutes(10);
+                      }
                     }}
                   >
                     {s === 'LEFT' ? t('breastModal.left') : s === 'RIGHT' ? t('breastModal.right') : t('breastModal.both')}
@@ -127,35 +159,91 @@ export function BreastfeedModal() {
               </div>
             </div>
 
-            {/* Durations */}
+            {/* Durations with Minutes and Seconds */}
             <div style={{ display: 'grid', gridTemplateColumns: side === 'BOTH' ? '1fr 1fr' : '1fr', gap: '0.75rem' }}>
               {(side === 'LEFT' || side === 'BOTH') && (
                 <div className="form-group">
-                  <label className="form-label">{t('breastModal.left')} (min)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="180"
-                    className="form-input"
-                    value={leftMinutes}
-                    onChange={e => setLeftMinutes(e.target.value)}
-                  />
+                  <label className="form-label">{t('breastModal.left')}</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="number"
+                        min="0"
+                        max="180"
+                        className="form-input"
+                        style={{ paddingRight: '2rem' }}
+                        value={leftMinutes}
+                        onChange={e => setLeftMinutes(e.target.value)}
+                        placeholder="0"
+                      />
+                      <span style={{ position: 'absolute', right: '0.6rem', top: '50%', transform: 'translateY(-50%)', fontSize: '0.75rem', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>
+                        min
+                      </span>
+                    </div>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="number"
+                        min="0"
+                        max="59"
+                        className="form-input"
+                        style={{ paddingRight: '2rem' }}
+                        value={leftSeconds}
+                        onChange={e => setLeftSeconds(e.target.value)}
+                        placeholder="0"
+                      />
+                      <span style={{ position: 'absolute', right: '0.6rem', top: '50%', transform: 'translateY(-50%)', fontSize: '0.75rem', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>
+                        sec
+                      </span>
+                    </div>
+                  </div>
                 </div>
               )}
 
               {(side === 'RIGHT' || side === 'BOTH') && (
                 <div className="form-group">
-                  <label className="form-label">{t('breastModal.right')} (min)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="180"
-                    className="form-input"
-                    value={rightMinutes}
-                    onChange={e => setRightMinutes(e.target.value)}
-                  />
+                  <label className="form-label">{t('breastModal.right')}</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="number"
+                        min="0"
+                        max="180"
+                        className="form-input"
+                        style={{ paddingRight: '2rem' }}
+                        value={rightMinutes}
+                        onChange={e => setRightMinutes(e.target.value)}
+                        placeholder="0"
+                      />
+                      <span style={{ position: 'absolute', right: '0.6rem', top: '50%', transform: 'translateY(-50%)', fontSize: '0.75rem', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>
+                        min
+                      </span>
+                    </div>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="number"
+                        min="0"
+                        max="59"
+                        className="form-input"
+                        style={{ paddingRight: '2rem' }}
+                        value={rightSeconds}
+                        onChange={e => setRightSeconds(e.target.value)}
+                        placeholder="0"
+                      />
+                      <span style={{ position: 'absolute', right: '0.6rem', top: '50%', transform: 'translateY(-50%)', fontSize: '0.75rem', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>
+                        sec
+                      </span>
+                    </div>
+                  </div>
                 </div>
               )}
+            </div>
+
+            {/* Total Duration Summary Callout */}
+            <div style={{ backgroundColor: 'var(--color-terracotta-light)', color: 'var(--color-terracotta)', borderRadius: 'var(--radius-md)', padding: '0.65rem 0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{t('common.duration')}</span>
+              <span style={{ fontSize: '1.1rem', fontWeight: 700 }}>
+                {formatDurationMs(totalDurationMs, language)}
+              </span>
             </div>
 
             {/* Time of Feed */}
@@ -163,6 +251,7 @@ export function BreastfeedModal() {
               <label className="form-label">{t('common.time')}</label>
               <input
                 type="time"
+                step="1"
                 className="form-input"
                 value={timeStr}
                 onChange={e => setTimeStr(e.target.value)}

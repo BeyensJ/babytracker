@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { triggerHaptic } from '../../utils/haptics';
 import { Pipette, X, Plus, Minus, ArrowRightLeft, Clock } from 'lucide-react';
 import { TimerStartCard } from '../TimerStartCard';
+import { formatDurationMs } from '../../utils/formatters';
 
 export function PumpModal() {
   const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, startPumpTimer, t, language } = useApp();
@@ -48,14 +49,22 @@ export function PumpModal() {
 
   const [durationMin, setDurationMin] = useState(() => {
     const ms = modalInitialData?.durationMs || 15 * 60 * 1000;
-    return Math.round(ms / 60000);
+    return Math.floor(ms / 60000);
+  });
+
+  const [durationSec, setDurationSec] = useState(() => {
+    const ms = modalInitialData?.durationMs || 0;
+    return Math.round((ms % 60000) / 1000);
   });
 
   const [note, setNote] = useState(modalInitialData?.note || '');
 
   const [timeStr, setTimeStr] = useState(() => {
     const d = new Date(modalInitialData?.beginDt || Date.now());
-    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    const h = String(d.getHours()).padStart(2, '0');
+    const m = String(d.getMinutes()).padStart(2, '0');
+    const s = String(d.getSeconds()).padStart(2, '0');
+    return `${h}:${m}:${s}`;
   });
 
   if (activeModal !== 'PUMP') return null;
@@ -128,11 +137,14 @@ export function PumpModal() {
 
   const handleSave = (e) => {
     e.preventDefault();
-    const [h, m] = timeStr.split(':').map(Number);
+    const parts = timeStr.split(':').map(Number);
+    const h = parts[0] || 0;
+    const m = parts[1] || 0;
+    const s = parts.length > 2 ? parts[2] : 0;
     const dateObj = new Date(modalInitialData?.beginDt || Date.now());
-    dateObj.setHours(h, m, 0, 0);
+    dateObj.setHours(h, m, s, 0);
     const beginDt = dateObj.getTime();
-    const durationMs = Number(durationMin) * 60000;
+    const durationMs = (Math.max(0, Number(durationMin) || 0) * 60 + Math.max(0, Number(durationSec) || 0)) * 1000;
 
     const finalLeftFloz = isMl ? numLeft / 29.5735 : numLeft;
     const finalRightFloz = isMl ? numRight / 29.5735 : numRight;
@@ -152,6 +164,7 @@ export function PumpModal() {
         leftFloz: Math.round(finalLeftFloz * 10000) / 10000,
         rightFloz: Math.round(finalRightFloz * 10000) / 10000,
         totalFloz: Math.round(finalTotalFloz * 10000) / 10000,
+        durationSeconds: Math.round(durationMs / 1000),
       },
       note,
     };
@@ -409,17 +422,20 @@ export function PumpModal() {
 
             {/* Duration */}
             <div className="form-group">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label className="form-label">{t('pumpModal.sessionDuration')} ({t('common.duration')})</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                <label className="form-label" style={{ marginBottom: 0 }}>
+                  {t('pumpModal.sessionDuration')} ({formatDurationMs((Math.max(0, Number(durationMin) || 0) * 60 + Math.max(0, Number(durationSec) || 0)) * 1000, language)})
+                </label>
                 <div style={{ display: 'flex', gap: '0.3rem' }}>
                   {[10, 15, 20, 30].map((m) => (
                     <button
                       key={m}
                       type="button"
-                      className={`pump-chip-btn ${durationMin === m ? 'chip-btn selected berry' : ''}`}
+                      className={`pump-chip-btn ${durationMin === m && Number(durationSec) === 0 ? 'chip-btn selected berry' : ''}`}
                       onClick={() => {
                         triggerHaptic('light', preferences?.haptics);
                         setDurationMin(m);
+                        setDurationSec(0);
                       }}
                       style={{ padding: '0.2rem 0.5rem' }}
                     >
@@ -428,14 +444,38 @@ export function PumpModal() {
                   ))}
                 </div>
               </div>
-              <input
-                type="number"
-                min="1"
-                max="180"
-                className="form-input"
-                value={durationMin}
-                onChange={(e) => setDurationMin(e.target.value)}
-              />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="number"
+                    min="0"
+                    max="180"
+                    className="form-input"
+                    style={{ paddingRight: '2rem' }}
+                    value={durationMin}
+                    onChange={(e) => setDurationMin(e.target.value)}
+                    placeholder="0"
+                  />
+                  <span style={{ position: 'absolute', right: '0.6rem', top: '50%', transform: 'translateY(-50%)', fontSize: '0.75rem', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>
+                    min
+                  </span>
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="number"
+                    min="0"
+                    max="59"
+                    className="form-input"
+                    style={{ paddingRight: '2rem' }}
+                    value={durationSec}
+                    onChange={(e) => setDurationSec(e.target.value)}
+                    placeholder="0"
+                  />
+                  <span style={{ position: 'absolute', right: '0.6rem', top: '50%', transform: 'translateY(-50%)', fontSize: '0.75rem', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>
+                    sec
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* Time of Pump */}
@@ -443,6 +483,7 @@ export function PumpModal() {
               <label className="form-label">{t('common.time')}</label>
               <input
                 type="time"
+                step="1"
                 className="form-input"
                 value={timeStr}
                 onChange={(e) => setTimeStr(e.target.value)}

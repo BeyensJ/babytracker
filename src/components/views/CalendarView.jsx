@@ -768,7 +768,7 @@ export function CalendarView() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', flexWrap: 'wrap' }}>
               {dayStats.totalSleepMs > 0 && (
                 <span style={{ padding: '0.2rem 0.55rem', borderRadius: '12px', background: 'rgba(84, 108, 126, 0.12)', color: 'var(--color-slate)', fontWeight: 600 }}>
-                  🌙 {formatDurationMs(dayStats.totalSleepMs, language)}
+                  🌙 {formatDurationMs(dayStats.totalSleepMs, language, { showSeconds: false })}
                 </span>
               )}
               {dayStats.feedCount > 0 && (
@@ -892,7 +892,7 @@ export function CalendarView() {
             <span>{language === 'nl' ? `Slaap op ${formatDateHeading(selectedDateKey, language)}` : `Sleep on ${formatDateHeading(selectedDateKey)}`}</span>
           </div>
           <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: '0.25rem', color: 'var(--text-primary)' }}>
-            {dayStats.totalSleepMs > 0 ? formatDurationMs(dayStats.totalSleepMs, language) : '0m'}
+            {dayStats.totalSleepMs > 0 ? formatDurationMs(dayStats.totalSleepMs, language, { showSeconds: false }) : '0m'}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
             {dayStats.napCount} {language === 'nl' ? (dayStats.napCount === 1 ? 'slaapblok' : 'slaapblokken') : (dayStats.napCount === 1 ? 'sleep stretch' : 'sleep stretches')}
@@ -907,7 +907,7 @@ export function CalendarView() {
           </div>
           <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: '0.25rem', color: 'var(--text-primary)' }}>
             {dayStats.totalNursingMs > 0
-              ? formatDurationMs(dayStats.totalNursingMs, language)
+              ? formatDurationMs(dayStats.totalNursingMs, language, { showSeconds: false })
               : dayStats.totalBottleFloz > 0
               ? formatVolume(dayStats.totalBottleFloz, preferences.volumeUnit)
               : '0m'}

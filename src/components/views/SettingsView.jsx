@@ -58,16 +58,11 @@ export function SettingsView() {
     reader.onload = (e) => {
       try {
         const content = e.target.result;
-        let parsedEvents = [];
-        let detectedProfile = null;
-        let detectedUnits = null;
+        let parsedResult = null;
 
         if (isJson) {
           const json = JSON.parse(content);
-          const res = convertJsonToEvents(json, activeChildId);
-          parsedEvents = res.events;
-          detectedProfile = res.detectedProfile;
-          detectedUnits = res.detectedUnits;
+          parsedResult = convertJsonToEvents(json, activeChildId);
         } else {
           // Parse CSV
           const rows = parseCSVToRows(content);
@@ -75,11 +70,13 @@ export function SettingsView() {
             setImportError(isDutch ? 'Geen geldige rijen gevonden in dit CSV-bestand.' : 'Could not find valid rows in this CSV file. Please make sure it is a valid export.');
             return;
           }
-          const res = convertCsvRowsToEvents(rows, activeChildId);
-          parsedEvents = res.events;
-          detectedProfile = res.detectedProfile;
-          detectedUnits = res.detectedUnits;
+          parsedResult = convertCsvRowsToEvents(rows, activeChildId);
         }
+
+        const parsedEvents = parsedResult?.events || [];
+        const detectedProfile = parsedResult?.detectedProfile || null;
+        const detectedUnits = parsedResult?.detectedUnits || null;
+        const detectedCaregivers = parsedResult?.detectedCaregivers || [];
 
         if (parsedEvents.length === 0) {
           setImportError(isDutch ? 'Geen herkenbare babyregistraties gevonden in dit bestand.' : 'No recognizable baby tracking rows found in this file.');
@@ -92,7 +89,7 @@ export function SettingsView() {
           parsedEvents,
           detectedProfile,
           detectedUnits,
-          detectedCaregivers: res.detectedCaregivers,
+          detectedCaregivers,
           activeChildId,
         });
       } catch (err) {

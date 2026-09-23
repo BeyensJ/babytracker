@@ -177,7 +177,7 @@ class NotificationService {
       const sideLabel = breast.activeSide === 'LEFT' ? (lang === 'nl' ? 'Linkerkant' : 'Left Side') : (lang === 'nl' ? 'Rechterkant' : 'Right Side');
       const statusLabel = breast.running ? sideLabel : (lang === 'nl' ? 'Gepauzeerd' : 'Paused');
       title = `🤱 ${lang === 'nl' ? 'Borstvoeding' : 'Nursing'} (${statusLabel}) — ${babyName}`;
-      body = `L: ${formatTimerClock(leftElapsed)} • R: ${formatTimerClock(rightElapsed)} (${lang === 'nl' ? 'Totaal' : 'Total'}: ${formatTimerClock(totalElapsed)})\n${lang === 'nl' ? 'Gestart om' : 'Started at'} ${formatTime(sessionStart, lang)}`;
+      body = `L: ${formatTimerClock(leftElapsed)} • R: ${formatTimerClock(rightElapsed)} (${lang === 'nl' ? 'Totaal' : 'Total'}: ${formatTimerClock(totalElapsed)})\n${lang === 'nl' ? 'Gestart om' : 'Started at'} ${formatTime(sessionStart, lang, true)}`;
 
       actions = [
         { action: 'switch_side', title: lang === 'nl' ? `Naar ${breast.activeSide === 'LEFT' ? 'Rechts' : 'Links'} 🔄` : `To ${breast.activeSide === 'LEFT' ? 'Right' : 'Left'} Side 🔄` },
@@ -190,7 +190,7 @@ class NotificationService {
       timestamp = startMs;
 
       title = `🌙 ${babyName} ${lang === 'nl' ? 'slaapt' : 'is Sleeping'}`;
-      body = `${formatTimerClock(elapsed)} ${lang === 'nl' ? 'verstreken' : 'elapsed'} • ${lang === 'nl' ? 'Gestart om' : 'Started at'} ${formatTime(startMs, lang)}\n${lang === 'nl' ? 'Tik op Wakker zodra de baby opstaat.' : 'Tap Woke Up below when baby awakens.'}`;
+      body = `${formatTimerClock(elapsed)} ${lang === 'nl' ? 'verstreken' : 'elapsed'} • ${lang === 'nl' ? 'Gestart om' : 'Started at'} ${formatTime(startMs, lang, true)}\n${lang === 'nl' ? 'Tik op Wakker zodra de baby opstaat.' : 'Tap Woke Up below when baby awakens.'}`;
 
       actions = [{ action: 'finish_timer', title: lang === 'nl' ? 'Wakker geworden ☀️' : 'Woke Up ☀️' }];
     } else if (pump) {
@@ -200,7 +200,7 @@ class NotificationService {
       timestamp = startMs;
 
       title = `🍼 ${lang === 'nl' ? 'Afkolfsessie' : 'Pumping Session'}`;
-      body = `${formatTimerClock(elapsed)} ${lang === 'nl' ? 'verstreken' : 'elapsed'} • ${lang === 'nl' ? 'Gestart om' : 'Started at'} ${formatTime(startMs, lang)}`;
+      body = `${formatTimerClock(elapsed)} ${lang === 'nl' ? 'verstreken' : 'elapsed'} • ${lang === 'nl' ? 'Gestart om' : 'Started at'} ${formatTime(startMs, lang, true)}`;
 
       actions = [{ action: 'finish_timer', title: lang === 'nl' ? 'Klaar & Opslaan ✓' : 'Finish & Save ✓' }];
     }

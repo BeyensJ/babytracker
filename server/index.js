@@ -296,11 +296,14 @@ app.post('/api/timers/action', (req, res) => {
         else if (rightSec > 0 && leftSec === 0) side = 'RIGHT';
 
         createdEvent = db.addEvent({
-          type: 'BREASTFEED',
+          type: 'BREAST',
           beginDt,
           endDt,
+          durationMs: totalSec * 1000,
           details: {
             side,
+            leftDurationMs: leftSec * 1000,
+            rightDurationMs: rightSec * 1000,
             leftDurationSeconds: leftSec,
             rightDurationSeconds: rightSec,
             totalDurationSeconds: totalSec,
@@ -319,6 +322,7 @@ app.post('/api/timers/action', (req, res) => {
           type: 'SLEEP',
           beginDt,
           endDt,
+          durationMs: durationSec * 1000,
           details: {
             durationSeconds: durationSec,
             sleepType: s.sleepType || 'NAP',
@@ -337,6 +341,7 @@ app.post('/api/timers/action', (req, res) => {
           type: 'PUMP',
           beginDt,
           endDt,
+          durationMs: durationSec * 1000,
           details: {
             durationSeconds: durationSec,
             side: p.side || 'BOTH',
