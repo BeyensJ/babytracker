@@ -57,13 +57,17 @@ function AppContent() {
     return (
       <div className="app-loading-screen">
         <div className="login-logo-circle" style={{ animation: 'pulseLight 1.5s infinite ease-in-out' }}>
-          <svg viewBox="0 0 100 100" width="48" height="48">
-            <circle cx="50" cy="50" r="48" fill="#CE6B4C" />
-            <path
-              d="M50 24 C38 24 30 34 30 46 C30 62 48 76 50 78 C52 76 70 62 70 46 C70 34 62 24 50 24 Z"
-              fill="#FAF5EE"
-            />
-            <circle cx="50" cy="46" r="9" fill="#CE6B4C" />
+          <svg viewBox="0 0 512 512" width="56" height="56">
+            <rect width="512" height="512" rx="115" fill="#CE6B4C" />
+            <g fill="none" stroke="#FFFFFF" strokeLinecap="round" strokeLinejoin="round">
+              <path
+                d="M 246 140 C 225 152 215 180 236 198 C 255 214 278 196 270 172 C 264 152 254 142 272 142 C 334 142 376 190 376 262 C 394 262 404 274 404 288 C 404 302 392 314 372 314 C 362 366 316 404 256 404 C 196 404 150 366 140 314 C 120 314 108 302 108 288 C 108 274 118 262 136 262 C 136 190 182 140 246 140 Z"
+                strokeWidth="18"
+              />
+              <path d="M 186 280 Q 212 302 238 280" strokeWidth="18" />
+              <path d="M 274 280 Q 300 302 326 280" strokeWidth="18" />
+              <path d="M 224 338 Q 256 362 288 338" strokeWidth="17" />
+            </g>
           </svg>
         </div>
       </div>
