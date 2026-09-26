@@ -38,7 +38,7 @@ SVG_FULL = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" widt
   </g>
 </svg>'''
 
-# 2. Maskable PWA SVG (Squircle/full background with 20% safe zone margin for dynamic cropping)
+# 2. Maskable PWA SVG (Squircle/full background with safe zone margin for dynamic cropping)
 SVG_MASKABLE = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
     <linearGradient id="terracottaGradMask" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -150,36 +150,79 @@ def save_and_render(svg_str, output_path, width, height):
     temp_svg = output_path + ".tmp.svg"
     with open(temp_svg, "w") as f:
         f.write(svg_str)
-    subprocess.run(["magick", "-size", f"{width}x{height}", temp_svg, "-resize", f"{width}x{height}", output_path], check=True)
-    os.remove(temp_svg)
+    subprocess.run([
+        "magick",
+        "-background", "none",
+        "-size", f"{width}x{height}",
+        temp_svg,
+        "-resize", f"{width}x{height}",
+        f"png32:{output_path}"
+    ], check=True)
+    if os.path.exists(temp_svg):
+        os.remove(temp_svg)
     print(f"Generated {output_path} ({width}x{height})")
 
 def main():
     print("--- 1. Generating Web / PWA Assets ---")
-    # Save favicon.svg
     favicon_path = os.path.join(WORKSPACE, "public/favicon.svg")
     with open(favicon_path, "w") as f:
         f.write(SVG_FULL)
     print(f"Updated {favicon_path}")
 
-    # PWA icons
     save_and_render(SVG_FULL, os.path.join(PUBLIC_ICONS, "icon-512.png"), 512, 512)
     save_and_render(SVG_FULL, os.path.join(PUBLIC_ICONS, "icon-192.png"), 192, 192)
     save_and_render(SVG_MASKABLE, os.path.join(PUBLIC_ICONS, "icon-maskable.png"), 512, 512)
     save_and_render(SVG_BADGE, os.path.join(PUBLIC_ICONS, "badge-72.png"), 72, 72)
 
-    print("\n--- 2. Generating Android Launcher Assets ---")
-    # Set background color
-    bg_xml = os.path.join(RES_DIR, "values/ic_launcher_background.xml")
-    with open(bg_xml, "w") as f:
+    print("\n--- 2. Setting Up Android Adaptive Icon XML Resources ---")
+    # 2a. Background color resource
+    bg_values_xml = os.path.join(RES_DIR, "values/ic_launcher_background.xml")
+    with open(bg_values_xml, "w") as f:
         f.write('''<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#CE6B4C</color>
 </resources>
 ''')
-    print(f"Updated {bg_xml} with #CE6B4C")
+    print(f"Updated {bg_values_xml} with #CE6B4C")
 
-    # Android density tiers
+    # 2b. Background drawable vector (108dp solid terracotta background)
+    bg_drawable_xml = os.path.join(RES_DIR, "drawable/ic_launcher_background.xml")
+    with open(bg_drawable_xml, "w") as f:
+        f.write('''<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#CE6B4C"
+        android:pathData="M0,0h108v108h-108z" />
+</vector>
+''')
+    print(f"Updated {bg_drawable_xml} with vector #CE6B4C")
+
+    # 2c. Remove obsolete drawable-v24/ic_launcher_foreground.xml if present
+    obsolete_fg = os.path.join(RES_DIR, "drawable-v24/ic_launcher_foreground.xml")
+    if os.path.exists(obsolete_fg):
+        os.remove(obsolete_fg)
+        print(f"Removed obsolete {obsolete_fg}")
+
+    # 2d. Update adaptive icon declarations in mipmap-anydpi-v26
+    anydpi_dir = os.path.join(RES_DIR, "mipmap-anydpi-v26")
+    os.makedirs(anydpi_dir, exist_ok=True)
+    adaptive_xml = '''<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_launcher_background"/>
+    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+</adaptive-icon>
+'''
+    for name in ["ic_launcher.xml", "ic_launcher_round.xml"]:
+        xml_path = os.path.join(anydpi_dir, name)
+        with open(xml_path, "w") as f:
+            f.write(adaptive_xml)
+        print(f"Updated {xml_path}")
+
+    print("\n--- 3. Generating Android Density PNGs ---")
     densities = [
         ("mipmap-mdpi", 48, 108),
         ("mipmap-hdpi", 72, 162),
@@ -196,7 +239,7 @@ def main():
         save_and_render(SVG_FULL, os.path.join(target_dir, "ic_launcher.png"), size, size)
         # Round circular icon
         save_and_render(SVG_ROUND, os.path.join(target_dir, "ic_launcher_round.png"), size, size)
-        # Adaptive foreground icon
+        # Adaptive foreground icon (transparent background + white baby face)
         save_and_render(SVG_FOREGROUND, os.path.join(target_dir, "ic_launcher_foreground.png"), fg_size, fg_size)
 
     print("\n✅ All Web and Android app icons successfully generated!")
