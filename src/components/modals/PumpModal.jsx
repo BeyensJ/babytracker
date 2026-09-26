@@ -359,14 +359,14 @@ export function PumpModal() {
               backgroundColor: 'var(--bg-card-subtle)',
               border: '1px solid var(--border-subtle)',
               borderRadius: 'var(--radius-md)',
-              padding: '0.65rem 0.85rem',
+              padding: '0.75rem 0.95rem',
               display: 'flex',
               flexDirection: 'column',
-              gap: '0.5rem',
+              gap: '0.65rem',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                  <Clock size={14} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  <Clock size={16} />
                   <span>{isDutch ? 'Starttijd:' : 'Start time:'}</span>
                 </div>
                 <input
@@ -374,9 +374,10 @@ export function PumpModal() {
                   className="form-input"
                   style={{
                     width: 'auto',
-                    minWidth: '95px',
-                    padding: '0.25rem 0.5rem',
-                    fontSize: '0.85rem',
+                    minWidth: '105px',
+                    minHeight: '38px',
+                    padding: '0.35rem 0.6rem',
+                    fontSize: '0.92rem',
                     fontWeight: 700,
                     textAlign: 'center',
                   }}
@@ -397,7 +398,6 @@ export function PumpModal() {
                     key={p.offset}
                     type="button"
                     className={`quick-preset-pill ${timerOffsetMinutes === p.offset ? 'active berry' : ''}`}
-                    style={{ padding: '0.25rem 0.45rem', fontSize: '0.78rem' }}
                     onClick={() => handleSelectTimerOffset(p.offset)}
                   >
                     {p.label}
@@ -574,7 +574,6 @@ export function PumpModal() {
                         key={m}
                         type="button"
                         className={`quick-preset-pill ${durationMin === m ? 'active berry' : ''}`}
-                        style={{ padding: '0.2rem 0.45rem', fontSize: '0.75rem', minWidth: '36px' }}
                         onClick={() => {
                           triggerHaptic('light', preferences?.haptics);
                           setDurationMin(m);

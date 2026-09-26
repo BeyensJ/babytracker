@@ -290,14 +290,14 @@ export function BreastfeedModal() {
               backgroundColor: 'var(--bg-card-subtle)',
               border: '1px solid var(--border-subtle)',
               borderRadius: 'var(--radius-md)',
-              padding: '0.65rem 0.85rem',
+              padding: '0.75rem 0.95rem',
               display: 'flex',
               flexDirection: 'column',
-              gap: '0.5rem',
+              gap: '0.65rem',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                  <Clock size={14} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  <Clock size={16} />
                   <span>{isDutch ? 'Starttijd:' : 'Start time:'}</span>
                 </div>
                 <input
@@ -305,9 +305,10 @@ export function BreastfeedModal() {
                   className="form-input"
                   style={{
                     width: 'auto',
-                    minWidth: '95px',
-                    padding: '0.25rem 0.5rem',
-                    fontSize: '0.85rem',
+                    minWidth: '105px',
+                    minHeight: '38px',
+                    padding: '0.35rem 0.6rem',
+                    fontSize: '0.92rem',
                     fontWeight: 700,
                     textAlign: 'center',
                   }}
@@ -328,7 +329,6 @@ export function BreastfeedModal() {
                     key={p.offset}
                     type="button"
                     className={`quick-preset-pill ${timerOffsetMinutes === p.offset ? 'active terracotta' : ''}`}
-                    style={{ padding: '0.25rem 0.45rem', fontSize: '0.78rem' }}
                     onClick={() => handleSelectTimerOffset(p.offset)}
                   >
                     {p.label}
@@ -370,33 +370,50 @@ export function BreastfeedModal() {
                 ))}
               </div>
 
-              {/* Duration Inputs & Quick Presets */}
-              <div style={{ display: 'grid', gridTemplateColumns: side === 'BOTH' ? '1fr 1fr' : '1fr', gap: '0.65rem' }}>
+              {/* Duration Inputs & Quick Presets with Seconds Input */}
+              <div style={{ display: 'grid', gridTemplateColumns: side === 'BOTH' ? 'repeat(auto-fit, minmax(140px, 1fr))' : '1fr', gap: '0.65rem' }}>
                 {(side === 'LEFT' || side === 'BOTH') && (
-                  <div className="form-group" style={{ backgroundColor: 'var(--bg-card-subtle)', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-md)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <label className="form-label" style={{ marginBottom: 0 }}>{t('breastModal.left')}</label>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <div className="form-group" style={{ backgroundColor: 'var(--bg-card-subtle)', padding: '0.75rem 0.85rem', borderRadius: 'var(--radius-md)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+                      <label className="form-label" style={{ marginBottom: 0, fontWeight: 700, fontSize: '0.86rem' }}>{t('breastModal.left')}</label>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'nowrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flex: 1 }}>
                         <input
                           type="number"
                           min="0"
-                          max="120"
+                          max="180"
                           className="form-input"
-                          style={{ width: '56px', padding: '0.3rem 0.4rem', textAlign: 'center', fontWeight: 700 }}
+                          style={{ minHeight: '40px', padding: '0.35rem 0.3rem', textAlign: 'center', fontWeight: 700, fontSize: '0.98rem' }}
                           value={leftMinutes}
                           onChange={e => setLeftMinutes(e.target.value)}
+                          aria-label={isDutch ? 'Minuten links' : 'Left minutes'}
                         />
-                        <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>min</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>min</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flex: 1 }}>
+                        <input
+                          type="number"
+                          min="0"
+                          max="59"
+                          className="form-input"
+                          style={{ minHeight: '40px', padding: '0.35rem 0.3rem', textAlign: 'center', fontWeight: 700, fontSize: '0.98rem' }}
+                          value={leftSeconds}
+                          onChange={e => setLeftSeconds(e.target.value)}
+                          aria-label={isDutch ? 'Seconden links' : 'Left seconds'}
+                        />
+                        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>sec</span>
                       </div>
                     </div>
+
                     {/* Quick duration pills */}
-                    <div className="quick-presets-row" style={{ marginTop: '0.4rem' }}>
+                    <div className="quick-presets-row" style={{ marginTop: '0.55rem' }}>
                       {[5, 10, 15, 20].map(m => (
                         <button
                           key={m}
                           type="button"
                           className={`quick-preset-pill ${Number(leftMinutes) === m && Number(leftSeconds) === 0 ? 'active terracotta' : ''}`}
-                          style={{ padding: '0.25rem 0.4rem', fontSize: '0.75rem', minWidth: '36px' }}
                           onClick={() => setQuickDuration('LEFT', m)}
                         >
                           {m}m
@@ -407,30 +424,47 @@ export function BreastfeedModal() {
                 )}
 
                 {(side === 'RIGHT' || side === 'BOTH') && (
-                  <div className="form-group" style={{ backgroundColor: 'var(--bg-card-subtle)', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-md)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <label className="form-label" style={{ marginBottom: 0 }}>{t('breastModal.right')}</label>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <div className="form-group" style={{ backgroundColor: 'var(--bg-card-subtle)', padding: '0.75rem 0.85rem', borderRadius: 'var(--radius-md)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+                      <label className="form-label" style={{ marginBottom: 0, fontWeight: 700, fontSize: '0.86rem' }}>{t('breastModal.right')}</label>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'nowrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flex: 1 }}>
                         <input
                           type="number"
                           min="0"
-                          max="120"
+                          max="180"
                           className="form-input"
-                          style={{ width: '56px', padding: '0.3rem 0.4rem', textAlign: 'center', fontWeight: 700 }}
+                          style={{ minHeight: '40px', padding: '0.35rem 0.3rem', textAlign: 'center', fontWeight: 700, fontSize: '0.98rem' }}
                           value={rightMinutes}
                           onChange={e => setRightMinutes(e.target.value)}
+                          aria-label={isDutch ? 'Minuten rechts' : 'Right minutes'}
                         />
-                        <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>min</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>min</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flex: 1 }}>
+                        <input
+                          type="number"
+                          min="0"
+                          max="59"
+                          className="form-input"
+                          style={{ minHeight: '40px', padding: '0.35rem 0.3rem', textAlign: 'center', fontWeight: 700, fontSize: '0.98rem' }}
+                          value={rightSeconds}
+                          onChange={e => setRightSeconds(e.target.value)}
+                          aria-label={isDutch ? 'Seconden rechts' : 'Right seconds'}
+                        />
+                        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>sec</span>
                       </div>
                     </div>
+
                     {/* Quick duration pills */}
-                    <div className="quick-presets-row" style={{ marginTop: '0.4rem' }}>
+                    <div className="quick-presets-row" style={{ marginTop: '0.55rem' }}>
                       {[5, 10, 15, 20].map(m => (
                         <button
                           key={m}
                           type="button"
                           className={`quick-preset-pill ${Number(rightMinutes) === m && Number(rightSeconds) === 0 ? 'active caramel' : ''}`}
-                          style={{ padding: '0.25rem 0.4rem', fontSize: '0.75rem', minWidth: '36px' }}
                           onClick={() => setQuickDuration('RIGHT', m)}
                         >
                           {m}m

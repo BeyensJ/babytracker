@@ -146,11 +146,11 @@ export function DiaperModal() {
             {/* 4 Direct 1-Tap Contents Buttons */}
             <div className="form-group">
               <label className="form-label">{t('diaperModal.contents')}</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.4rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.45rem' }}>
                 <button
                   type="button"
                   className={`chip-btn ${pee && !poop && !dry ? 'selected' : ''}`}
-                  style={{ justifyContent: 'center', padding: '0.55rem 0.3rem', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+                  style={{ justifyContent: 'center', minHeight: '44px', padding: '0.6rem 0.35rem', fontSize: '0.86rem', fontWeight: 700, borderRadius: 'var(--radius-md)', whiteSpace: 'nowrap' }}
                   onClick={() => handleSelectType('WET')}
                 >
                   💧 {t('diaperModal.wet')}
@@ -158,7 +158,7 @@ export function DiaperModal() {
                 <button
                   type="button"
                   className={`chip-btn ${!pee && poop && !dry ? 'selected' : ''}`}
-                  style={{ justifyContent: 'center', padding: '0.55rem 0.3rem', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+                  style={{ justifyContent: 'center', minHeight: '44px', padding: '0.6rem 0.35rem', fontSize: '0.86rem', fontWeight: 700, borderRadius: 'var(--radius-md)', whiteSpace: 'nowrap' }}
                   onClick={() => handleSelectType('DIRTY')}
                 >
                   💩 {t('diaperModal.dirty')}
@@ -166,7 +166,7 @@ export function DiaperModal() {
                 <button
                   type="button"
                   className={`chip-btn ${pee && poop && !dry ? 'selected' : ''}`}
-                  style={{ justifyContent: 'center', padding: '0.55rem 0.3rem', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+                  style={{ justifyContent: 'center', minHeight: '44px', padding: '0.6rem 0.35rem', fontSize: '0.86rem', fontWeight: 700, borderRadius: 'var(--radius-md)', whiteSpace: 'nowrap' }}
                   onClick={() => handleSelectType('BOTH')}
                 >
                   💧+💩 {isDutch ? 'Beide' : 'Both'}
@@ -174,7 +174,7 @@ export function DiaperModal() {
                 <button
                   type="button"
                   className={`chip-btn ${dry ? 'selected' : ''}`}
-                  style={{ justifyContent: 'center', padding: '0.55rem 0.3rem', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+                  style={{ justifyContent: 'center', minHeight: '44px', padding: '0.6rem 0.35rem', fontSize: '0.86rem', fontWeight: 700, borderRadius: 'var(--radius-md)', whiteSpace: 'nowrap' }}
                   onClick={() => handleSelectType('DRY')}
                 >
                   ✨ {t('diaperModal.dry')}
@@ -202,17 +202,16 @@ export function DiaperModal() {
                   <div className="expandable-details-card">
                     {/* Poop Color */}
                     <div className="form-group">
-                      <label className="form-label" style={{ fontSize: '0.72rem' }}>{t('diaperModal.poopColor')}</label>
+                      <label className="form-label" style={{ fontSize: '0.78rem' }}>{t('diaperModal.poopColor')}</label>
                       <div className="chip-grid">
                         {poopColors.map(c => (
                           <button
                             key={c.id}
                             type="button"
                             className={`chip-btn ${color === c.id ? 'selected' : ''}`}
-                            style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}
                             onClick={() => setColor(c.id)}
                           >
-                            <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: c.hex, display: 'inline-block' }} />
+                            <span style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: c.hex, display: 'inline-block' }} />
                             {c.label}
                           </button>
                         ))}
@@ -221,14 +220,13 @@ export function DiaperModal() {
 
                     {/* Poop Texture */}
                     <div className="form-group">
-                      <label className="form-label" style={{ fontSize: '0.72rem' }}>{t('diaperModal.consistency')}</label>
+                      <label className="form-label" style={{ fontSize: '0.78rem' }}>{t('diaperModal.consistency')}</label>
                       <div className="chip-grid">
                         {poopTextures.map(tOption => (
                           <button
                             key={tOption.id}
                             type="button"
                             className={`chip-btn ${texture === tOption.id ? 'selected' : ''}`}
-                            style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}
                             onClick={() => setTexture(tOption.id)}
                           >
                             {tOption.label}

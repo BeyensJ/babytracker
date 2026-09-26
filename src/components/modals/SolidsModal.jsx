@@ -144,7 +144,6 @@ export function SolidsModal() {
                     key={f}
                     type="button"
                     className={`chip-btn ${food === f ? 'selected' : ''}`}
-                    style={{ padding: '0.3rem 0.55rem', fontSize: '0.75rem' }}
                     onClick={() => setFood(f)}
                   >
                     {f}
@@ -162,7 +161,6 @@ export function SolidsModal() {
                     key={r.id}
                     type="button"
                     className={`chip-btn ${reaction === r.id ? 'selected' : ''}`}
-                    style={{ padding: '0.3rem 0.55rem', fontSize: '0.75rem' }}
                     onClick={() => setReaction(r.id)}
                   >
                     {r.label}

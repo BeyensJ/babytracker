@@ -279,14 +279,14 @@ export function SleepModal() {
               backgroundColor: 'var(--bg-card-subtle)',
               border: '1px solid var(--border-subtle)',
               borderRadius: 'var(--radius-md)',
-              padding: '0.65rem 0.85rem',
+              padding: '0.75rem 0.95rem',
               display: 'flex',
               flexDirection: 'column',
-              gap: '0.5rem',
+              gap: '0.65rem',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                  <Clock size={14} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  <Clock size={16} />
                   <span>{isDutch ? 'Starttijd:' : 'Start time:'}</span>
                 </div>
                 <input
@@ -294,9 +294,10 @@ export function SleepModal() {
                   className="form-input"
                   style={{
                     width: 'auto',
-                    minWidth: '95px',
-                    padding: '0.25rem 0.5rem',
-                    fontSize: '0.85rem',
+                    minWidth: '105px',
+                    minHeight: '38px',
+                    padding: '0.35rem 0.6rem',
+                    fontSize: '0.92rem',
                     fontWeight: 700,
                     textAlign: 'center',
                   }}
@@ -318,7 +319,6 @@ export function SleepModal() {
                     key={p.offset}
                     type="button"
                     className={`quick-preset-pill ${timerOffsetMinutes === p.offset ? 'active slate' : ''}`}
-                    style={{ padding: '0.25rem 0.45rem', fontSize: '0.78rem' }}
                     onClick={() => handleSelectTimerOffset(p.offset)}
                   >
                     {p.label}
@@ -357,7 +357,7 @@ export function SleepModal() {
 
               {/* Quick Duration Presets */}
               <div>
-                <label className="form-label" style={{ marginBottom: '0.35rem' }}>
+                <label className="form-label" style={{ marginBottom: '0.45rem' }}>
                   {t('common.quickDuration')}
                 </label>
                 <div className="quick-presets-row">
@@ -384,6 +384,7 @@ export function SleepModal() {
                   <input
                     type="time"
                     className="form-input"
+                    style={{ minHeight: '42px', fontSize: '0.98rem', fontWeight: 700, textAlign: 'center' }}
                     value={startTime}
                     onChange={e => setStartTime(e.target.value)}
                   />
@@ -394,6 +395,7 @@ export function SleepModal() {
                   <input
                     type="time"
                     className="form-input"
+                    style={{ minHeight: '42px', fontSize: '0.98rem', fontWeight: 700, textAlign: 'center' }}
                     value={endTime}
                     onChange={e => setEndTime(e.target.value)}
                   />

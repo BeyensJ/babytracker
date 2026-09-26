@@ -181,7 +181,6 @@ export function HealthModal() {
                         key={m}
                         type="button"
                         className={`chip-btn ${medicineName === m ? 'selected' : ''}`}
-                        style={{ padding: '0.3rem 0.55rem', fontSize: '0.75rem' }}
                         onClick={() => setMedicineName(m)}
                       >
                         {m}
