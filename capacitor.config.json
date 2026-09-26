@@ -1,0 +1,9 @@
+{
+  "appId": "com.beyensj.babytracker",
+  "appName": "Baby Tracker",
+  "webDir": "dist",
+  "server": {
+    "cleartext": true,
+    "androidScheme": "https"
+  }
+}

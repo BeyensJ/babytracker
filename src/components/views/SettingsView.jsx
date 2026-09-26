@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { parseCSVToRows, convertCsvRowsToEvents, convertJsonToEvents } from '../../utils/csvParser';
-import { Upload, Download, FileSpreadsheet, Sparkles, Trash2, Baby, Sliders, Moon, Sun, Plus, Edit2, Heart, Lock, Key, LogOut, ShieldCheck, Bell, Send, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Sparkles, Trash2, Baby, Sliders, Moon, Sun, Plus, Edit2, Heart, Lock, Key, LogOut, ShieldCheck, Bell, Send, AlertTriangle, CheckCircle2, Info, Server, RefreshCw } from 'lucide-react';
+import { syncService } from '../../services/syncService';
 import { triggerHaptic } from '../../utils/haptics';
 import confetti from 'canvas-confetti';
 
@@ -34,6 +35,7 @@ export function SettingsView() {
   const [dragOver, setDragOver] = useState(false);
   const [importError, setImportError] = useState('');
   const [testAlertStatus, setTestAlertStatus] = useState(null);
+  const [serverTestStatus, setServerTestStatus] = useState(null);
 
   const handleTestAlert = async () => {
     setTestAlertStatus({ loading: true, message: 'Triggering test notification...' });
@@ -44,6 +46,38 @@ export function SettingsView() {
     } catch (err) {
       setTestAlertStatus({ success: false, message: err.message || 'Notification failed' });
       setTimeout(() => setTestAlertStatus(null), 8000);
+    }
+  };
+
+  const handleTestServer = async () => {
+    setServerTestStatus({ loading: true, message: t('settings.serverTesting') });
+    try {
+      const res = await syncService.checkServerHealth();
+      if (res.reachable) {
+        setServerTestStatus({
+          loading: false,
+          success: true,
+          message: isDutch
+            ? `Verbonden! Server reageert (HTTP ${res.status})`
+            : `Connected! Server responded (HTTP ${res.status})`,
+        });
+      } else {
+        setServerTestStatus({
+          loading: false,
+          success: false,
+          message: isDutch
+            ? `Kan server niet bereiken (${res.error || 'Geen reactie'})`
+            : `Could not reach server (${res.error || 'No response'})`,
+        });
+      }
+      setTimeout(() => setServerTestStatus(null), 8000);
+    } catch (err) {
+      setServerTestStatus({
+        loading: false,
+        success: false,
+        message: err.message || (isDutch ? 'Verbinding mislukt' : 'Connection failed'),
+      });
+      setTimeout(() => setServerTestStatus(null), 8000);
     }
   };
 
@@ -622,7 +656,107 @@ export function SettingsView() {
         )}
       </div>
 
-      {/* 6. Security & Family Password */}
+      {/* 6. Server Connection */}
+      <div className="card settings-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                background: 'rgba(84, 108, 126, 0.15)',
+                color: 'var(--color-slate, #546C7E)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Server size={16} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('settings.serverTitle')}</h3>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                {t('settings.serverDesc')}
+              </p>
+            </div>
+          </div>
+
+          <span
+            style={{
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              padding: '0.2rem 0.6rem',
+              borderRadius: '999px',
+              backgroundColor: syncService.getServerBaseUrl() ? 'rgba(84, 108, 126, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+              color: syncService.getServerBaseUrl() ? 'var(--color-slate, #546C7E)' : 'var(--text-secondary)',
+              maxWidth: 160,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {syncService.getServerBaseUrl() || t('settings.serverDefault')}
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => openModal('SERVER_SETUP')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
+          >
+            <Server size={14} />
+            <span>{t('settings.serverEdit')}</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleTestServer}
+            disabled={serverTestStatus?.loading}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
+          >
+            <RefreshCw size={14} className={serverTestStatus?.loading ? 'spin' : ''} />
+            <span>{t('settings.serverTestBtn')}</span>
+          </button>
+        </div>
+
+        {serverTestStatus && (
+          <div
+            style={{
+              padding: '0.6rem 0.85rem',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.78rem',
+              backgroundColor: serverTestStatus.loading
+                ? 'rgba(0, 0, 0, 0.04)'
+                : serverTestStatus.success
+                ? 'rgba(46, 125, 50, 0.1)'
+                : 'rgba(211, 47, 47, 0.1)',
+              color: serverTestStatus.loading
+                ? 'var(--text-secondary)'
+                : serverTestStatus.success
+                ? '#2E7D32'
+                : '#D32F2F',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+            }}
+          >
+            {serverTestStatus.loading ? (
+              <RefreshCw size={14} className="spin" />
+            ) : serverTestStatus.success ? (
+              <CheckCircle2 size={15} />
+            ) : (
+              <AlertTriangle size={15} />
+            )}
+            <span>{serverTestStatus.message}</span>
+          </div>
+        )}
+      </div>
+
+      {/* 7. Security & Family Password */}
       <div className="card settings-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
           <div

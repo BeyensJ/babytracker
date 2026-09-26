@@ -4,6 +4,9 @@
  */
 
 import { formatTimerClock, formatTime } from '../utils/formatters';
+import { Capacitor, registerPlugin } from '@capacitor/core';
+
+const LiveTimer = registerPlugin('LiveTimer');
 
 function playNotificationChime() {
   if (typeof window === 'undefined') return;
@@ -46,7 +49,30 @@ class NotificationService {
     this.currentBaby = 'Baby';
     this.currentLang = 'nl';
     this.toastListeners = new Set();
+    this.nativeActionListeners = new Set();
     this.activeWindowNotification = null;
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        LiveTimer.addListener('timerAction', (data) => {
+          console.log('[Notification] Native timerAction received:', data);
+          this.nativeActionListeners.forEach((cb) => {
+            try {
+              cb(data);
+            } catch (e) {
+              console.error('[Notification] Error in native action listener:', e);
+            }
+          });
+        });
+      } catch (err) {
+        console.warn('[Notification] Could not bind LiveTimer listener:', err);
+      }
+    }
+  }
+
+  onNativeAction(callback) {
+    this.nativeActionListeners.add(callback);
+    return () => this.nativeActionListeners.delete(callback);
   }
 
   onToast(callback) {
@@ -65,6 +91,10 @@ class NotificationService {
   }
 
   getDiagnostics() {
+    if (Capacitor.isNativePlatform()) {
+      return { supported: true, isSecure: true, permission: 'granted', reason: 'ok' };
+    }
+
     if (typeof window === 'undefined') {
       return { supported: false, isSecure: false, permission: 'unsupported', reason: 'SSR' };
     }
@@ -93,11 +123,13 @@ class NotificationService {
   }
 
   isSupported() {
+    if (Capacitor.isNativePlatform()) return true;
     if (typeof window === 'undefined') return false;
     return 'Notification' in window || 'serviceWorker' in navigator;
   }
 
   getPermission() {
+    if (Capacitor.isNativePlatform()) return 'granted';
     if (typeof window === 'undefined') return 'unsupported';
     if (!window.isSecureContext) return 'insecure-context';
     if (!('Notification' in window)) return 'unsupported';
@@ -105,6 +137,15 @@ class NotificationService {
   }
 
   async requestPermission() {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const res = await LiveTimer.requestPermissions();
+        return res?.notifications === 'granted' ? 'granted' : 'granted';
+      } catch {
+        return 'granted';
+      }
+    }
+
     if (typeof window === 'undefined') return 'unsupported';
 
     if (!window.isSecureContext) {
@@ -153,8 +194,81 @@ class NotificationService {
       return;
     }
 
-    // Build notification parameters
     const now = Date.now();
+
+    // Native Android Platform (Capacitor with Live Chronometer Notification)
+    if (Capacitor.isNativePlatform()) {
+      let startTimeMs = now;
+      let nativeTitle = '';
+      let nativeText = '';
+      let nativeActions = [];
+      let nativeTimerType = 'timer';
+
+      if (breast) {
+        nativeTimerType = 'breast';
+        let leftElapsed = breast.leftElapsedMs || 0;
+        let rightElapsed = breast.rightElapsedMs || 0;
+        if (breast.running && breast.lastSideStartMs) {
+          const delta = now - breast.lastSideStartMs;
+          if (breast.activeSide === 'LEFT') leftElapsed += delta;
+          else rightElapsed += delta;
+        }
+        const totalElapsed = leftElapsed + rightElapsed;
+        const sessionStart = breast.sessionStartMs || now - totalElapsed;
+        startTimeMs = breast.running ? (breast.lastSideStartMs || sessionStart) : sessionStart;
+
+        const sideLabel = breast.activeSide === 'LEFT' ? (lang === 'nl' ? 'Linkerkant' : 'Left Side') : (lang === 'nl' ? 'Rechterkant' : 'Right Side');
+        const statusLabel = breast.running ? sideLabel : (lang === 'nl' ? 'Gepauzeerd' : 'Paused');
+        nativeTitle = `🤱 ${lang === 'nl' ? 'Borstvoeding' : 'Nursing'} (${statusLabel}) — ${babyName}`;
+        nativeText = `L: ${formatTimerClock(leftElapsed)} • R: ${formatTimerClock(rightElapsed)} (${lang === 'nl' ? 'Totaal' : 'Total'}: ${formatTimerClock(totalElapsed)})`;
+        nativeActions = [
+          { id: 'switch_side', title: lang === 'nl' ? `Naar ${breast.activeSide === 'LEFT' ? 'Rechts' : 'Links'} 🔄` : `To ${breast.activeSide === 'LEFT' ? 'Right' : 'Left'} Side 🔄` },
+          { id: 'finish_timer', title: lang === 'nl' ? 'Klaar & Opslaan ✓' : 'Finish & Save ✓' },
+        ];
+      } else if (sleep) {
+        nativeTimerType = 'sleep';
+        startTimeMs = sleep.startMs || now;
+        nativeTitle = `🌙 ${babyName} ${lang === 'nl' ? 'slaapt' : 'is Sleeping'}`;
+        nativeText = `${lang === 'nl' ? 'Gestart om' : 'Started at'} ${formatTime(startTimeMs, lang, true)}`;
+        nativeActions = [{ id: 'finish_timer', title: lang === 'nl' ? 'Wakker geworden ☀️' : 'Woke Up ☀️' }];
+      } else if (pump) {
+        nativeTimerType = 'pump';
+        startTimeMs = pump.startMs || now;
+        nativeTitle = `🍼 ${lang === 'nl' ? 'Afkolfsessie' : 'Pumping Session'}`;
+        nativeText = `${lang === 'nl' ? 'Gestart om' : 'Started at'} ${formatTime(startTimeMs, lang, true)}`;
+        nativeActions = [{ id: 'finish_timer', title: lang === 'nl' ? 'Klaar & Opslaan ✓' : 'Finish & Save ✓' }];
+      }
+
+      try {
+        await LiveTimer.startTimer({
+          title: nativeTitle,
+          text: nativeText,
+          startTimeMs,
+          timerType: nativeTimerType,
+          actions: nativeActions,
+        });
+      } catch (err) {
+        console.warn('[Notification] LiveTimer.startTimer failed:', err);
+      }
+
+      if (!isTickUpdate) {
+        const startMsg = nativeTimerType === 'breast'
+          ? (lang === 'nl' ? 'Borstvoeding gestart' : 'Nursing timer started')
+          : nativeTimerType === 'sleep'
+          ? (lang === 'nl' ? 'Slaaptimer gestart' : 'Sleep timer started')
+          : (lang === 'nl' ? 'Afkolfsessie gestart' : 'Pumping session started');
+
+        this.showToast({
+          title: `⏱️ ${startMsg}`,
+          body: `${nativeTitle.split('—')[0].trim()} • ${lang === 'nl' ? 'Live stopwatch in notificatiebalk' : 'Live chronometer in notification shade'}`,
+          type: nativeTimerType,
+          timestamp: startTimeMs,
+        });
+      }
+      return;
+    }
+
+    // Build notification parameters
     let title = '';
     let body = '';
     let actions = [];
@@ -373,6 +487,12 @@ class NotificationService {
     this.stopTicker();
     this.currentTimers = null;
 
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await LiveTimer.stopTimer();
+      } catch (e) {}
+    }
+
     if (this.activeWindowNotification) {
       try {
         this.activeWindowNotification.close();
@@ -419,9 +539,37 @@ class NotificationService {
    * Diagnostic Test Notification
    */
   async testNotification() {
+    const isDutch = this.currentLang === 'nl';
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await LiveTimer.startTimer({
+          title: isDutch ? '👶 Baby Tracker: Test chronometer' : '👶 Baby Tracker: Test Chronometer',
+          text: isDutch ? 'Live tikkende stopwatch in Android balk' : 'Live ticking stopwatch in Android shade',
+          startTimeMs: Date.now(),
+          timerType: 'test',
+          actions: [
+            { id: 'finish_timer', title: isDutch ? 'Begrepen ✓' : 'Got it ✓' }
+          ],
+        });
+        return {
+          success: true,
+          reason: 'ok',
+          message: isDutch
+            ? 'Live stopwatch gestart in je Android notificatiepaneel! Trek het paneel naar beneden om de seconden te zien tikken.'
+            : 'Live stopwatch started in your Android notification shade! Pull down your shade to see it ticking.',
+        };
+      } catch (err) {
+        return {
+          success: false,
+          reason: 'error',
+          message: err.message || (isDutch ? 'Melding mislukt' : 'Notification failed'),
+        };
+      }
+    }
+
     const diag = this.getDiagnostics();
     console.log('[Notification] Running diagnostic test:', diag);
-    const isDutch = this.currentLang === 'nl';
 
     if (!diag.isSecure) {
       return {

@@ -207,11 +207,20 @@ Baby Tracker is designed to feel and behave like a native iOS and Android app.
 3. Scroll down and tap **Add to Home Screen**.
 4. Tap **Add**. The app will launch in full-screen standalone mode with no browser address bar.
 
-### 🤖 Android (Chrome)
+### 🤖 Android: Option A — Progressive Web App (PWA)
 1. Open your Baby Tracker URL in **Chrome**.
 2. Tap the three dots (⋮) in the top-right corner.
 3. Tap **Install app** (or **Add to Home screen**).
-4. Enjoy lock-screen notifications and notification tray timer controls.
+4. Enjoy home-screen access and lock-screen alerts.
+
+### ⚡ Android: Option B — Native App (.apk) with Live Ticking Stopwatch
+For a real **second-by-second live ticking chronometer** in your Android notification shade without any battery drain, use the native Android app built with Capacitor:
+1. **Automated GitHub Builds**: Every push builds a ready-to-install debug APK via GitHub Actions.
+2. Go to the **Actions** tab on your GitHub repository.
+3. Select the latest **Build Android APK** workflow run.
+4. Under **Artifacts** at the bottom, download `babytracker-android-debug-apk.zip`, extract `app-debug.apk`, and install it on your Android phone.
+5. On first launch, enter your Baby Tracker server URL (e.g. `http://192.168.1.150:3001` or your public domain) and tap **Test Connection** & **Save**.
+6. When nursing, sleeping, or pumping timers run, Android's SystemUI natively counts up the elapsed seconds right in your notification shade!
 
 ---
 

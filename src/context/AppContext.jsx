@@ -740,26 +740,43 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     );
   }, [activeTimers, activeCaregiver?.name, activeChild?.name, notificationPermission, language]);
 
-  // 6. Listen for Service Worker Notification Actions (e.g. from Android Notification Shade)
+  // 6. Listen for Notification Actions (both Native Capacitor Android Shade and Service Worker)
   useEffect(() => {
-    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
-
-    const handleSwAction = (event) => {
-      if (event.data?.type === 'NOTIFICATION_ACTION') {
-        const { action, timerType } = event.data;
-        if (action === 'switch_side') {
-          switchBreastSide();
-        } else if (action === 'finish_timer') {
-          if (timerType === 'breast') stopBreastTimer();
-          else if (timerType === 'sleep') stopSleepTimer();
-          else if (timerType === 'pump') stopPumpTimer();
-        }
+    // A. Native Capacitor Action Listener
+    const unsubNative = notificationService.onNativeAction((data) => {
+      const { action, timerType } = data || {};
+      if (action === 'switch_side') {
+        switchBreastSide();
+      } else if (action === 'finish_timer') {
+        if (timerType === 'breast') stopBreastTimer();
+        else if (timerType === 'sleep') stopSleepTimer();
+        else if (timerType === 'pump') stopPumpTimer();
       }
-    };
+    });
 
-    navigator.serviceWorker.addEventListener('message', handleSwAction);
+    // B. Service Worker Action Listener (Web / PWA)
+    let handleSwAction = null;
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      handleSwAction = (event) => {
+        if (event.data?.type === 'NOTIFICATION_ACTION') {
+          const { action, timerType } = event.data;
+          if (action === 'switch_side') {
+            switchBreastSide();
+          } else if (action === 'finish_timer') {
+            if (timerType === 'breast') stopBreastTimer();
+            else if (timerType === 'sleep') stopSleepTimer();
+            else if (timerType === 'pump') stopPumpTimer();
+          }
+        }
+      };
+      navigator.serviceWorker.addEventListener('message', handleSwAction);
+    }
+
     return () => {
-      navigator.serviceWorker.removeEventListener('message', handleSwAction);
+      unsubNative();
+      if (handleSwAction && typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleSwAction);
+      }
     };
   }, [activeTimers, activeCaregiver]);
 

@@ -14,6 +14,7 @@ import { ChildSettingsModal } from './ChildSettingsModal';
 import { ImportPreviewModal } from './ImportPreviewModal';
 import { CaregiverModal } from './CaregiverModal';
 import { ChangePasswordModal } from './ChangePasswordModal';
+import { ServerSetupModal } from './ServerSetupModal';
 
 export function ModalManager() {
   const { activeModal, closeModal } = useApp();
@@ -36,6 +37,7 @@ export function ModalManager() {
       <ImportPreviewModal />
       <CaregiverModal />
       <ChangePasswordModal isOpen={activeModal === 'CHANGE_PASSWORD'} onClose={closeModal} />
+      <ServerSetupModal isOpen={activeModal === 'SERVER_SETUP'} onClose={closeModal} />
     </>
   );
 }

@@ -10,9 +10,19 @@ import { ModalManager } from './components/modals/ModalManager';
 import { LoginScreen } from './components/LoginScreen';
 import { NotificationToast } from './components/NotificationToast';
 
+import { Capacitor } from '@capacitor/core';
+import { syncService } from './services/syncService';
+
 function AppContent() {
   const { isAuthenticated, isLoadingAuth, openModal } = useApp();
   const [activeTab, setActiveTab] = useState('today');
+
+  // Auto-prompt server setup on native Android on first launch
+  useEffect(() => {
+    if (Capacitor.isNativePlatform() && !syncService.getServerBaseUrl()) {
+      openModal('SERVER_SETUP');
+    }
+  }, [openModal]);
 
   // Handle PWA Home Screen Shortcuts (/#nurse, /#bottle, /#sleep, /#diaper)
   useEffect(() => {
@@ -61,7 +71,12 @@ function AppContent() {
   }
 
   if (!isAuthenticated) {
-    return <LoginScreen />;
+    return (
+      <>
+        <LoginScreen />
+        <ModalManager />
+      </>
+    );
   }
 
   return (

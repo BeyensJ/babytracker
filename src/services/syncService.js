@@ -4,6 +4,7 @@
  */
 
 const AUTH_TOKEN_KEY = 'babytracker_auth_token_v1';
+const CUSTOM_SERVER_URL_KEY = 'babytracker_custom_server_url';
 
 class SyncService {
   constructor() {
@@ -17,6 +18,65 @@ class SyncService {
     this.pingInterval = null;
     this.isExplicitlyClosed = false;
     this.token = typeof localStorage !== 'undefined' ? localStorage.getItem(AUTH_TOKEN_KEY) : null;
+  }
+
+  // --- Server Base URL Management (Custom/LAN/Remote Servers) ---
+
+  getServerBaseUrl() {
+    if (typeof localStorage !== 'undefined') {
+      const custom = localStorage.getItem(CUSTOM_SERVER_URL_KEY);
+      if (custom && custom.trim()) {
+        let trimmed = custom.trim().replace(/\/+$/, '');
+        if (!/^https?:\/\//i.test(trimmed)) {
+          trimmed = `http://${trimmed}`;
+        }
+        return trimmed;
+      }
+    }
+    return '';
+  }
+
+  setServerBaseUrl(url) {
+    if (typeof localStorage !== 'undefined') {
+      if (url && url.trim()) {
+        let trimmed = url.trim().replace(/\/+$/, '');
+        if (!/^https?:\/\//i.test(trimmed)) {
+          trimmed = `http://${trimmed}`;
+        }
+        localStorage.setItem(CUSTOM_SERVER_URL_KEY, trimmed);
+      } else {
+        localStorage.removeItem(CUSTOM_SERVER_URL_KEY);
+      }
+    }
+  }
+
+  _buildUrl(endpoint) {
+    const base = this.getServerBaseUrl();
+    if (!base) return endpoint;
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    return `${base}${cleanEndpoint}`;
+  }
+
+  async checkServerHealth(testUrl = null) {
+    let base = testUrl !== null ? (testUrl ? testUrl.trim().replace(/\/+$/, '') : '') : this.getServerBaseUrl();
+    if (base && !/^https?:\/\//i.test(base)) {
+      base = `http://${base}`;
+    }
+    const url = base ? `${base}/api/sync/state` : '/api/sync/state';
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      // Both 200 (authenticated) and 401 (requires login) indicate a reachable Baby Tracker server
+      return { reachable: true, status: res.status, url: base || window.location.origin };
+    } catch (err) {
+      return { reachable: false, error: err.message, url: base || window.location.origin };
+    }
   }
 
   // --- Auth Token Management ---
@@ -115,9 +175,23 @@ class SyncService {
 
     this._setStatus('connecting');
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/ws?token=${encodeURIComponent(this.token)}`;
+    const base = this.getServerBaseUrl();
+    let wsUrl;
+    if (base) {
+      try {
+        const parsed = new URL(base);
+        const protocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
+        wsUrl = `${protocol}//${parsed.host}/ws?token=${encodeURIComponent(this.token)}`;
+      } catch {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        wsUrl = `${protocol}//${host}/ws?token=${encodeURIComponent(this.token)}`;
+      }
+    } else {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.host;
+      wsUrl = `${protocol}//${host}/ws?token=${encodeURIComponent(this.token)}`;
+    }
 
     try {
       this.ws = new WebSocket(wsUrl);
@@ -228,7 +302,8 @@ class SyncService {
       ...(options.headers || {}),
     };
 
-    const res = await fetch(url, { ...options, headers });
+    const targetUrl = this._buildUrl(url);
+    const res = await fetch(targetUrl, { ...options, headers });
     if (res.status === 401) {
       this.setToken(null);
       this._triggerAuthRequired();
@@ -240,7 +315,7 @@ class SyncService {
   // --- Authentication API ---
 
   async login(password, caregiverId, rememberMe = true) {
-    const res = await fetch('/api/auth/login', {
+    const res = await fetch(this._buildUrl('/api/auth/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password, caregiverId, rememberMe }),
@@ -280,7 +355,7 @@ class SyncService {
   async logout() {
     try {
       if (this.token) {
-        await fetch('/api/auth/logout', {
+        await fetch(this._buildUrl('/api/auth/logout'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

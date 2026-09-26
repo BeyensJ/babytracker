@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Lock, Eye, EyeOff, Check, Heart, ShieldCheck } from 'lucide-react';
+import { Lock, Eye, EyeOff, Check, Heart, ShieldCheck, Server } from 'lucide-react';
+import { syncService } from '../services/syncService';
 
 export function LoginScreen() {
-  const { login, caregivers, activeChild, t, language } = useApp();
+  const { login, caregivers, activeChild, t, language, openModal } = useApp();
   const [selectedCaregiverId, setSelectedCaregiverId] = useState(() => {
     // Default to Mom or first caregiver
     return caregivers?.[0]?.id || 'cg_mom';
@@ -175,6 +176,28 @@ export function LoginScreen() {
             )}
           </button>
         </form>
+
+        <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center' }}>
+          <button
+            type="button"
+            onClick={() => openModal('SERVER_SETUP')}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              fontSize: '0.78rem',
+              color: 'var(--text-secondary)',
+              padding: '0.4rem 0.6rem',
+              borderRadius: 'var(--radius-sm)',
+            }}
+          >
+            <Server size={14} color="var(--color-terracotta)" />
+            <span>{syncService.getServerBaseUrl() || (language === 'nl' ? 'Server configureren' : 'Configure server')}</span>
+          </button>
+        </div>
       </div>
     </div>
   );
