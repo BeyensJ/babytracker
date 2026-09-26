@@ -803,6 +803,14 @@ export function SettingsView() {
           </button>
         </div>
       </div>
+
+      {/* App Version & Build Footer */}
+      <div style={{ textAlign: 'center', padding: '0.75rem 0 0.5rem', color: 'var(--text-tertiary)', fontSize: '0.75rem', lineHeight: 1.5 }}>
+        <div>
+          Baby Tracker {typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v1.0'} {typeof __APP_BUILD_NUMBER__ !== 'undefined' && __APP_BUILD_NUMBER__ !== 'dev' ? `(build #${__APP_BUILD_NUMBER__})` : ''}
+        </div>
+        <div>{isDutch ? '100% Privé • Zelf gehost voor mama & papa' : '100% Private • Self-hosted for mom & dad'}</div>
+      </div>
     </div>
   );
 }
