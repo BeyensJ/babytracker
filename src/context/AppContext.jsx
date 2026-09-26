@@ -586,15 +586,9 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     const totalDuration = finalLeft + finalRight;
     const beginDt = b?.sessionStartMs || (now - totalDuration);
 
-    // Clear timer across devices
-    broadcastTimers(prev => {
-      const next = { ...prev };
-      delete next.breast;
-      return next;
-    });
-
-    // Open log modal
+    // Open log modal WITHOUT deleting timer immediately so cancel/close keeps it running
     openModal('BREAST', {
+      fromActiveTimer: 'breast',
       side: finalRight > 0 && finalLeft > 0 ? 'BOTH' : (finalRight > 0 ? 'RIGHT' : 'LEFT'),
       leftDurationMs: finalLeft,
       rightDurationMs: finalRight,
@@ -626,13 +620,9 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     const now = Date.now();
     const start = s?.startMs || now - 30 * 60 * 1000;
 
-    broadcastTimers(prev => {
-      const next = { ...prev };
-      delete next.sleep;
-      return next;
-    });
-
+    // Open log modal WITHOUT deleting timer immediately so cancel/close keeps it running
     openModal('SLEEP', {
+      fromActiveTimer: 'sleep',
       beginDt: start,
       endDt: now,
       durationMs: Math.max(0, now - start),
@@ -664,13 +654,9 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     const start = p?.startMs || now - 15 * 60 * 1000;
     const pumpSide = p?.side || 'BOTH';
 
-    broadcastTimers(prev => {
-      const next = { ...prev };
-      delete next.pump;
-      return next;
-    });
-
+    // Open log modal WITHOUT deleting timer immediately so cancel/close keeps it running
     openModal('PUMP', {
+      fromActiveTimer: 'pump',
       beginDt: start,
       endDt: now,
       durationMs: Math.max(0, now - start),
@@ -680,6 +666,20 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
         rightFloz: pumpSide === 'LEFT' ? 0 : 2.0,
       },
     });
+  };
+
+  // Clear an active timer explicitly when saved or deleted
+  const clearActiveTimer = (timerType) => {
+    broadcastTimers(prev => {
+      const next = { ...prev };
+      delete next[timerType];
+      return next;
+    });
+    try {
+      if (notificationService?.cancel) {
+        notificationService.cancel(timerType);
+      }
+    } catch {}
   };
 
   // 4. Update Start Time on Active Running Timer
@@ -900,6 +900,7 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     stopSleepTimer,
     startPumpTimer,
     stopPumpTimer,
+    clearActiveTimer,
     updateTimerStartTime,
     exportCSV,
     exportJSON,

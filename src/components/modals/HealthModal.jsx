@@ -149,43 +149,45 @@ export function HealthModal() {
             {/* Medicine Fields */}
             {subType === 'MED' && (
               <>
-                <div className="form-group">
-                  <label className="form-label">{language === 'nl' ? 'Naam geneesmiddel' : 'Medication Name'}</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder={language === 'nl' ? 'bv. Perdolan baby, Vitamine D' : 'e.g. Tylenol, Vitamin D'}
-                    value={medicineName}
-                    onChange={e => setMedicineName(e.target.value)}
-                    required
-                  />
+                <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '0.65rem' }}>
+                  <div className="form-group">
+                    <label className="form-label">{language === 'nl' ? 'Geneesmiddel' : 'Medication'}</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder={language === 'nl' ? 'bv. Perdolan, Vitamine D' : 'e.g. Tylenol, Vit D'}
+                      value={medicineName}
+                      onChange={e => setMedicineName(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">{language === 'nl' ? 'Dosis' : 'Dose'}</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder={language === 'nl' ? 'bv. 100mg, 6 dr' : 'e.g. 100mg, 1 drop'}
+                      value={dosage}
+                      onChange={e => setDosage(e.target.value)}
+                    />
+                  </div>
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">{language === 'nl' ? 'Veelgebruikte medicatie' : 'Common Medications'}</label>
                   <div className="chip-grid">
-                    {commonMeds.map(m => (
+                    {commonMeds.slice(0, 4).map(m => (
                       <button
                         key={m}
                         type="button"
                         className={`chip-btn ${medicineName === m ? 'selected' : ''}`}
+                        style={{ padding: '0.3rem 0.55rem', fontSize: '0.75rem' }}
                         onClick={() => setMedicineName(m)}
                       >
                         {m}
                       </button>
                     ))}
                   </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">{language === 'nl' ? 'Dosis / hoeveelheid' : 'Dose / Amount'}</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder={language === 'nl' ? 'bv. 1 suppo (100mg), 6 druppeltjes' : 'e.g. 1.25 mL, 1 drop, 400 IU'}
-                    value={dosage}
-                    onChange={e => setDosage(e.target.value)}
-                  />
                 </div>
               </>
             )}
@@ -200,6 +202,7 @@ export function HealthModal() {
                   min={isCelsius ? 34 : 93}
                   max={isCelsius ? 42 : 108}
                   className="form-input"
+                  style={{ fontSize: '1.4rem', fontWeight: 800, textAlign: 'center' }}
                   value={tempInput}
                   onChange={e => setTempInput(e.target.value)}
                   required
@@ -214,7 +217,7 @@ export function HealthModal() {
                 <input
                   type="text"
                   className="form-input"
-                  placeholder={language === 'nl' ? 'bv. Kind & Gezin consult, Kinderarts, Huisarts' : 'e.g. Pediatrician, 2 Month Checkup, Dr. Jansen'}
+                  placeholder={language === 'nl' ? 'bv. Kind & Gezin consult, Kinderarts' : 'e.g. Pediatrician, 2 Month Checkup'}
                   value={doctorName}
                   onChange={e => setDoctorName(e.target.value)}
                 />
@@ -228,7 +231,7 @@ export function HealthModal() {
                 <input
                   type="text"
                   className="form-input"
-                  placeholder={language === 'nl' ? 'bv. Hexyon, Prevenar, RotaTeq (8 weken prikjes)' : 'e.g. DTaP, Rotavirus, Hep B, 2 Month shots'}
+                  placeholder={language === 'nl' ? 'bv. Hexyon, Prevenar (8w prikjes)' : 'e.g. DTaP, Rotavirus'}
                   value={vaccineName}
                   onChange={e => setVaccineName(e.target.value)}
                   required
@@ -236,27 +239,28 @@ export function HealthModal() {
               </div>
             )}
 
-            {/* Time */}
-            <div className="form-group">
-              <label className="form-label">{t('common.time')}</label>
-              <input
-                type="time"
-                className="form-input"
-                value={timeStr}
-                onChange={e => setTimeStr(e.target.value)}
-              />
-            </div>
+            {/* Time & Notes */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '0.65rem' }}>
+              <div className="form-group">
+                <label className="form-label">{t('common.time')}</label>
+                <input
+                  type="time"
+                  className="form-input"
+                  value={timeStr}
+                  onChange={e => setTimeStr(e.target.value)}
+                />
+              </div>
 
-            {/* Notes */}
-            <div className="form-group">
-              <label className="form-label">{t('common.notes')}</label>
-              <textarea
-                className="form-textarea"
-                rows="2"
-                placeholder={language === 'nl' ? 'Koorts na prikje, huilerig, goed gedronken...' : 'Reason given, pediatrician advised, mild fussiness...'}
-                value={note}
-                onChange={e => setNote(e.target.value)}
-              />
+              <div className="form-group">
+                <label className="form-label">{t('common.notes')}</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder={t('common.notes')}
+                  value={note}
+                  onChange={e => setNote(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 

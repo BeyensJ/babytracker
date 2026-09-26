@@ -1,16 +1,34 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { triggerHaptic } from '../../utils/haptics';
-import { Pipette, X, Plus, Minus, ArrowRightLeft, Clock } from 'lucide-react';
-import { TimerStartCard } from '../TimerStartCard';
+import { Pipette, X, Plus, Minus, Play, Clock, Trash2 } from 'lucide-react';
 import { formatDurationMs } from '../../utils/formatters';
 
 export function PumpModal() {
-  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, startPumpTimer, t, language } = useApp();
+  const {
+    activeModal,
+    modalInitialData,
+    closeModal,
+    addEvent,
+    updateEvent,
+    deleteEvent,
+    clearActiveTimer,
+    preferences,
+    startPumpTimer,
+    t,
+    language,
+  } = useApp();
   const isDutch = language === 'nl';
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
+  const isFromActiveTimer = Boolean(modalInitialData?.fromActiveTimer === 'pump');
+  const isFromFinishedTimer = Boolean(!isEditing && (modalInitialData?.durationMs || isFromActiveTimer));
   const defaultUnit = preferences.volumeUnit === 'ml' ? 'ml' : 'oz';
+
+  const [activeTab, setActiveTab] = useState(() => {
+    if (isEditing || isFromFinishedTimer) return 'MANUAL';
+    return 'TIMER';
+  });
 
   const [unit, setUnit] = useState(() => {
     return modalInitialData?.details?.volumeUnit || defaultUnit;
@@ -20,7 +38,48 @@ export function PumpModal() {
     return modalInitialData?.details?.side || 'BOTH';
   });
 
-  // Convert raw initial value to the active unit
+  const formatTimeHHMM = (d = new Date()) => {
+    const h = String(d.getHours()).padStart(2, '0');
+    const m = String(d.getMinutes()).padStart(2, '0');
+    return `${h}:${m}`;
+  };
+
+  // Timer tab state
+  const [timerOffsetMinutes, setTimerOffsetMinutes] = useState(0);
+  const [timerTimeStr, setTimerTimeStr] = useState(() => formatTimeHHMM());
+
+  const handleSelectTimerOffset = (mins) => {
+    triggerHaptic('light', preferences?.haptics);
+    setTimerOffsetMinutes(mins);
+    if (mins === 0) {
+      setTimerTimeStr(formatTimeHHMM());
+    } else {
+      const target = new Date(Date.now() - mins * 60000);
+      setTimerTimeStr(formatTimeHHMM(target));
+    }
+  };
+
+  const handleManualTimerTimeChange = (e) => {
+    const val = e.target.value;
+    setTimerTimeStr(val);
+    setTimerOffsetMinutes(null);
+  };
+
+  const getComputedStartTs = () => {
+    if (timerOffsetMinutes === 0) return Date.now();
+    if (timerOffsetMinutes !== null && timerOffsetMinutes > 0) return Date.now() - timerOffsetMinutes * 60000;
+    if (!timerTimeStr) return Date.now();
+    const parts = timerTimeStr.split(':').map(Number);
+    const h = parts[0] || 0;
+    const m = parts[1] || 0;
+    const d = new Date();
+    d.setHours(h, m, 0, 0);
+    if (d.getTime() > Date.now() + 60000) {
+      d.setDate(d.getDate() - 1);
+    }
+    return d.getTime();
+  };
+
   const getInitialValue = (valFloz, valMl, fallback) => {
     if (unit === 'ml') {
       if (valMl !== undefined && valMl !== null) return valMl;
@@ -49,12 +108,7 @@ export function PumpModal() {
 
   const [durationMin, setDurationMin] = useState(() => {
     const ms = modalInitialData?.durationMs || 15 * 60 * 1000;
-    return Math.floor(ms / 60000);
-  });
-
-  const [durationSec, setDurationSec] = useState(() => {
-    const ms = modalInitialData?.durationMs || 0;
-    return Math.round((ms % 60000) / 1000);
+    return Math.max(1, Math.floor(ms / 60000));
   });
 
   const [note, setNote] = useState(modalInitialData?.note || '');
@@ -63,8 +117,7 @@ export function PumpModal() {
     const d = new Date(modalInitialData?.beginDt || Date.now());
     const h = String(d.getHours()).padStart(2, '0');
     const m = String(d.getMinutes()).padStart(2, '0');
-    const s = String(d.getSeconds()).padStart(2, '0');
-    return `${h}:${m}:${s}`;
+    return `${h}:${m}`;
   });
 
   if (activeModal !== 'PUMP') return null;
@@ -74,7 +127,7 @@ export function PumpModal() {
   const numRight = side === 'LEFT' ? 0 : (parseFloat(rightAmount) || 0);
   const totalAmount = isMl
     ? Math.round(numLeft + numRight)
-    : Math.round((numLeft + numRight) * 100) / 100;
+    : Math.round((numLeft + numRight) * 10) / 10;
 
   // Unit Switching
   const handleToggleUnit = (newUnit) => {
@@ -84,13 +137,12 @@ export function PumpModal() {
       setLeftAmount((prev) => Math.round((parseFloat(prev) || 0) * 29.5735));
       setRightAmount((prev) => Math.round((parseFloat(prev) || 0) * 29.5735));
     } else {
-      setLeftAmount((prev) => Math.round(((parseFloat(prev) || 0) / 29.5735) * 100) / 100);
-      setRightAmount((prev) => Math.round(((parseFloat(prev) || 0) / 29.5735) * 100) / 100);
+      setLeftAmount((prev) => Math.round(((parseFloat(prev) || 0) / 29.5735) * 10) / 10);
+      setRightAmount((prev) => Math.round(((parseFloat(prev) || 0) / 29.5735) * 10) / 10);
     }
     setUnit(newUnit);
   };
 
-  // Side Mode change
   const handleSideChange = (newSide) => {
     triggerHaptic('light', preferences?.haptics);
     setSide(newSide);
@@ -106,33 +158,31 @@ export function PumpModal() {
     }
   };
 
-  // Stepper adjustments
   const adjustSide = (target, delta) => {
     triggerHaptic('light', preferences?.haptics);
     if (target === 'LEFT') {
       setLeftAmount((prev) => {
         const cur = parseFloat(prev) || 0;
-        const nxt = isMl ? Math.max(0, Math.round(cur + delta)) : Math.max(0, Math.round((cur + delta) * 100) / 100);
-        return nxt;
+        return isMl ? Math.max(0, Math.round(cur + delta)) : Math.max(0, Math.round((cur + delta) * 10) / 10);
       });
     } else {
       setRightAmount((prev) => {
         const cur = parseFloat(prev) || 0;
-        const nxt = isMl ? Math.max(0, Math.round(cur + delta)) : Math.max(0, Math.round((cur + delta) * 100) / 100);
-        return nxt;
+        return isMl ? Math.max(0, Math.round(cur + delta)) : Math.max(0, Math.round((cur + delta) * 10) / 10);
       });
     }
   };
 
-  // Quick Helpers
   const copyLeftToRight = () => {
     triggerHaptic('light', preferences?.haptics);
     setRightAmount(leftAmount);
   };
 
-  const copyRightToLeft = () => {
-    triggerHaptic('light', preferences?.haptics);
-    setLeftAmount(rightAmount);
+  const handleStartLiveTimer = () => {
+    triggerHaptic('medium', preferences?.haptics);
+    const startTs = getComputedStartTs();
+    closeModal();
+    startPumpTimer(side, startTs);
   };
 
   const handleSave = (e) => {
@@ -140,11 +190,10 @@ export function PumpModal() {
     const parts = timeStr.split(':').map(Number);
     const h = parts[0] || 0;
     const m = parts[1] || 0;
-    const s = parts.length > 2 ? parts[2] : 0;
     const dateObj = new Date(modalInitialData?.beginDt || Date.now());
-    dateObj.setHours(h, m, s, 0);
+    dateObj.setHours(h, m, 0, 0);
     const beginDt = dateObj.getTime();
-    const durationMs = (Math.max(0, Number(durationMin) || 0) * 60 + Math.max(0, Number(durationSec) || 0)) * 1000;
+    const durationMs = Math.max(0, Number(durationMin) || 0) * 60 * 1000;
 
     const finalLeftFloz = isMl ? numLeft / 29.5735 : numLeft;
     const finalRightFloz = isMl ? numRight / 29.5735 : numRight;
@@ -175,7 +224,26 @@ export function PumpModal() {
       addEvent(eventPayload);
     }
 
+    if (isFromActiveTimer) {
+      clearActiveTimer('pump');
+    }
+
     closeModal();
+  };
+
+  const handleDelete = () => {
+    triggerHaptic('warning', preferences?.haptics);
+    if (isEditing) {
+      if (window.confirm(isDutch ? 'Ben je zeker dat je deze activiteit wil verwijderen?' : 'Are you sure you want to delete this event?')) {
+        deleteEvent(modalInitialData.id);
+        closeModal();
+      }
+    } else if (isFromActiveTimer) {
+      if (window.confirm(isDutch ? 'Weet je zeker dat je deze timer wilt wissen zonder op te slaan?' : 'Are you sure you want to discard this timer without logging?')) {
+        clearActiveTimer('pump');
+        closeModal();
+      }
+    }
   };
 
   return (
@@ -199,31 +267,38 @@ export function PumpModal() {
           </button>
         </div>
 
-        <form onSubmit={handleSave}>
-          <div className="modal-body">
-            {!isEditing && (
-              <TimerStartCard
-                title={t('timers.activePump')}
-                subtitle={language === 'nl' ? 'Houd live de afkolfsessie bij met timer' : 'Track live pumping with custom start time'}
-                icon={Pipette}
-                iconColor="var(--color-berry)"
-                iconBg="var(--color-berry-light)"
-                actions={[
-                  {
-                    id: 'start-timer-pump',
-                    label: language === 'nl' ? 'Kolftimer starten' : 'Start Pump Timer',
-                    className: 'btn-primary',
-                    style: { padding: '0.45rem 1rem', fontSize: '0.8rem', backgroundColor: 'var(--color-berry)' },
-                  },
-                ]}
-                onStart={(startTs) => {
-                  closeModal();
-                  startPumpTimer(side, startTs);
+        {/* Top Mode Toggle (hidden when editing or reviewing finished timer) */}
+        {!isEditing && !isFromFinishedTimer && (
+          <div style={{ padding: '0.65rem 1.15rem 0' }}>
+            <div className="modal-mode-toggle">
+              <button
+                type="button"
+                className={`modal-mode-btn ${activeTab === 'TIMER' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTab('TIMER');
+                  triggerHaptic('light', preferences?.haptics);
                 }}
-              />
-            )}
+              >
+                {t('common.liveTimerTab')}
+              </button>
+              <button
+                type="button"
+                className={`modal-mode-btn ${activeTab === 'MANUAL' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTab('MANUAL');
+                  triggerHaptic('light', preferences?.haptics);
+                }}
+              >
+                {t('common.manualLogTab')}
+              </button>
+            </div>
+          </div>
+        )}
 
-            {/* Pumping Side Toggle */}
+        {/* Tab 1: Live Pump Timer */}
+        {activeTab === 'TIMER' && !isEditing && !isFromFinishedTimer ? (
+          <div className="modal-body" style={{ gap: '1.1rem', paddingTop: '0.9rem' }}>
+            {/* Side selector */}
             <div className="form-group">
               <label className="form-label">{t('pumpModal.sideSelection')}</label>
               <div className="segmented-control">
@@ -251,273 +326,315 @@ export function PumpModal() {
               </div>
             </div>
 
-            {/* Total Expressed Banner & Unit Switcher */}
-            <div className="pump-total-banner">
-              <div>
-                <div className="pump-total-label">{t('pumpModal.totalExpressed')}</div>
-                <div className="pump-total-value">
-                  {totalAmount} <span style={{ fontSize: '1.2rem', fontWeight: 600 }}>{unit}</span>
-                </div>
-              </div>
-
-              {/* On-the-fly unit toggle */}
-              <div className="bottle-unit-toggle">
-                <button
-                  type="button"
-                  className={`bottle-unit-btn ${unit === 'ml' ? 'active' : ''}`}
-                  onClick={() => handleToggleUnit('ml')}
-                >
-                  mL
-                </button>
-                <button
-                  type="button"
-                  className={`bottle-unit-btn ${unit === 'oz' ? 'active' : ''}`}
-                  onClick={() => handleToggleUnit('oz')}
-                >
-                  oz
-                </button>
-              </div>
-            </div>
-
-            {/* Left & Right Side Cards */}
-            <div className="pump-sides-grid">
-              {/* Left Side */}
-              <div className={`pump-side-card ${side === 'RIGHT' ? 'disabled' : ''}`}>
-                <div className="pump-side-header">
-                  <span className="pump-side-title">{t('pumpModal.leftSide')}</span>
-                  {side === 'BOTH' && (
-                    <button
-                      type="button"
-                      className="pump-chip-btn"
-                      onClick={copyLeftToRight}
-                      title={t('pumpModal.copyToRight')}
-                    >
-                      {t('pumpModal.copyToRight')} ➔
-                    </button>
-                  )}
-                </div>
-
-                <div className="pump-input-row">
-                  <button
-                    type="button"
-                    className="pump-stepper-btn"
-                    onClick={() => adjustSide('LEFT', isMl ? -5 : -0.25)}
-                    aria-label={isDutch ? 'Links verlagen' : 'Decrease Left amount'}
-                  >
-                    <Minus size={16} />
-                  </button>
-                  <input
-                    type="number"
-                    step={isMl ? '1' : '0.1'}
-                    min="0"
-                    className="pump-amount-input"
-                    value={side === 'RIGHT' ? 0 : leftAmount}
-                    disabled={side === 'RIGHT'}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      setLeftAmount(isNaN(val) ? '' : Math.max(0, val));
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="pump-stepper-btn"
-                    onClick={() => adjustSide('LEFT', isMl ? 5 : 0.25)}
-                    aria-label={isDutch ? 'Links verhogen' : 'Increase Left amount'}
-                  >
-                    <Plus size={16} />
-                  </button>
-                </div>
-
-                {/* Quick Stepper Chips for Left */}
-                <div className="pump-chips-row">
-                  {isMl ? (
-                    <>
-                      <button type="button" className="pump-chip-btn" onClick={() => adjustSide('LEFT', -10)}>-10</button>
-                      <button type="button" className="pump-chip-btn" onClick={() => adjustSide('LEFT', -5)}>-5</button>
-                      <button type="button" className="pump-chip-btn" onClick={() => adjustSide('LEFT', 5)}>+5</button>
-                      <button type="button" className="pump-chip-btn" onClick={() => adjustSide('LEFT', 10)}>+10</button>
-                      <button type="button" className="pump-chip-btn" onClick={() => adjustSide('LEFT', 30)}>+30</button>
-                    </>
-                  ) : (
-                    <>
-                      <button type="button" className="pump-chip-btn" onClick={() => adjustSide('LEFT', -0.5)}>-0.5</button>
-                      <button type="button" className="pump-chip-btn" onClick={() => adjustSide('LEFT', -0.25)}>-0.25</button>
-                      <button type="button" className="pump-chip-btn" onClick={() => adjustSide('LEFT', 0.25)}>+0.25</button>
-                      <button type="button" className="pump-chip-btn" onClick={() => adjustSide('LEFT', 0.5)}>+0.5</button>
-                      <button type="button" className="pump-chip-btn" onClick={() => adjustSide('LEFT', 1.0)}>+1.0</button>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Right Side */}
-              <div className={`pump-side-card ${side === 'LEFT' ? 'disabled' : ''}`}>
-                <div className="pump-side-header">
-                  <span className="pump-side-title">{t('pumpModal.rightSide')}</span>
-                  {side === 'BOTH' && (
-                    <button
-                      type="button"
-                      className="pump-chip-btn"
-                      onClick={copyRightToLeft}
-                      title={t('pumpModal.copyToLeft')}
-                    >
-                      {t('pumpModal.copyToLeft')} ➔
-                    </button>
-                  )}
-                </div>
-
-                <div className="pump-input-row">
-                  <button
-                    type="button"
-                    className="pump-stepper-btn"
-                    onClick={() => adjustSide('RIGHT', isMl ? -5 : -0.25)}
-                    aria-label={isDutch ? 'Rechts verlagen' : 'Decrease Right amount'}
-                  >
-                    <Minus size={16} />
-                  </button>
-                  <input
-                    type="number"
-                    step={isMl ? '1' : '0.1'}
-                    min="0"
-                    className="pump-amount-input"
-                    value={side === 'LEFT' ? 0 : rightAmount}
-                    disabled={side === 'LEFT'}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      setRightAmount(isNaN(val) ? '' : Math.max(0, val));
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="pump-stepper-btn"
-                    onClick={() => adjustSide('RIGHT', isMl ? 5 : 0.25)}
-                    aria-label={isDutch ? 'Rechts verhogen' : 'Increase Right amount'}
-                  >
-                    <Plus size={16} />
-                  </button>
-                </div>
-
-                {/* Quick Stepper Chips for Right */}
-                <div className="pump-chips-row">
-                  {isMl ? (
-                    <>
-                      <button type="button" className="pump-chip-btn" onClick={() => adjustSide('RIGHT', -10)}>-10</button>
-                      <button type="button" className="pump-chip-btn" onClick={() => adjustSide('RIGHT', -5)}>-5</button>
-                      <button type="button" className="pump-chip-btn" onClick={() => adjustSide('RIGHT', 5)}>+5</button>
-                      <button type="button" className="pump-chip-btn" onClick={() => adjustSide('RIGHT', 10)}>+10</button>
-                      <button type="button" className="pump-chip-btn" onClick={() => adjustSide('RIGHT', 30)}>+30</button>
-                    </>
-                  ) : (
-                    <>
-                      <button type="button" className="pump-chip-btn" onClick={() => adjustSide('RIGHT', -0.5)}>-0.5</button>
-                      <button type="button" className="pump-chip-btn" onClick={() => adjustSide('RIGHT', -0.25)}>-0.25</button>
-                      <button type="button" className="pump-chip-btn" onClick={() => adjustSide('RIGHT', 0.25)}>+0.25</button>
-                      <button type="button" className="pump-chip-btn" onClick={() => adjustSide('RIGHT', 0.5)}>+0.5</button>
-                      <button type="button" className="pump-chip-btn" onClick={() => adjustSide('RIGHT', 1.0)}>+1.0</button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Duration */}
-            <div className="form-group">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                <label className="form-label" style={{ marginBottom: 0 }}>
-                  {t('pumpModal.sessionDuration')} ({formatDurationMs((Math.max(0, Number(durationMin) || 0) * 60 + Math.max(0, Number(durationSec) || 0)) * 1000, language)})
-                </label>
-                <div style={{ display: 'flex', gap: '0.3rem' }}>
-                  {[10, 15, 20, 30].map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      className={`pump-chip-btn ${durationMin === m && Number(durationSec) === 0 ? 'chip-btn selected berry' : ''}`}
-                      onClick={() => {
-                        triggerHaptic('light', preferences?.haptics);
-                        setDurationMin(m);
-                        setDurationSec(0);
-                      }}
-                      style={{ padding: '0.2rem 0.5rem' }}
-                    >
-                      {m}m
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type="number"
-                    min="0"
-                    max="180"
-                    className="form-input"
-                    style={{ paddingRight: '2rem' }}
-                    value={durationMin}
-                    onChange={(e) => setDurationMin(e.target.value)}
-                    placeholder="0"
-                  />
-                  <span style={{ position: 'absolute', right: '0.6rem', top: '50%', transform: 'translateY(-50%)', fontSize: '0.75rem', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>
-                    min
-                  </span>
-                </div>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type="number"
-                    min="0"
-                    max="59"
-                    className="form-input"
-                    style={{ paddingRight: '2rem' }}
-                    value={durationSec}
-                    onChange={(e) => setDurationSec(e.target.value)}
-                    placeholder="0"
-                  />
-                  <span style={{ position: 'absolute', right: '0.6rem', top: '50%', transform: 'translateY(-50%)', fontSize: '0.75rem', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>
-                    sec
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Time of Pump */}
-            <div className="form-group">
-              <label className="form-label">{t('common.time')}</label>
-              <input
-                type="time"
-                step="1"
-                className="form-input"
-                value={timeStr}
-                onChange={(e) => setTimeStr(e.target.value)}
-              />
-            </div>
-
-            {/* Notes */}
-            <div className="form-group">
-              <label className="form-label">{t('common.notes')}</label>
-              <textarea
-                className="form-textarea"
-                rows="2"
-                placeholder={language === 'nl' ? 'In koelkast bewaard, ochtendsessie, elektrisch afgekolfd...' : 'Stored in fridge bag, morning pump, electric pump...'}
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="modal-footer">
-            <button type="button" className="btn-secondary" onClick={closeModal}>
-              {t('common.cancel')}
-            </button>
             <button
-              type="submit"
+              type="button"
               className="btn-primary"
-              style={{ backgroundColor: 'var(--color-berry)' }}
+              style={{
+                width: '100%',
+                minHeight: '56px',
+                backgroundColor: 'var(--color-berry)',
+                fontSize: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+              }}
+              onClick={handleStartLiveTimer}
             >
-              {isEditing ? t('pumpModal.submitEdit') : t('pumpModal.submitAdd')}
+              <Play size={18} fill="currentColor" />
+              <span>
+                {isDutch ? 'Kolftimer starten' : 'Start Pump Timer'}
+                <span style={{ fontSize: '0.8rem', opacity: 0.9, marginLeft: '0.4rem', fontWeight: 500 }}>
+                  ({timerOffsetMinutes === 0
+                    ? (isDutch ? 'nu' : 'now')
+                    : timerOffsetMinutes !== null
+                      ? (isDutch ? `${timerOffsetMinutes}m geleden` : `${timerOffsetMinutes}m ago`)
+                      : (isDutch ? `om ${timerTimeStr}` : `at ${timerTimeStr}`)})
+                </span>
+              </span>
             </button>
+
+            {/* Starting Time: Manual Time Input + Quick Offset Pills */}
+            <div style={{
+              backgroundColor: 'var(--bg-card-subtle)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-md)',
+              padding: '0.65rem 0.85rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  <Clock size={14} />
+                  <span>{isDutch ? 'Starttijd:' : 'Start time:'}</span>
+                </div>
+                <input
+                  type="time"
+                  className="form-input"
+                  style={{
+                    width: 'auto',
+                    minWidth: '95px',
+                    padding: '0.25rem 0.5rem',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    textAlign: 'center',
+                  }}
+                  value={timerTimeStr}
+                  onChange={handleManualTimerTimeChange}
+                  title={isDutch ? 'Kies handmatig een exacte starttijd' : 'Choose exact start time manually'}
+                />
+              </div>
+
+              <div className="quick-presets-row">
+                {[
+                  { offset: 0, label: isDutch ? 'Nu' : 'Now' },
+                  { offset: 5, label: '5m' },
+                  { offset: 10, label: '10m' },
+                  { offset: 15, label: '15m' },
+                ].map(p => (
+                  <button
+                    key={p.offset}
+                    type="button"
+                    className={`quick-preset-pill ${timerOffsetMinutes === p.offset ? 'active berry' : ''}`}
+                    style={{ padding: '0.25rem 0.45rem', fontSize: '0.78rem' }}
+                    onClick={() => handleSelectTimerOffset(p.offset)}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-        </form>
+        ) : (
+          /* Tab 2: Manual Past Pump Form */
+          <form onSubmit={handleSave}>
+            <div className="modal-body">
+              {/* Side Selection */}
+              <div className="segmented-control">
+                <button
+                  type="button"
+                  className={`segmented-btn ${side === 'BOTH' ? 'active' : ''}`}
+                  onClick={() => handleSideChange('BOTH')}
+                >
+                  {t('pumpModal.bothSides')}
+                </button>
+                <button
+                  type="button"
+                  className={`segmented-btn ${side === 'LEFT' ? 'active' : ''}`}
+                  onClick={() => handleSideChange('LEFT')}
+                >
+                  {t('pumpModal.leftOnly')}
+                </button>
+                <button
+                  type="button"
+                  className={`segmented-btn ${side === 'RIGHT' ? 'active' : ''}`}
+                  onClick={() => handleSideChange('RIGHT')}
+                >
+                  {t('pumpModal.rightOnly')}
+                </button>
+              </div>
+
+              {/* Total Expressed Summary Banner + Unit Switcher */}
+              <div style={{
+                backgroundColor: 'var(--color-berry-light)',
+                color: 'var(--color-berry)',
+                border: '1px solid rgba(136, 103, 123, 0.2)',
+                borderRadius: 'var(--radius-md)',
+                padding: '0.65rem 0.95rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}>
+                <div>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    {t('pumpModal.totalExpressed')}
+                  </div>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 800, lineHeight: 1.1 }}>
+                    {totalAmount} <span style={{ fontSize: '0.95rem', fontWeight: 600 }}>{unit}</span>
+                  </div>
+                </div>
+
+                <div className="bottle-unit-toggle">
+                  <button
+                    type="button"
+                    className={`bottle-unit-btn ${unit === 'ml' ? 'active' : ''}`}
+                    style={{ backgroundColor: unit === 'ml' ? 'var(--color-berry)' : 'transparent' }}
+                    onClick={() => handleToggleUnit('ml')}
+                  >
+                    mL
+                  </button>
+                  <button
+                    type="button"
+                    className={`bottle-unit-btn ${unit === 'oz' ? 'active' : ''}`}
+                    style={{ backgroundColor: unit === 'oz' ? 'var(--color-berry)' : 'transparent' }}
+                    onClick={() => handleToggleUnit('oz')}
+                  >
+                    oz
+                  </button>
+                </div>
+              </div>
+
+              {/* Side Volume Inputs */}
+              <div style={{ display: 'grid', gridTemplateColumns: side === 'BOTH' ? '1fr 1fr' : '1fr', gap: '0.65rem' }}>
+                {(side === 'LEFT' || side === 'BOTH') && (
+                  <div className="pump-side-card" style={{ padding: '0.65rem 0.85rem' }}>
+                    <div className="pump-side-header">
+                      <span className="pump-side-title">{t('pumpModal.leftSide')}</span>
+                      {side === 'BOTH' && (
+                        <button
+                          type="button"
+                          className="pump-chip-btn"
+                          onClick={copyLeftToRight}
+                          title={t('pumpModal.copyToRight')}
+                        >
+                          ➔ R
+                        </button>
+                      )}
+                    </div>
+                    <div className="pump-input-row">
+                      <button
+                        type="button"
+                        className="pump-stepper-btn"
+                        onClick={() => adjustSide('LEFT', isMl ? -10 : -0.5)}
+                        aria-label="Decrease"
+                      >
+                        <Minus size={15} />
+                      </button>
+                      <input
+                        type="number"
+                        step={isMl ? '1' : '0.1'}
+                        min="0"
+                        className="pump-amount-input"
+                        value={leftAmount}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          setLeftAmount(isNaN(val) ? '' : Math.max(0, val));
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="pump-stepper-btn"
+                        onClick={() => adjustSide('LEFT', isMl ? 10 : 0.5)}
+                        aria-label="Increase"
+                      >
+                        <Plus size={15} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {(side === 'RIGHT' || side === 'BOTH') && (
+                  <div className="pump-side-card" style={{ padding: '0.65rem 0.85rem' }}>
+                    <div className="pump-side-header">
+                      <span className="pump-side-title">{t('pumpModal.rightSide')}</span>
+                    </div>
+                    <div className="pump-input-row">
+                      <button
+                        type="button"
+                        className="pump-stepper-btn"
+                        onClick={() => adjustSide('RIGHT', isMl ? -10 : -0.5)}
+                        aria-label="Decrease"
+                      >
+                        <Minus size={15} />
+                      </button>
+                      <input
+                        type="number"
+                        step={isMl ? '1' : '0.1'}
+                        min="0"
+                        className="pump-amount-input"
+                        value={rightAmount}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          setRightAmount(isNaN(val) ? '' : Math.max(0, val));
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="pump-stepper-btn"
+                        onClick={() => adjustSide('RIGHT', isMl ? 10 : 0.5)}
+                        aria-label="Increase"
+                      >
+                        <Plus size={15} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Duration with Quick Presets */}
+              <div className="form-group">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                  <label className="form-label" style={{ marginBottom: 0 }}>
+                    {t('common.duration')} ({durationMin} min)
+                  </label>
+                  <div className="quick-presets-row">
+                    {[10, 15, 20, 30].map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        className={`quick-preset-pill ${durationMin === m ? 'active berry' : ''}`}
+                        style={{ padding: '0.2rem 0.45rem', fontSize: '0.75rem', minWidth: '36px' }}
+                        onClick={() => {
+                          triggerHaptic('light', preferences?.haptics);
+                          setDurationMin(m);
+                        }}
+                      >
+                        {m}m
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Time & Notes */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '0.65rem' }}>
+                <div className="form-group">
+                  <input
+                    type="time"
+                    className="form-input"
+                    value={timeStr}
+                    onChange={(e) => setTimeStr(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder={t('common.notes')}
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              {(isEditing || isFromActiveTimer) && (
+                <button
+                  type="button"
+                  className="btn-danger"
+                  onClick={handleDelete}
+                  title={isEditing ? t('common.delete') : (isDutch ? 'Timer wissen' : 'Discard timer')}
+                >
+                  <Trash2 size={16} />
+                  <span>{isEditing ? t('common.delete') : (isDutch ? 'Wissen' : 'Delete')}</span>
+                </button>
+              )}
+              <button type="button" className="btn-secondary" onClick={closeModal}>
+                {t('common.cancel')}
+              </button>
+              <button
+                type="submit"
+                className="btn-primary"
+                style={{ backgroundColor: 'var(--color-berry)' }}
+              >
+                {isEditing ? t('pumpModal.submitEdit') : t('pumpModal.submitAdd')}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
 }
-

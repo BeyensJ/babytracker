@@ -125,69 +125,73 @@ export function GrowthModal() {
 
         <form onSubmit={handleSave}>
           <div className="modal-body">
-            {/* Weight */}
-            <div className="form-group">
-              <label className="form-label">{t('growthModal.weight', { unit: isMetric ? 'kg' : 'lbs' })}</label>
-              <input
-                type="number"
-                step="0.05"
-                min="1"
-                max="100"
-                className="form-input"
-                value={weightInput}
-                onChange={e => setWeightInput(e.target.value)}
-                required
-              />
+            {/* Weight & Length side-by-side */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
+              <div className="form-group">
+                <label className="form-label">{t('growthModal.weight', { unit: isMetric ? 'kg' : 'lbs' })}</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="1"
+                  max="100"
+                  className="form-input"
+                  placeholder={isMetric ? '4.25' : '9.4'}
+                  value={weightInput}
+                  onChange={e => setWeightInput(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">{t('growthModal.length', { unit: preferences.lengthUnit === 'cm' ? 'cm' : 'in' })}</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="5"
+                  max="150"
+                  className="form-input"
+                  placeholder={preferences.lengthUnit === 'cm' ? '54.5' : '21.5'}
+                  value={heightInput}
+                  onChange={e => setHeightInput(e.target.value)}
+                  required
+                />
+              </div>
             </div>
 
-            {/* Height */}
-            <div className="form-group">
-              <label className="form-label">{t('growthModal.length', { unit: preferences.lengthUnit === 'cm' ? 'cm' : 'inches' })}</label>
-              <input
-                type="number"
-                step="0.1"
-                min="5"
-                max="150"
-                className="form-input"
-                value={heightInput}
-                onChange={e => setHeightInput(e.target.value)}
-                required
-              />
-            </div>
+            {/* Head Circumference & Date side-by-side */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
+              <div className="form-group">
+                <label className="form-label">{t('growthModal.head', { unit: preferences.lengthUnit === 'cm' ? 'cm' : 'in' })}</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="5"
+                  max="100"
+                  className="form-input"
+                  placeholder={t('growthModal.headPlaceholder')}
+                  value={headInput}
+                  onChange={e => setHeadInput(e.target.value)}
+                />
+              </div>
 
-            {/* Head Circumference */}
-            <div className="form-group">
-              <label className="form-label">{t('growthModal.head', { unit: preferences.lengthUnit === 'cm' ? 'cm' : 'inches' })}</label>
-              <input
-                type="number"
-                step="0.1"
-                min="5"
-                max="100"
-                className="form-input"
-                placeholder={t('growthModal.headPlaceholder')}
-                value={headInput}
-                onChange={e => setHeadInput(e.target.value)}
-              />
-            </div>
-
-            {/* Date */}
-            <div className="form-group">
-              <label className="form-label">{language === 'nl' ? 'Datum van meting' : 'Date of Measurement'}</label>
-              <input
-                type="date"
-                className="form-input"
-                value={dateStr}
-                onChange={e => setDateStr(e.target.value)}
-              />
+              <div className="form-group">
+                <label className="form-label">{language === 'nl' ? 'Datum' : 'Date'}</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={dateStr}
+                  onChange={e => setDateStr(e.target.value)}
+                />
+              </div>
             </div>
 
             {/* Notes */}
             <div className="form-group">
               <label className="form-label">{t('common.notes')}</label>
-              <textarea
-                className="form-textarea"
-                rows="2"
-                placeholder={language === 'nl' ? 'Controle bij Kind & Gezin / kinderarts, percentielen...' : 'Pediatrician checkup notes, percentiles...'}
+              <input
+                type="text"
+                className="form-input"
+                placeholder={language === 'nl' ? 'Controle bij Kind & Gezin / kinderarts...' : 'Pediatrician checkup notes...'}
                 value={note}
                 onChange={e => setNote(e.target.value)}
               />

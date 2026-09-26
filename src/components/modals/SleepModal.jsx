@@ -1,61 +1,156 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { formatDurationMs } from '../../utils/formatters';
-import { Moon, X } from 'lucide-react';
-import { TimerStartCard } from '../TimerStartCard';
+import { Moon, X, Play, Clock, Trash2 } from 'lucide-react';
+import { triggerHaptic } from '../../utils/haptics';
 
 export function SleepModal() {
-  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, startSleepTimer, t, language } = useApp();
+  const {
+    activeModal,
+    modalInitialData,
+    closeModal,
+    addEvent,
+    updateEvent,
+    deleteEvent,
+    clearActiveTimer,
+    startSleepTimer,
+    preferences,
+    t,
+    language,
+  } = useApp();
+  const isDutch = language === 'nl';
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
+  const isFromActiveTimer = Boolean(modalInitialData?.fromActiveTimer === 'sleep');
+  const isFromFinishedTimer = Boolean(!isEditing && (modalInitialData?.durationMs !== undefined || isFromActiveTimer));
 
+  const [activeTab, setActiveTab] = useState(() => {
+    if (isEditing || isFromFinishedTimer) return 'MANUAL';
+    return 'TIMER';
+  });
+
+  const formatTimeHHMM = (d = new Date()) => {
+    const h = String(d.getHours()).padStart(2, '0');
+    const m = String(d.getMinutes()).padStart(2, '0');
+    return `${h}:${m}`;
+  };
+
+  // Timer starting state
+  const [timerOffsetMinutes, setTimerOffsetMinutes] = useState(0);
+  const [timerTimeStr, setTimerTimeStr] = useState(() => formatTimeHHMM());
+
+  const handleSelectTimerOffset = (mins) => {
+    triggerHaptic('light', preferences?.haptics);
+    setTimerOffsetMinutes(mins);
+    if (mins === 0) {
+      setTimerTimeStr(formatTimeHHMM());
+    } else {
+      const target = new Date(Date.now() - mins * 60000);
+      setTimerTimeStr(formatTimeHHMM(target));
+    }
+  };
+
+  const handleManualTimerTimeChange = (e) => {
+    const val = e.target.value;
+    setTimerTimeStr(val);
+    setTimerOffsetMinutes(null);
+  };
+
+  const getComputedStartTs = () => {
+    if (timerOffsetMinutes === 0) return Date.now();
+    if (timerOffsetMinutes !== null && timerOffsetMinutes > 0) return Date.now() - timerOffsetMinutes * 60000;
+    if (!timerTimeStr) return Date.now();
+    const parts = timerTimeStr.split(':').map(Number);
+    const h = parts[0] || 0;
+    const m = parts[1] || 0;
+    const d = new Date();
+    d.setHours(h, m, 0, 0);
+    if (d.getTime() > Date.now() + 60000) {
+      d.setDate(d.getDate() - 1);
+    }
+    return d.getTime();
+  };
+
+  // Manual logging state
   const [sleepType, setSleepType] = useState(() => {
     return modalInitialData?.details?.sleepType || 'NAP';
   });
 
-  const formatTimeStr = (ts) => {
+  const formatHHMM = (ts) => {
     const d = new Date(ts);
     const h = String(d.getHours()).padStart(2, '0');
     const m = String(d.getMinutes()).padStart(2, '0');
-    const s = String(d.getSeconds()).padStart(2, '0');
-    return `${h}:${m}:${s}`;
+    return `${h}:${m}`;
   };
 
-  const [startDate, setStartDate] = useState(() => {
-    const d = new Date(modalInitialData?.beginDt || Date.now() - 60 * 60 * 1000);
-    return d.toISOString().split('T')[0];
+  const [startDateStr] = useState(() => {
+    const d = new Date(modalInitialData?.beginDt || (Date.now() - 45 * 60 * 1000));
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   });
 
   const [startTime, setStartTime] = useState(() => {
-    return formatTimeStr(modalInitialData?.beginDt || (Date.now() - 60 * 60 * 1000));
-  });
-
-  const [endDate, setEndDate] = useState(() => {
-    const d = new Date(modalInitialData?.endDt || Date.now());
-    return d.toISOString().split('T')[0];
+    return formatHHMM(modalInitialData?.beginDt || (Date.now() - 45 * 60 * 1000));
   });
 
   const [endTime, setEndTime] = useState(() => {
-    return formatTimeStr(modalInitialData?.endDt || Date.now());
+    return formatHHMM(modalInitialData?.endDt || Date.now());
   });
 
   const [note, setNote] = useState(modalInitialData?.note || '');
 
   if (activeModal !== 'SLEEP') return null;
 
-  // Calculate duration preview with second precision
-  const parseTimeOnDate = (dateStr, timeStr) => {
-    const [y, mon, day] = dateStr.split('-').map(Number);
-    const parts = (timeStr || '').split(':').map(Number);
-    const h = parts[0] || 0;
-    const m = parts[1] || 0;
-    const s = parts.length > 2 ? parts[2] : 0;
-    return new Date(y, mon - 1, day, h, m, s, 0).getTime();
+  // Calculate start & end timestamps accurately, handling overnight sleeps
+  const calculateTimestamps = () => {
+    const [y, mon, day] = startDateStr.split('-').map(Number);
+    const [sh, sm] = (startTime || '00:00').split(':').map(Number);
+    const [eh, em] = (endTime || '00:00').split(':').map(Number);
+
+    const startObj = new Date(y, mon - 1, day, sh || 0, sm || 0, 0, 0);
+    const endObj = new Date(y, mon - 1, day, eh || 0, em || 0, 0, 0);
+
+    // If end is before start, baby slept past midnight into next day
+    if (endObj.getTime() < startObj.getTime()) {
+      endObj.setDate(endObj.getDate() + 1);
+    }
+
+    const startTs = startObj.getTime();
+    const endTs = endObj.getTime();
+    const durationMs = Math.max(0, endTs - startTs);
+
+    return { startTs, endTs, durationMs };
   };
 
-  const startTs = parseTimeOnDate(startDate, startTime);
-  const endTs = parseTimeOnDate(endDate, endTime);
-  const durationMs = Math.max(0, endTs - startTs);
+  const { startTs, endTs, durationMs } = calculateTimestamps();
+
+  // Quick duration presets (30m, 45m, 1h, 1.5h, 2h, 3h)
+  const quickDurations = [
+    { mins: 30, label: '30m' },
+    { mins: 45, label: '45m' },
+    { mins: 60, label: '1h' },
+    { mins: 90, label: '1.5h' },
+    { mins: 120, label: '2h' },
+    { mins: 180, label: '3h' },
+  ];
+
+  const handleApplyDuration = (mins) => {
+    triggerHaptic('light', preferences?.haptics);
+    const [sh, sm] = (startTime || '00:00').split(':').map(Number);
+    const [y, mon, day] = startDateStr.split('-').map(Number);
+    const startObj = new Date(y, mon - 1, day, sh || 0, sm || 0, 0, 0);
+    const targetEndObj = new Date(startObj.getTime() + mins * 60000);
+    setEndTime(formatHHMM(targetEndObj.getTime()));
+  };
+
+  const handleStartLiveTimer = () => {
+    triggerHaptic('medium', preferences?.haptics);
+    const startTs = getComputedStartTs();
+    closeModal();
+    startSleepTimer(startTs);
+  };
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -77,7 +172,26 @@ export function SleepModal() {
       addEvent(eventPayload);
     }
 
+    if (isFromActiveTimer) {
+      clearActiveTimer('sleep');
+    }
+
     closeModal();
+  };
+
+  const handleDelete = () => {
+    triggerHaptic('warning', preferences?.haptics);
+    if (isEditing) {
+      if (window.confirm(isDutch ? 'Ben je zeker dat je deze activiteit wil verwijderen?' : 'Are you sure you want to delete this event?')) {
+        deleteEvent(modalInitialData.id);
+        closeModal();
+      }
+    } else if (isFromActiveTimer) {
+      if (window.confirm(isDutch ? 'Weet je zeker dat je deze timer wilt wissen zonder op te slaan?' : 'Are you sure you want to discard this timer without logging?')) {
+        clearActiveTimer('sleep');
+        closeModal();
+      }
+    }
   };
 
   return (
@@ -95,107 +209,248 @@ export function SleepModal() {
           </button>
         </div>
 
-        <form onSubmit={handleSave}>
-          <div className="modal-body">
-            {/* Live Sleep Timer with Starting Time Option */}
-            {!isEditing && (
-              <TimerStartCard
-                title={language === 'nl' ? 'Valt de baby in slaap?' : 'Baby Falling Asleep?'}
-                subtitle={language === 'nl' ? 'Start een actieve slaaptimer met instelbare begintijd' : 'Start an active sleep timer with custom start time'}
-                icon={Moon}
-                iconColor="var(--color-slate)"
-                iconBg="var(--color-slate-light)"
-                actions={[
-                  {
-                    id: 'start-timer-sleep',
-                    label: language === 'nl' ? 'Slaaptimer starten' : 'Start Sleep Timer',
-                    className: 'btn-primary',
-                    style: { padding: '0.45rem 1rem', fontSize: '0.8rem', backgroundColor: 'var(--color-slate)' },
-                  },
-                ]}
-                onStart={(startTs) => {
-                  closeModal();
-                  startSleepTimer(startTs);
+        {/* Top Mode Toggle (hidden when editing or reviewing finished timer) */}
+        {!isEditing && !isFromFinishedTimer && (
+          <div style={{ padding: '0.65rem 1.15rem 0' }}>
+            <div className="modal-mode-toggle">
+              <button
+                type="button"
+                className={`modal-mode-btn ${activeTab === 'TIMER' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTab('TIMER');
+                  triggerHaptic('light', preferences?.haptics);
                 }}
-              />
-            )}
+              >
+                {t('common.liveTimerTab')}
+              </button>
+              <button
+                type="button"
+                className={`modal-mode-btn ${activeTab === 'MANUAL' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTab('MANUAL');
+                  triggerHaptic('light', preferences?.haptics);
+                }}
+              >
+                {t('common.manualLogTab')}
+              </button>
+            </div>
+          </div>
+        )}
 
-            {/* Sleep Type (Nap vs Night) */}
-            <div className="form-group">
-              <label className="form-label">{language === 'nl' ? 'Type slaap' : 'Type of Sleep'}</label>
+        {/* Tab 1: Start Live Sleep Timer */}
+        {activeTab === 'TIMER' && !isEditing && !isFromFinishedTimer ? (
+          <div className="modal-body" style={{ gap: '1.1rem', paddingTop: '0.9rem' }}>
+            <div style={{ textAlign: 'center', padding: '0.4rem 0 0.1rem' }}>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                {isDutch ? 'Valt de baby in slaap?' : 'Is baby falling asleep?'}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              className="btn-primary"
+              style={{
+                width: '100%',
+                minHeight: '56px',
+                backgroundColor: 'var(--color-slate)',
+                fontSize: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+              }}
+              onClick={handleStartLiveTimer}
+            >
+              <Play size={18} fill="currentColor" />
+              <span>
+                {isDutch ? 'Slaaptimer starten' : 'Start Sleep Timer'}
+                <span style={{ fontSize: '0.8rem', opacity: 0.9, marginLeft: '0.4rem', fontWeight: 500 }}>
+                  ({timerOffsetMinutes === 0
+                    ? (isDutch ? 'nu' : 'now')
+                    : timerOffsetMinutes !== null
+                      ? (isDutch ? `${timerOffsetMinutes}m geleden` : `${timerOffsetMinutes}m ago`)
+                      : (isDutch ? `om ${timerTimeStr}` : `at ${timerTimeStr}`)})
+                </span>
+              </span>
+            </button>
+
+            {/* Starting Time: Manual Time Input + Quick Offset Pills */}
+            <div style={{
+              backgroundColor: 'var(--bg-card-subtle)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-md)',
+              padding: '0.65rem 0.85rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  <Clock size={14} />
+                  <span>{isDutch ? 'Starttijd:' : 'Start time:'}</span>
+                </div>
+                <input
+                  type="time"
+                  className="form-input"
+                  style={{
+                    width: 'auto',
+                    minWidth: '95px',
+                    padding: '0.25rem 0.5rem',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    textAlign: 'center',
+                  }}
+                  value={timerTimeStr}
+                  onChange={handleManualTimerTimeChange}
+                  title={isDutch ? 'Kies handmatig een exacte starttijd' : 'Choose exact start time manually'}
+                />
+              </div>
+
+              <div className="quick-presets-row">
+                {[
+                  { offset: 0, label: isDutch ? 'Nu' : 'Now' },
+                  { offset: 5, label: '5m' },
+                  { offset: 10, label: '10m' },
+                  { offset: 15, label: '15m' },
+                  { offset: 30, label: '30m' },
+                ].map(p => (
+                  <button
+                    key={p.offset}
+                    type="button"
+                    className={`quick-preset-pill ${timerOffsetMinutes === p.offset ? 'active slate' : ''}`}
+                    style={{ padding: '0.25rem 0.45rem', fontSize: '0.78rem' }}
+                    onClick={() => handleSelectTimerOffset(p.offset)}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Tab 2: Manual Past Sleep Form */
+          <form onSubmit={handleSave}>
+            <div className="modal-body">
+              {/* Sleep Type (Nap vs Night) */}
               <div className="segmented-control">
                 <button
                   type="button"
                   className={`segmented-btn ${sleepType === 'NAP' ? 'active' : ''}`}
-                  onClick={() => setSleepType('NAP')}
+                  onClick={() => {
+                    setSleepType('NAP');
+                    triggerHaptic('light', preferences?.haptics);
+                  }}
                 >
-                  {language === 'nl' ? 'Dutje' : 'Nap'}
+                  {isDutch ? 'Dutje' : 'Nap'}
                 </button>
                 <button
                   type="button"
                   className={`segmented-btn ${sleepType === 'NIGHT' ? 'active' : ''}`}
-                  onClick={() => setSleepType('NIGHT')}
+                  onClick={() => {
+                    setSleepType('NIGHT');
+                    triggerHaptic('light', preferences?.haptics);
+                  }}
                 >
-                  {language === 'nl' ? 'Nachtslaap' : 'Night Sleep'}
+                  {isDutch ? 'Nachtslaap' : 'Night Sleep'}
                 </button>
               </div>
-            </div>
 
-            {/* Duration Summary Callout */}
-            <div style={{ backgroundColor: 'var(--color-slate-light)', color: 'var(--color-slate)', borderRadius: 'var(--radius-md)', padding: '0.85rem 1rem', textAlign: 'center' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>{t('common.duration')}</div>
-              <div style={{ fontSize: '1.4rem', fontWeight: 700, marginTop: '0.15rem' }}>
-                {formatDurationMs(durationMs, language)}
+              {/* Quick Duration Presets */}
+              <div>
+                <label className="form-label" style={{ marginBottom: '0.35rem' }}>
+                  {t('common.quickDuration')}
+                </label>
+                <div className="quick-presets-row">
+                  {quickDurations.map(qd => {
+                    const isSelected = Math.abs(durationMs - qd.mins * 60000) < 60000;
+                    return (
+                      <button
+                        key={qd.mins}
+                        type="button"
+                        className={`quick-preset-pill ${isSelected ? 'active slate' : ''}`}
+                        onClick={() => handleApplyDuration(qd.mins)}
+                      >
+                        {qd.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
 
-            {/* Start & End Times */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              {/* Start & End Times + Live Duration Badge */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
+                <div className="form-group">
+                  <label className="form-label">{t('sleepModal.fellAsleep')}</label>
+                  <input
+                    type="time"
+                    className="form-input"
+                    value={startTime}
+                    onChange={e => setStartTime(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">{t('sleepModal.wokeUp')}</label>
+                  <input
+                    type="time"
+                    className="form-input"
+                    value={endTime}
+                    onChange={e => setEndTime(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Total Duration Preview Banner */}
+              <div style={{
+                backgroundColor: 'var(--color-slate-light)',
+                color: 'var(--color-slate)',
+                borderRadius: 'var(--radius-md)',
+                padding: '0.55rem 0.85rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}>
+                <span style={{ fontSize: '0.78rem', fontWeight: 600, textTransform: 'uppercase' }}>
+                  {t('common.duration')}
+                </span>
+                <span style={{ fontSize: '1.15rem', fontWeight: 700 }}>
+                  {formatDurationMs(durationMs, language)}
+                </span>
+              </div>
+
+              {/* Notes */}
               <div className="form-group">
-                <label className="form-label">{t('sleepModal.fellAsleep')}</label>
                 <input
-                  type="time"
-                  step="1"
+                  type="text"
                   className="form-input"
-                  value={startTime}
-                  onChange={e => setStartTime(e.target.value)}
+                  placeholder={isDutch ? 'In bedje gelegd, witte ruis...' : 'Crib transfer, white noise...'}
+                  value={note}
+                  onChange={e => setNote(e.target.value)}
                 />
               </div>
-
-              <div className="form-group">
-                <label className="form-label">{t('sleepModal.wokeUp')}</label>
-                <input
-                  type="time"
-                  step="1"
-                  className="form-input"
-                  value={endTime}
-                  onChange={e => setEndTime(e.target.value)}
-                />
-              </div>
             </div>
 
-            {/* Notes */}
-            <div className="form-group">
-              <label className="form-label">{t('common.notes')}</label>
-              <textarea
-                className="form-textarea"
-                rows="2"
-                placeholder={language === 'nl' ? 'In bed gelegd, witte ruis aan, rustgevend ritueel...' : 'Crib transfer, white noise on, soothing routine...'}
-                value={note}
-                onChange={e => setNote(e.target.value)}
-              />
+            <div className="modal-footer">
+              {(isEditing || isFromActiveTimer) && (
+                <button
+                  type="button"
+                  className="btn-danger"
+                  onClick={handleDelete}
+                  title={isEditing ? t('common.delete') : (isDutch ? 'Timer wissen' : 'Discard timer')}
+                >
+                  <Trash2 size={16} />
+                  <span>{isEditing ? t('common.delete') : (isDutch ? 'Wissen' : 'Delete')}</span>
+                </button>
+              )}
+              <button type="button" className="btn-secondary" onClick={closeModal}>
+                {t('common.cancel')}
+              </button>
+              <button type="submit" className="btn-primary" style={{ backgroundColor: 'var(--color-slate)' }}>
+                {isEditing ? t('sleepModal.submitEdit') : t('sleepModal.submitAdd')}
+              </button>
             </div>
-          </div>
-
-          <div className="modal-footer">
-            <button type="button" className="btn-secondary" onClick={closeModal}>
-              {t('common.cancel')}
-            </button>
-            <button type="submit" className="btn-primary" style={{ backgroundColor: 'var(--color-slate)' }}>
-              {isEditing ? t('sleepModal.submitEdit') : t('sleepModal.submitAdd')}
-            </button>
-          </div>
-        </form>
+          </form>
+        )}
       </div>
     </div>
   );

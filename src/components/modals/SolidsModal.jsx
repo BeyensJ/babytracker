@@ -138,13 +138,13 @@ export function SolidsModal() {
 
             {/* Quick Food Suggestions */}
             <div className="form-group">
-              <label className="form-label">{t('common.quickPresets')}</label>
               <div className="chip-grid">
-                {commonFoods.map(f => (
+                {commonFoods.slice(0, 4).map(f => (
                   <button
                     key={f}
                     type="button"
                     className={`chip-btn ${food === f ? 'selected' : ''}`}
+                    style={{ padding: '0.3rem 0.55rem', fontSize: '0.75rem' }}
                     onClick={() => setFood(f)}
                   >
                     {f}
@@ -162,6 +162,7 @@ export function SolidsModal() {
                     key={r.id}
                     type="button"
                     className={`chip-btn ${reaction === r.id ? 'selected' : ''}`}
+                    style={{ padding: '0.3rem 0.55rem', fontSize: '0.75rem' }}
                     onClick={() => setReaction(r.id)}
                   >
                     {r.label}
@@ -170,27 +171,28 @@ export function SolidsModal() {
               </div>
             </div>
 
-            {/* Time */}
-            <div className="form-group">
-              <label className="form-label">{t('common.time')}</label>
-              <input
-                type="time"
-                className="form-input"
-                value={timeStr}
-                onChange={e => setTimeStr(e.target.value)}
-              />
-            </div>
+            {/* Time & Notes */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '0.65rem' }}>
+              <div className="form-group">
+                <label className="form-label">{t('common.time')}</label>
+                <input
+                  type="time"
+                  className="form-input"
+                  value={timeStr}
+                  onChange={e => setTimeStr(e.target.value)}
+                />
+              </div>
 
-            {/* Notes */}
-            <div className="form-group">
-              <label className="form-label">{t('common.notes')}</label>
-              <textarea
-                className="form-textarea"
-                rows="2"
-                placeholder={language === 'nl' ? 'Ongeveer 150g gegeten, flink gelepeld...' : 'Ate about 2 tablespoons, great interest...'}
-                value={note}
-                onChange={e => setNote(e.target.value)}
-              />
+              <div className="form-group">
+                <label className="form-label">{t('common.notes')}</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder={language === 'nl' ? 'bv. 150g gelepeld...' : 'e.g. 2 tbsp, good appetite...'}
+                  value={note}
+                  onChange={e => setNote(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 
