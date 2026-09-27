@@ -17,10 +17,20 @@ import {
   Edit2,
   Trash2,
   User,
+  Play,
 } from 'lucide-react';
 
 export function TimelineItem({ event }) {
-  const { preferences, deleteEvent, openModal, language, t } = useApp();
+  const {
+    preferences,
+    deleteEvent,
+    openModal,
+    resumeBreastTimerWithData,
+    resumeSleepTimerWithData,
+    resumePumpTimerWithData,
+    language,
+    t,
+  } = useApp();
   const [menuOpen, setMenuOpen] = useState(false);
   const isDutch = language === 'nl';
 
@@ -226,10 +236,36 @@ export function TimelineItem({ event }) {
 
   const handleDelete = () => {
     setMenuOpen(false);
+    triggerHaptic('warning', preferences?.haptics);
     if (window.confirm(isDutch ? 'Ben je zeker dat je deze activiteit wil verwijderen?' : 'Delete this logged activity?')) {
       deleteEvent(event.id);
     }
   };
+
+  const handleResumeTimer = () => {
+    setMenuOpen(false);
+    triggerHaptic('medium', preferences?.haptics);
+    if (event.type === 'SLEEP') {
+      resumeSleepTimerWithData({ beginDt: event.beginDt });
+      deleteEvent(event.id);
+    } else if (event.type === 'BREAST') {
+      resumeBreastTimerWithData({
+        side: det.side || 'LEFT',
+        leftDurationMs: det.leftDurationMs || 0,
+        rightDurationMs: det.rightDurationMs || 0,
+        beginDt: event.beginDt,
+      });
+      deleteEvent(event.id);
+    } else if (event.type === 'PUMP') {
+      resumePumpTimerWithData({
+        side: det.side || 'BOTH',
+        beginDt: event.beginDt,
+      });
+      deleteEvent(event.id);
+    }
+  };
+
+  const isResumable = ['SLEEP', 'BREAST', 'PUMP'].includes(event.type);
 
   return (
     <div className="timeline-item-card">
@@ -294,6 +330,26 @@ export function TimelineItem({ event }) {
                   gap: '0.2rem',
                 }}
               >
+                {isResumable && (
+                  <button
+                    onClick={handleResumeTimer}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.45rem 0.65rem',
+                      fontSize: '0.8rem',
+                      color: 'var(--color-terracotta)',
+                      fontWeight: 600,
+                      borderRadius: 'var(--radius-sm)',
+                      width: '100%',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <Play size={13} fill="currentColor" />
+                    {isDutch ? 'Timer hervatten' : 'Resume timer'}
+                  </button>
+                )}
                 <button
                   onClick={handleEdit}
                   style={{

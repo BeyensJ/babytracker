@@ -5,6 +5,7 @@ import { syncService } from '../services/syncService';
 import { pwaService } from '../services/pwaService';
 import { notificationService } from '../services/notificationService';
 import { triggerHaptic } from '../utils/haptics';
+import { downloadFile } from '../utils/fileDownloader';
 
 const AppContext = createContext();
 
@@ -682,6 +683,67 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     } catch {}
   };
 
+  // Resume finished timer from existing event or initial data
+  const resumeBreastTimerWithData = (data = {}) => {
+    if (notificationService.getPermission() === 'default') {
+      notificationService.requestPermission().then(p => setNotificationPermission(p)).catch(() => {});
+    }
+    const now = Date.now();
+    const side = data.side === 'RIGHT' ? 'RIGHT' : 'LEFT';
+    const leftElapsedMs = Number(data.leftDurationMs || data.details?.leftDurationMs || data.leftElapsedMs) || 0;
+    const rightElapsedMs = Number(data.rightDurationMs || data.details?.rightDurationMs || data.rightElapsedMs) || 0;
+    const sessionStartMs = data.beginDt || (now - (leftElapsedMs + rightElapsedMs));
+    triggerHaptic('medium', preferences?.haptics);
+
+    broadcastTimers(prev => ({
+      ...prev,
+      breast: {
+        running: true,
+        activeSide: side,
+        sessionStartMs,
+        leftElapsedMs,
+        rightElapsedMs,
+        lastSideStartMs: now,
+      },
+    }));
+  };
+
+  const resumeSleepTimerWithData = (data = {}) => {
+    if (notificationService.getPermission() === 'default') {
+      notificationService.requestPermission().then(p => setNotificationPermission(p)).catch(() => {});
+    }
+    const now = Date.now();
+    const startMs = data.beginDt || data.startMs || (now - 30 * 60000);
+    triggerHaptic('medium', preferences?.haptics);
+
+    broadcastTimers(prev => ({
+      ...prev,
+      sleep: {
+        running: true,
+        startMs,
+      },
+    }));
+  };
+
+  const resumePumpTimerWithData = (data = {}) => {
+    if (notificationService.getPermission() === 'default') {
+      notificationService.requestPermission().then(p => setNotificationPermission(p)).catch(() => {});
+    }
+    const now = Date.now();
+    const startMs = data.beginDt || data.startMs || (now - 15 * 60000);
+    const side = data.side || data.details?.side || 'BOTH';
+    triggerHaptic('medium', preferences?.haptics);
+
+    broadcastTimers(prev => ({
+      ...prev,
+      pump: {
+        running: true,
+        startMs,
+        side,
+      },
+    }));
+  };
+
   // 4. Update Start Time on Active Running Timer
   const updateTimerStartTime = (timerType, newStartTimeMs) => {
     const now = Date.now();
@@ -807,26 +869,16 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
   const notificationDiagnostics = notificationService.getDiagnostics();
 
   // --- Export Helpers ---
-  const exportCSV = () => {
+  const exportCSV = async () => {
     const csvContent = exportEventsToCSV(events, activeChild.name);
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `babytracker_${activeChild.name.toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    const filename = `babytracker_${activeChild.name.toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`;
+    await downloadFile(filename, csvContent, 'text/csv;charset=utf-8;');
   };
 
-  const exportJSON = () => {
+  const exportJSON = async () => {
     const dataStr = JSON.stringify({ child: activeChild, events, preferences }, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `babytracker_backup_${activeChild.name.toLowerCase()}_${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
+    const filename = `babytracker_backup_${activeChild.name.toLowerCase()}_${new Date().toISOString().split('T')[0]}.json`;
+    await downloadFile(filename, dataStr, 'application/json');
   };
 
   // --- Family Authentication Operations ---
@@ -912,11 +964,14 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     switchBreastSide,
     pauseBreastTimer,
     resumeBreastTimer,
+    resumeBreastTimerWithData,
     stopBreastTimer,
     startSleepTimer,
     stopSleepTimer,
+    resumeSleepTimerWithData,
     startPumpTimer,
     stopPumpTimer,
+    resumePumpTimerWithData,
     clearActiveTimer,
     updateTimerStartTime,
     exportCSV,

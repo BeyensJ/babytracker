@@ -25,7 +25,7 @@ export function HealthModal() {
     if (rawF && !isCelsius) return String(rawF);
     if (rawC && !isCelsius) return ((rawC * 9) / 5 + 32).toFixed(1);
     if (rawF && isCelsius) return (((rawF - 32) * 5) / 9).toFixed(1);
-    return isCelsius ? '37.0' : '98.6';
+    return '';
   });
   const [vaccineName, setVaccineName] = useState(() => modalInitialData?.details?.vaccineName || '');
   const [note, setNote] = useState(modalInitialData?.note || '');
@@ -202,6 +202,7 @@ export function HealthModal() {
                   max={isCelsius ? 42 : 108}
                   className="form-input"
                   style={{ fontSize: '1.4rem', fontWeight: 800, textAlign: 'center' }}
+                  placeholder={isCelsius ? '37.0' : '98.6'}
                   value={tempInput}
                   onChange={e => setTempInput(e.target.value)}
                   required

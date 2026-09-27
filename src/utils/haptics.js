@@ -1,9 +1,11 @@
 /**
- * Haptic Feedback Utility for Mobile PWA
- * Uses the Web Vibration API (navigator.vibrate) to deliver subtle tactile cues.
+ * Haptic Feedback Utility for Mobile PWA & Native Capacitor Android App
+ * Uses @capacitor/haptics natively on Android and the Web Vibration API as fallback.
  */
+import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
+import { Capacitor } from '@capacitor/core';
 
-// Vibration pattern presets in milliseconds
+// Vibration pattern presets in milliseconds for Web Vibration API
 const PATTERNS = {
   light: 12,                  // Quick subtle tap for buttons, pills, tabs
   medium: 24,                 // Tactile pulse for switching timer sides, dock taps
@@ -17,14 +19,44 @@ const PATTERNS = {
  * @param {'light' | 'medium' | 'heavy' | 'success' | 'warning'} type
  * @param {boolean} isEnabled
  */
-export function triggerHaptic(type = 'light', isEnabled = true) {
+export async function triggerHaptic(type = 'light', isEnabled = true) {
   if (!isEnabled) return;
-  if (typeof navigator === 'undefined' || !navigator.vibrate) return;
 
-  try {
-    const pattern = PATTERNS[type] || PATTERNS.light;
-    navigator.vibrate(pattern);
-  } catch (err) {
-    // Graceful fallback on devices with vibration restrictions
+  // 1. Try native Capacitor Haptics on Android / iOS
+  if (Capacitor.isNativePlatform()) {
+    try {
+      switch (type) {
+        case 'light':
+          await Haptics.impact({ style: ImpactStyle.Light });
+          return;
+        case 'medium':
+          await Haptics.impact({ style: ImpactStyle.Medium });
+          return;
+        case 'heavy':
+          await Haptics.impact({ style: ImpactStyle.Heavy });
+          return;
+        case 'success':
+          await Haptics.notification({ type: NotificationType.Success });
+          return;
+        case 'warning':
+          await Haptics.notification({ type: NotificationType.Warning });
+          return;
+        default:
+          await Haptics.impact({ style: ImpactStyle.Light });
+          return;
+      }
+    } catch {
+      // Graceful fallback to web vibration below
+    }
+  }
+
+  // 2. Fallback to Web Vibration API for browsers / PWAs
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    try {
+      const pattern = PATTERNS[type] || PATTERNS.light;
+      navigator.vibrate(pattern);
+    } catch {
+      // Graceful fallback on devices with vibration restrictions
+    }
   }
 }

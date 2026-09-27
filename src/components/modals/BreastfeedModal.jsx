@@ -14,6 +14,7 @@ export function BreastfeedModal() {
     deleteEvent,
     clearActiveTimer,
     startBreastTimer,
+    resumeBreastTimerWithData,
     preferences,
     t,
     language,
@@ -77,22 +78,22 @@ export function BreastfeedModal() {
   const [leftMinutes, setLeftMinutes] = useState(() => {
     const ms = modalInitialData?.details?.leftDurationMs || modalInitialData?.leftDurationMs || 0;
     if (ms > 0) return Math.floor(ms / 60000);
-    return (side === 'LEFT' || side === 'BOTH') ? 10 : 0;
+    return '';
   });
   const [leftSeconds, setLeftSeconds] = useState(() => {
     const ms = modalInitialData?.details?.leftDurationMs || modalInitialData?.leftDurationMs || 0;
     if (ms > 0) return Math.round((ms % 60000) / 1000);
-    return 0;
+    return '';
   });
   const [rightMinutes, setRightMinutes] = useState(() => {
     const ms = modalInitialData?.details?.rightDurationMs || modalInitialData?.rightDurationMs || 0;
     if (ms > 0) return Math.floor(ms / 60000);
-    return (side === 'RIGHT' || side === 'BOTH') ? 10 : 0;
+    return '';
   });
   const [rightSeconds, setRightSeconds] = useState(() => {
     const ms = modalInitialData?.details?.rightDurationMs || modalInitialData?.rightDurationMs || 0;
     if (ms > 0) return Math.round((ms % 60000) / 1000);
-    return 0;
+    return '';
   });
 
   const [note, setNote] = useState(modalInitialData?.note || '');
@@ -105,8 +106,8 @@ export function BreastfeedModal() {
 
   if (activeModal !== 'BREAST') return null;
 
-  const leftMs = (Math.max(0, Number(leftMinutes) || 0) * 60 + Math.max(0, Number(leftSeconds) || 0)) * 1000;
-  const rightMs = (Math.max(0, Number(rightMinutes) || 0) * 60 + Math.max(0, Number(rightSeconds) || 0)) * 1000;
+  const leftMs = side === 'RIGHT' ? 0 : (leftMinutes === '' && leftSeconds === '' ? 10 * 60 * 1000 : (Math.max(0, Number(leftMinutes) || 0) * 60 + Math.max(0, Number(leftSeconds) || 0)) * 1000);
+  const rightMs = side === 'LEFT' ? 0 : (rightMinutes === '' && rightSeconds === '' ? 10 * 60 * 1000 : (Math.max(0, Number(rightMinutes) || 0) * 60 + Math.max(0, Number(rightSeconds) || 0)) * 1000);
   const totalDurationMs = leftMs + rightMs;
 
   const handleStartTimer = (startSide) => {
@@ -162,6 +163,18 @@ export function BreastfeedModal() {
       clearActiveTimer('breast');
     }
 
+    closeModal();
+  };
+
+  const handleResumeTimer = () => {
+    triggerHaptic('medium', preferences?.haptics);
+    const beginDt = modalInitialData?.beginDt || (Date.now() - totalDurationMs);
+    resumeBreastTimerWithData({
+      side: side === 'RIGHT' ? 'RIGHT' : 'LEFT',
+      leftDurationMs: leftMs,
+      rightDurationMs: rightMs,
+      beginDt,
+    });
     closeModal();
   };
 
@@ -352,16 +365,11 @@ export function BreastfeedModal() {
                       setSide(s);
                       triggerHaptic('light', preferences?.haptics);
                       if (s === 'LEFT') {
-                        setRightMinutes(0);
-                        setRightSeconds(0);
-                        if (Number(leftMinutes) === 0) setLeftMinutes(10);
+                        setRightMinutes('');
+                        setRightSeconds('');
                       } else if (s === 'RIGHT') {
-                        setLeftMinutes(0);
-                        setLeftSeconds(0);
-                        if (Number(rightMinutes) === 0) setRightMinutes(10);
-                      } else if (s === 'BOTH') {
-                        if (Number(leftMinutes) === 0) setLeftMinutes(10);
-                        if (Number(rightMinutes) === 0) setRightMinutes(10);
+                        setLeftMinutes('');
+                        setLeftSeconds('');
                       }
                     }}
                   >
@@ -386,6 +394,7 @@ export function BreastfeedModal() {
                           max="180"
                           className="form-input"
                           style={{ minHeight: '40px', padding: '0.35rem 0.3rem', textAlign: 'center', fontWeight: 700, fontSize: '0.98rem' }}
+                          placeholder="10"
                           value={leftMinutes}
                           onChange={e => setLeftMinutes(e.target.value)}
                           aria-label={isDutch ? 'Minuten links' : 'Left minutes'}
@@ -399,6 +408,7 @@ export function BreastfeedModal() {
                           max="59"
                           className="form-input"
                           style={{ minHeight: '40px', padding: '0.35rem 0.3rem', textAlign: 'center', fontWeight: 700, fontSize: '0.98rem' }}
+                          placeholder="0"
                           value={leftSeconds}
                           onChange={e => setLeftSeconds(e.target.value)}
                           aria-label={isDutch ? 'Seconden links' : 'Left seconds'}
@@ -437,6 +447,7 @@ export function BreastfeedModal() {
                           max="180"
                           className="form-input"
                           style={{ minHeight: '40px', padding: '0.35rem 0.3rem', textAlign: 'center', fontWeight: 700, fontSize: '0.98rem' }}
+                          placeholder="10"
                           value={rightMinutes}
                           onChange={e => setRightMinutes(e.target.value)}
                           aria-label={isDutch ? 'Minuten rechts' : 'Right minutes'}
@@ -450,6 +461,7 @@ export function BreastfeedModal() {
                           max="59"
                           className="form-input"
                           style={{ minHeight: '40px', padding: '0.35rem 0.3rem', textAlign: 'center', fontWeight: 700, fontSize: '0.98rem' }}
+                          placeholder="0"
                           value={rightSeconds}
                           onChange={e => setRightSeconds(e.target.value)}
                           aria-label={isDutch ? 'Seconden rechts' : 'Right seconds'}
@@ -524,6 +536,24 @@ export function BreastfeedModal() {
                 >
                   <Trash2 size={16} />
                   <span>{isEditing ? t('common.delete') : (isDutch ? 'Wissen' : 'Delete')}</span>
+                </button>
+              )}
+              {(isFromActiveTimer || isFromFinishedTimer) && (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    color: 'var(--color-terracotta)',
+                    borderColor: 'var(--color-terracotta-light)',
+                    fontWeight: 700,
+                  }}
+                  onClick={handleResumeTimer}
+                >
+                  <Play size={15} fill="currentColor" />
+                  <span>{isDutch ? 'Hervat timer' : 'Resume timer'}</span>
                 </button>
               )}
               <button type="button" className="btn-secondary" onClick={closeModal}>

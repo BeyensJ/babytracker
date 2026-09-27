@@ -14,6 +14,7 @@ export function SleepModal() {
     deleteEvent,
     clearActiveTimer,
     startSleepTimer,
+    resumeSleepTimerWithData,
     preferences,
     t,
     language,
@@ -176,6 +177,13 @@ export function SleepModal() {
       clearActiveTimer('sleep');
     }
 
+    closeModal();
+  };
+
+  const handleResumeTimer = () => {
+    triggerHaptic('medium', preferences?.haptics);
+    const start = modalInitialData?.beginDt || startTs || (Date.now() - durationMs);
+    resumeSleepTimerWithData({ beginDt: start, startMs: start });
     closeModal();
   };
 
@@ -442,6 +450,24 @@ export function SleepModal() {
                 >
                   <Trash2 size={16} />
                   <span>{isEditing ? t('common.delete') : (isDutch ? 'Wissen' : 'Delete')}</span>
+                </button>
+              )}
+              {(isFromActiveTimer || isFromFinishedTimer) && (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    color: 'var(--color-slate)',
+                    borderColor: 'var(--color-slate-light)',
+                    fontWeight: 700,
+                  }}
+                  onClick={handleResumeTimer}
+                >
+                  <Play size={15} fill="currentColor" />
+                  <span>{isDutch ? 'Hervat timer' : 'Resume timer'}</span>
                 </button>
               )}
               <button type="button" className="btn-secondary" onClick={closeModal}>

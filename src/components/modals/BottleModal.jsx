@@ -22,7 +22,7 @@ export function BottleModal() {
       }
       return Math.round(rawFloz * 100) / 100;
     }
-    return defaultUnit === 'ml' ? 120 : 4.0;
+    return '';
   });
 
   // Offered vs Leftover Subtraction Mode
@@ -37,10 +37,10 @@ export function BottleModal() {
     );
   });
   const [offeredAmount, setOfferedAmount] = useState(() => {
-    return modalInitialData?.details?.offeredAmount || (unit === 'ml' ? 150 : 5.0);
+    return modalInitialData?.details?.offeredAmount !== undefined ? modalInitialData?.details?.offeredAmount : '';
   });
   const [leftoverAmount, setLeftoverAmount] = useState(() => {
-    return modalInitialData?.details?.leftoverAmount || 0;
+    return modalInitialData?.details?.leftoverAmount !== undefined ? modalInitialData?.details?.leftoverAmount : '';
   });
 
   const [milkType, setMilkType] = useState(() => {
@@ -89,7 +89,7 @@ export function BottleModal() {
   const handleAdjust = (delta) => {
     triggerHaptic('light', preferences?.haptics);
     setAmount((prev) => {
-      const current = parseFloat(prev) || 0;
+      const current = prev === '' ? (delta > 0 ? (isMl ? 60 : 2.0) : 0) : (parseFloat(prev) || 0);
       const next = isMl
         ? Math.max(0, Math.min(maxVolume, Math.round(current + delta)))
         : Math.max(0, Math.min(maxVolume, Math.round((current + delta) * 10) / 10));
@@ -132,8 +132,8 @@ export function BottleModal() {
     dateObj.setHours(h, m, 0, 0);
     const beginDt = dateObj.getTime();
 
-    // Preserve exact fl oz conversion
-    const numAmount = parseFloat(amount) || 0;
+    // Preserve exact fl oz conversion (default to placeholder value if left empty)
+    const numAmount = amount === '' ? (isMl ? 120 : 4.0) : (parseFloat(amount) || 0);
     const finalFloz = isMl ? numAmount / 29.5735 : numAmount;
 
     const eventPayload = {
@@ -243,6 +243,7 @@ export function BottleModal() {
                     step={isMl ? '1' : '0.1'}
                     min="0"
                     max={maxVolume}
+                    placeholder={isMl ? '120' : '4.0'}
                     value={amount}
                     onChange={(e) => {
                       const val = parseFloat(e.target.value);
@@ -325,6 +326,7 @@ export function BottleModal() {
                           style={{ padding: '0.4rem 0.6rem', fontSize: '0.9rem' }}
                           step={isMl ? '5' : '0.25'}
                           min="0"
+                          placeholder={isMl ? '150' : '5.0'}
                           value={offeredAmount}
                           onChange={(e) => handleOfferedChange(e.target.value)}
                         />
@@ -339,6 +341,7 @@ export function BottleModal() {
                           style={{ padding: '0.4rem 0.6rem', fontSize: '0.9rem' }}
                           step={isMl ? '5' : '0.25'}
                           min="0"
+                          placeholder="0"
                           value={leftoverAmount}
                           onChange={(e) => handleLeftoverChange(e.target.value)}
                         />

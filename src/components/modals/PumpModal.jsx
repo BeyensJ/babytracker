@@ -15,6 +15,7 @@ export function PumpModal() {
     clearActiveTimer,
     preferences,
     startPumpTimer,
+    resumePumpTimerWithData,
     t,
     language,
   } = useApp();
@@ -80,35 +81,35 @@ export function PumpModal() {
     return d.getTime();
   };
 
-  const getInitialValue = (valFloz, valMl, fallback) => {
+  const getInitialValue = (valFloz, valMl) => {
     if (unit === 'ml') {
       if (valMl !== undefined && valMl !== null) return valMl;
       if (valFloz !== undefined && valFloz !== null) return Math.round(valFloz * 29.5735);
-      return fallback;
+      return '';
     } else {
       if (valFloz !== undefined && valFloz !== null) return Math.round(valFloz * 100) / 100;
       if (valMl !== undefined && valMl !== null) return Math.round((valMl / 29.5735) * 100) / 100;
-      return fallback;
+      return '';
     }
   };
-
-  const defaultSingle = unit === 'ml' ? 60 : 2.0;
 
   const [leftAmount, setLeftAmount] = useState(() => {
     const initSide = modalInitialData?.details?.side || 'BOTH';
     if (initSide === 'RIGHT') return 0;
-    return getInitialValue(modalInitialData?.details?.leftFloz, modalInitialData?.details?.leftAmount, defaultSingle);
+    return getInitialValue(modalInitialData?.details?.leftFloz, modalInitialData?.details?.leftAmount);
   });
 
   const [rightAmount, setRightAmount] = useState(() => {
     const initSide = modalInitialData?.details?.side || 'BOTH';
     if (initSide === 'LEFT') return 0;
-    return getInitialValue(modalInitialData?.details?.rightFloz, modalInitialData?.details?.rightAmount, defaultSingle);
+    return getInitialValue(modalInitialData?.details?.rightFloz, modalInitialData?.details?.rightAmount);
   });
 
   const [durationMin, setDurationMin] = useState(() => {
-    const ms = modalInitialData?.durationMs || 15 * 60 * 1000;
-    return Math.max(1, Math.floor(ms / 60000));
+    if (modalInitialData?.durationMs) {
+      return Math.max(1, Math.floor(modalInitialData.durationMs / 60000));
+    }
+    return '';
   });
 
   const [note, setNote] = useState(modalInitialData?.note || '');
@@ -147,14 +148,9 @@ export function PumpModal() {
     triggerHaptic('light', preferences?.haptics);
     setSide(newSide);
     if (newSide === 'LEFT') {
-      if ((parseFloat(leftAmount) || 0) === 0) setLeftAmount(defaultSingle);
       setRightAmount(0);
     } else if (newSide === 'RIGHT') {
-      if ((parseFloat(rightAmount) || 0) === 0) setRightAmount(defaultSingle);
       setLeftAmount(0);
-    } else if (newSide === 'BOTH') {
-      if ((parseFloat(leftAmount) || 0) === 0) setLeftAmount(defaultSingle);
-      if ((parseFloat(rightAmount) || 0) === 0) setRightAmount(defaultSingle);
     }
   };
 
@@ -162,12 +158,12 @@ export function PumpModal() {
     triggerHaptic('light', preferences?.haptics);
     if (target === 'LEFT') {
       setLeftAmount((prev) => {
-        const cur = parseFloat(prev) || 0;
+        const cur = prev === '' ? (delta > 0 ? (isMl ? 30 : 1.0) : 0) : (parseFloat(prev) || 0);
         return isMl ? Math.max(0, Math.round(cur + delta)) : Math.max(0, Math.round((cur + delta) * 10) / 10);
       });
     } else {
       setRightAmount((prev) => {
-        const cur = parseFloat(prev) || 0;
+        const cur = prev === '' ? (delta > 0 ? (isMl ? 30 : 1.0) : 0) : (parseFloat(prev) || 0);
         return isMl ? Math.max(0, Math.round(cur + delta)) : Math.max(0, Math.round((cur + delta) * 10) / 10);
       });
     }
@@ -192,8 +188,8 @@ export function PumpModal() {
     const m = parts[1] || 0;
     const dateObj = new Date(modalInitialData?.beginDt || Date.now());
     dateObj.setHours(h, m, 0, 0);
-    const beginDt = dateObj.getTime();
-    const durationMs = Math.max(0, Number(durationMin) || 0) * 60 * 1000;
+    const finalDurationMin = durationMin === '' ? 15 : (Math.max(0, Number(durationMin)) || 15);
+    const durationMs = finalDurationMin * 60 * 1000;
 
     const finalLeftFloz = isMl ? numLeft / 29.5735 : numLeft;
     const finalRightFloz = isMl ? numRight / 29.5735 : numRight;
@@ -228,6 +224,18 @@ export function PumpModal() {
       clearActiveTimer('pump');
     }
 
+    closeModal();
+  };
+
+  const handleResumeTimer = () => {
+    triggerHaptic('medium', preferences?.haptics);
+    const finalDurationMin = parseInt(durationMin, 10) || 15;
+    const startTs = modalInitialData?.beginDt || activeTimers?.pump?.startMs || (Date.now() - finalDurationMin * 60000);
+    resumePumpTimerWithData({
+      beginDt: startTs,
+      startMs: startTs,
+      side,
+    });
     closeModal();
   };
 
@@ -496,7 +504,7 @@ export function PumpModal() {
                       <button
                         type="button"
                         className="pump-stepper-btn"
-                        onClick={() => adjustSide('LEFT', isMl ? -10 : -0.5)}
+                        onClick={() => adjustSide('LEFT', isMl ? -5 : -0.2)}
                         aria-label="Decrease"
                       >
                         <Minus size={15} />
@@ -506,6 +514,7 @@ export function PumpModal() {
                         step={isMl ? '1' : '0.1'}
                         min="0"
                         className="pump-amount-input"
+                        placeholder={isMl ? '60' : '2.0'}
                         value={leftAmount}
                         onChange={(e) => {
                           const val = parseFloat(e.target.value);
@@ -515,7 +524,7 @@ export function PumpModal() {
                       <button
                         type="button"
                         className="pump-stepper-btn"
-                        onClick={() => adjustSide('LEFT', isMl ? 10 : 0.5)}
+                        onClick={() => adjustSide('LEFT', isMl ? 5 : 0.2)}
                         aria-label="Increase"
                       >
                         <Plus size={15} />
@@ -533,7 +542,7 @@ export function PumpModal() {
                       <button
                         type="button"
                         className="pump-stepper-btn"
-                        onClick={() => adjustSide('RIGHT', isMl ? -10 : -0.5)}
+                        onClick={() => adjustSide('RIGHT', isMl ? -5 : -0.2)}
                         aria-label="Decrease"
                       >
                         <Minus size={15} />
@@ -543,6 +552,7 @@ export function PumpModal() {
                         step={isMl ? '1' : '0.1'}
                         min="0"
                         className="pump-amount-input"
+                        placeholder={isMl ? '60' : '2.0'}
                         value={rightAmount}
                         onChange={(e) => {
                           const val = parseFloat(e.target.value);
@@ -552,7 +562,7 @@ export function PumpModal() {
                       <button
                         type="button"
                         className="pump-stepper-btn"
-                        onClick={() => adjustSide('RIGHT', isMl ? 10 : 0.5)}
+                        onClick={() => adjustSide('RIGHT', isMl ? 5 : 0.2)}
                         aria-label="Increase"
                       >
                         <Plus size={15} />
@@ -566,7 +576,7 @@ export function PumpModal() {
               <div className="form-group">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
                   <label className="form-label" style={{ marginBottom: 0 }}>
-                    {t('common.duration')} ({durationMin} min)
+                    {t('common.duration')} ({durationMin || 15} min)
                   </label>
                   <div className="quick-presets-row">
                     {[10, 15, 20, 30].map((m) => (
@@ -618,6 +628,24 @@ export function PumpModal() {
                 >
                   <Trash2 size={16} />
                   <span>{isEditing ? t('common.delete') : (isDutch ? 'Wissen' : 'Delete')}</span>
+                </button>
+              )}
+              {(isFromActiveTimer || isFromFinishedTimer) && (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    color: 'var(--color-berry)',
+                    borderColor: 'var(--color-berry-light)',
+                    fontWeight: 700,
+                  }}
+                  onClick={handleResumeTimer}
+                >
+                  <Play size={15} fill="currentColor" />
+                  <span>{isDutch ? 'Hervat timer' : 'Resume timer'}</span>
                 </button>
               )}
               <button type="button" className="btn-secondary" onClick={closeModal}>
