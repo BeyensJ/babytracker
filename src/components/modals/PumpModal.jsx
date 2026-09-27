@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { triggerHaptic } from '../../utils/haptics';
-import { Pipette, X, Plus, Minus, Play, Clock, Trash2 } from 'lucide-react';
+import { X, Plus, Minus, Play, Clock, Trash2 } from 'lucide-react';
+import { PumpIcon } from '../icons/PumpIcon';
 import { formatDurationMs } from '../../utils/formatters';
 
 export function PumpModal() {
@@ -256,7 +257,7 @@ export function PumpModal() {
                 color: 'var(--color-berry)',
               }}
             >
-              <Pipette size={18} />
+              <PumpIcon size={18} />
             </div>
             <h2>
               {isFromActiveTimer

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatTimerClock, formatTime } from '../utils/formatters';
 import { Heart, Moon, Milk, Play, Pause, RefreshCw, Check, Clock, Bell } from 'lucide-react';
+import { PumpIcon } from './icons/PumpIcon';
 
 export function ActiveTimersDock() {
   const {
@@ -221,7 +222,7 @@ function PumpTimerRow({ timer, now, onFinish, onUpdateStartTime, t, language }) 
     <div className="active-timer-row">
       <div className="timer-left-meta">
         <div className="timer-pulse-icon pump">
-          <Milk size={18} color="#FFF" />
+          <PumpIcon size={18} color="#FFF" />
           <span className="timer-pulse-ring" />
         </div>
         <div>

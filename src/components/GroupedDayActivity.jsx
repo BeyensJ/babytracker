@@ -20,9 +20,9 @@ import {
   Stethoscope,
   Award,
   BookOpen,
-  Pipette,
   Play,
 } from 'lucide-react';
+import { PumpIcon } from './icons/PumpIcon';
 
 export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) {
   const {
@@ -252,7 +252,7 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
         <CategoryCard
           categoryKey="pumping"
           title={isDutch ? 'Afkolven' : 'Pumping'}
-          icon={Pipette}
+          icon={PumpIcon}
           colorClass="pump"
           count={pumps.length}
           summaryText={pumpSummaryText}

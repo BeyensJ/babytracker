@@ -6,7 +6,6 @@ import {
   Milk,
   Moon,
   Sparkles,
-  Pipette,
   Apple,
   Ruler,
   Stethoscope,
@@ -19,6 +18,7 @@ import {
   User,
   Play,
 } from 'lucide-react';
+import { PumpIcon } from './icons/PumpIcon';
 
 export function TimelineItem({ event }) {
   const {
@@ -134,7 +134,7 @@ export function TimelineItem({ event }) {
       }
       case 'PUMP':
         return {
-          icon: Pipette,
+          icon: PumpIcon,
           badgeClass: 'pump',
           title: isDutch ? 'Afkolven' : 'Pumping',
           chips: [

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatRelative, formatDurationMs, formatVolume, getWakeWindowStatus } from '../utils/formatters';
-import { Utensils, Moon, Pipette, Sun, Clock, ChevronRight, Heart, Milk, Apple } from 'lucide-react';
+import { Utensils, Moon, Sun, Clock, ChevronRight, Heart, Milk, Apple } from 'lucide-react';
+import { PumpIcon } from './icons/PumpIcon';
 
 export function QuickStatusBanner() {
   const { events, activeChild, activeChildId, activeTimers, preferences, openModal, language, t } = useApp();
@@ -130,7 +131,7 @@ export function QuickStatusBanner() {
       else if (pSide === 'RIGHT') sideBadge = isDutch ? 'Rechts' : 'Right';
 
       return {
-        icon: Pipette,
+        icon: PumpIcon,
         badge: isDutch ? 'Actief' : 'Active',
         detail: isDutch ? `Kolven bezig (${sideBadge})` : `Pumping now (${sideBadge})`,
         color: 'var(--color-berry)',
@@ -140,7 +141,7 @@ export function QuickStatusBanner() {
 
     if (!ev) {
       return {
-        icon: Pipette,
+        icon: PumpIcon,
         badge: null,
         detail: isDutch ? 'Nog niet gekolfd' : 'No pump yet',
         color: 'var(--color-berry)',
@@ -162,7 +163,7 @@ export function QuickStatusBanner() {
     if (ev.durationMs > 0) parts.push(formatDurationMs(ev.durationMs, language));
 
     return {
-      icon: Pipette,
+      icon: PumpIcon,
       badge: sideBadge,
       detail: parts.length > 0 ? parts.join(' · ') : (isDutch ? 'Kolfsessie' : 'Pump session'),
       color: 'var(--color-berry)',

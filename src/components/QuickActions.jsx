@@ -6,7 +6,6 @@ import {
   Milk,
   Moon,
   Sparkles,
-  Pipette,
   Apple,
   Ruler,
   Stethoscope,
@@ -15,6 +14,7 @@ import {
   Plus,
   X,
 } from 'lucide-react';
+import { PumpIcon } from './icons/PumpIcon';
 
 export function QuickActions() {
   const { openModal, preferences, t } = useApp();
@@ -24,7 +24,7 @@ export function QuickActions() {
     { id: 'BREAST', label: t('quickActions.breast'), icon: Heart, type: 'breast' },
     { id: 'BOTTLE', label: t('quickActions.bottle'), icon: Milk, type: 'bottle' },
     { id: 'SLEEP', label: t('quickActions.sleep'), icon: Moon, type: 'sleep' },
-    { id: 'PUMP', label: t('quickActions.pump') || t('quickActions.pumpLabel'), icon: Pipette, type: 'pump' },
+    { id: 'PUMP', label: t('quickActions.pump') || t('quickActions.pumpLabel'), icon: PumpIcon, type: 'pump' },
   ];
 
   const moreActions = [
