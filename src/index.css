@@ -1646,6 +1646,7 @@ input, select, textarea {
 }
 
 .grouped-activity-card.feed { border-left: 3.5px solid var(--color-terracotta); }
+.grouped-activity-card.pump { border-left: 3.5px solid var(--color-berry); }
 .grouped-activity-card.sleep { border-left: 3.5px solid var(--color-slate); }
 .grouped-activity-card.diaper { border-left: 3.5px solid var(--color-sage); }
 .grouped-activity-card.other { border-left: 3.5px solid var(--color-caramel); }
@@ -1681,6 +1682,7 @@ input, select, textarea {
 }
 
 .grouped-badge-wrap.feed { background-color: var(--color-terracotta-light); color: var(--color-terracotta); }
+.grouped-badge-wrap.pump { background-color: var(--color-berry-light); color: var(--color-berry); }
 .grouped-badge-wrap.sleep { background-color: var(--color-slate-light); color: var(--color-slate); }
 .grouped-badge-wrap.diaper { background-color: var(--color-sage-light); color: var(--color-sage); }
 .grouped-badge-wrap.other { background-color: var(--color-caramel-light); color: var(--color-caramel); }

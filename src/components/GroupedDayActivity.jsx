@@ -66,8 +66,9 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
     }
   };
 
-  // Group events into 4 buckets
+  // Group events into 5 buckets
   const feeds = [];
+  const pumps = [];
   const sleeps = [];
   const diapers = [];
   const others = [];
@@ -75,6 +76,8 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
   events.forEach(ev => {
     if (['BREAST', 'BOTTLE', 'SOLIDS', 'COMBO'].includes(ev.type)) {
       feeds.push(ev);
+    } else if (ev.type === 'PUMP') {
+      pumps.push(ev);
     } else if (ev.type === 'SLEEP') {
       sleeps.push(ev);
     } else if (ev.type === 'DIAPER') {
@@ -114,6 +117,29 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
   }
   if (feedSubParts.length > 0) {
     feedSummaryText += ` · ${feedSubParts.join(', ')}`;
+  }
+
+  // Calculate Pumping Metrics
+  let totalPumpFloz = 0;
+  let totalPumpDurationMs = 0;
+  pumps.forEach(p => {
+    const det = p.details || {};
+    totalPumpFloz += det.totalFloz || det.volumeFloz || 0;
+    totalPumpDurationMs += p.durationMs || (p.endDt ? p.endDt - p.beginDt : 0);
+  });
+
+  let pumpSummaryText = isDutch
+    ? `${pumps.length} kolfsessie${pumps.length === 1 ? '' : 's'}`
+    : `${pumps.length} Pump Session${pumps.length === 1 ? '' : 's'}`;
+  const pumpSubParts = [];
+  if (totalPumpFloz > 0) {
+    pumpSubParts.push(formatVolume(totalPumpFloz, preferences.volumeUnit));
+  }
+  if (totalPumpDurationMs > 0) {
+    pumpSubParts.push(formatDurationMs(totalPumpDurationMs, language));
+  }
+  if (pumpSubParts.length > 0) {
+    pumpSummaryText += ` · ${pumpSubParts.join(', ')}`;
   }
 
   // Calculate Sleep Metrics
@@ -195,7 +221,34 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
         />
       )}
 
-      {/* 2. Sleep Section */}
+      {/* 2. Pumping Section */}
+      {pumps.length > 0 && (
+        <CategoryCard
+          categoryKey="pumping"
+          title={isDutch ? 'Afkolven' : 'Pumping'}
+          icon={Pipette}
+          colorClass="pump"
+          count={pumps.length}
+          summaryText={pumpSummaryText}
+          events={pumps}
+          defaultOpen={defaultExpanded}
+          renderItem={(ev) => (
+            <PumpItemRow
+              key={ev.id}
+              event={ev}
+              preferences={preferences}
+              language={language}
+              onEdit={openModal}
+              onDelete={deleteEvent}
+              onResume={handleResume}
+              activeTimers={activeTimers}
+              allEvents={allEvents}
+            />
+          )}
+        />
+      )}
+
+      {/* 3. Sleep Section */}
       {sleeps.length > 0 && (
         <CategoryCard
           categoryKey="sleep"
@@ -221,7 +274,7 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
         />
       )}
 
-      {/* 3. Diapers Section */}
+      {/* 4. Diapers Section */}
       {diapers.length > 0 && (
         <CategoryCard
           categoryKey="diaper"
@@ -236,7 +289,7 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
         />
       )}
 
-      {/* 4. Other Activities Section */}
+      {/* 5. Other Activities Section */}
       {others.length > 0 && (
         <CategoryCard
           categoryKey="others"
@@ -255,9 +308,6 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
               language={language}
               onEdit={openModal}
               onDelete={deleteEvent}
-              onResume={handleResume}
-              activeTimers={activeTimers}
-              allEvents={allEvents}
             />
           )}
         />
@@ -464,38 +514,69 @@ function DiaperItemRow({ event, language, onEdit, onDelete }) {
 }
 
 /**
- * Other Activities Row (Pump, Growth, Health, Routine, Milestone, Note)
+ * Individual Pump Item Row in Grouped View
  */
-function OtherItemRow({ event, preferences, language, onEdit, onDelete, onResume, activeTimers, allEvents }) {
+function PumpItemRow({ event, preferences, language, onEdit, onDelete, onResume, activeTimers, allEvents }) {
+  const isDutch = language === 'nl';
+  const det = event.details || {};
+  const label = isDutch ? 'Afkolven' : 'Pumping';
+
+  const lastEvent = (allEvents || []).reduce((latest, cur) => {
+    if (cur.type !== 'PUMP') return latest;
+    if (!latest) return cur;
+    const curTs = cur.endDt || cur.beginDt;
+    const latestTs = latest.endDt || latest.beginDt;
+    return curTs > latestTs ? cur : latest;
+  }, null);
+  const isLastOfCategory = lastEvent?.id === event.id;
+
+  const isCurrentlyRunning = activeTimers?.pump?.resumedEventId === event.id;
+  const endTs = event.endDt || (event.beginDt + (event.durationMs || 0));
+  const timeSinceEndMs = Date.now() - endTs;
+  const isRecent = timeSinceEndMs >= -5 * 60 * 1000 && timeSinceEndMs < 12 * 60 * 60 * 1000;
+  const isResumable = isLastOfCategory && isRecent && !isCurrentlyRunning;
+
+  // Build detail chip (volume, duration, side)
+  const parts = [];
+  if (det.totalFloz) {
+    parts.push(formatVolume(det.totalFloz, preferences.volumeUnit));
+  } else if (det.totalAmount) {
+    parts.push(`${det.totalAmount} ${det.volumeUnit || preferences.volumeUnit}`);
+  }
+  if (event.durationMs > 0) {
+    parts.push(formatDurationMs(event.durationMs, language));
+  }
+  if (det.side && det.side !== 'BOTH') {
+    parts.push(det.side === 'LEFT' ? (isDutch ? 'Links' : 'Left') : (isDutch ? 'Rechts' : 'Right'));
+  }
+  const detailChip = parts.join(' · ');
+
+  return (
+    <ItemRowTemplate
+      event={event}
+      label={label}
+      detailChip={detailChip}
+      language={language}
+      onEdit={onEdit}
+      onDelete={onDelete}
+      onResume={onResume}
+      isCurrentlyRunning={isCurrentlyRunning}
+      isResumable={isResumable}
+      categoryType="pump"
+    />
+  );
+}
+
+/**
+ * Other Activities Row (Growth, Health, Routine, Milestone, Note)
+ */
+function OtherItemRow({ event, preferences, language, onEdit, onDelete }) {
   const isDutch = language === 'nl';
   const det = event.details || {};
   let label = isDutch ? 'Activiteit' : 'Activity';
   let detailChip = '';
 
-  const isPump = event.type === 'PUMP';
-  const lastEvent = isPump
-    ? (allEvents || []).reduce((latest, cur) => {
-        if (cur.type !== 'PUMP') return latest;
-        if (!latest) return cur;
-        const curTs = cur.endDt || cur.beginDt;
-        const latestTs = latest.endDt || latest.beginDt;
-        return curTs > latestTs ? cur : latest;
-      }, null)
-    : null;
-  const isLastOfCategory = lastEvent?.id === event.id;
-
-  const isCurrentlyRunning = isPump && activeTimers?.pump?.resumedEventId === event.id;
-  const endTs = event.endDt || (event.beginDt + (event.durationMs || 0));
-  const timeSinceEndMs = Date.now() - endTs;
-  const isRecent = timeSinceEndMs >= -5 * 60 * 1000 && timeSinceEndMs < 12 * 60 * 60 * 1000;
-  const isResumable = isPump && isLastOfCategory && isRecent && !isCurrentlyRunning;
-
-  if (event.type === 'PUMP') {
-    label = isDutch ? 'Afkolven' : 'Pumping';
-    detailChip = det.totalFloz
-      ? formatVolume(det.totalFloz, preferences.volumeUnit)
-      : formatDurationMs(event.durationMs, language);
-  } else if (event.type === 'GROWTH') {
+  if (event.type === 'GROWTH') {
     label = isDutch ? 'Groei' : 'Growth';
     const isMetric = preferences.weightUnit === 'kg';
     const parts = [];
@@ -524,10 +605,7 @@ function OtherItemRow({ event, preferences, language, onEdit, onDelete, onResume
       language={language}
       onEdit={onEdit}
       onDelete={onDelete}
-      onResume={onResume}
-      isCurrentlyRunning={isCurrentlyRunning}
-      isResumable={isResumable}
-      categoryType="pump"
+      categoryType="other"
     />
   );
 }
