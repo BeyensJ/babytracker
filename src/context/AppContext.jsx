@@ -687,8 +687,11 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
       note: existing?.note || '',
       details: {
         side: pumpSide,
-        leftFloz: pumpSide === 'RIGHT' ? 0 : 2.0,
-        rightFloz: pumpSide === 'LEFT' ? 0 : 2.0,
+        leftAmount: pumpSide === 'RIGHT' ? 0 : 50,
+        rightAmount: pumpSide === 'LEFT' ? 0 : 50,
+        leftFloz: pumpSide === 'RIGHT' ? 0 : 1.7,
+        rightFloz: pumpSide === 'LEFT' ? 0 : 1.7,
+        volumeUnit: preferences?.volumeUnit || 'ml',
         ...(existing?.details || {}),
       },
     });
