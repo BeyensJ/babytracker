@@ -15,7 +15,6 @@ export function PumpModal() {
     clearActiveTimer,
     preferences,
     startPumpTimer,
-    resumePumpTimerWithData,
     t,
     language,
   } = useApp();
@@ -227,28 +226,16 @@ export function PumpModal() {
     closeModal();
   };
 
-  const handleResumeTimer = () => {
-    triggerHaptic('medium', preferences?.haptics);
-    const finalDurationMin = parseInt(durationMin, 10) || 15;
-    const startTs = modalInitialData?.beginDt || activeTimers?.pump?.startMs || (Date.now() - finalDurationMin * 60000);
-    resumePumpTimerWithData({
-      beginDt: startTs,
-      startMs: startTs,
-      side,
-    });
-    closeModal();
-  };
-
   const handleDelete = () => {
     triggerHaptic('warning', preferences?.haptics);
-    if (isEditing) {
-      if (window.confirm(isDutch ? 'Ben je zeker dat je deze activiteit wil verwijderen?' : 'Are you sure you want to delete this event?')) {
-        deleteEvent(modalInitialData.id);
-        closeModal();
-      }
-    } else if (isFromActiveTimer) {
+    if (isFromActiveTimer) {
       if (window.confirm(isDutch ? 'Weet je zeker dat je deze timer wilt wissen zonder op te slaan?' : 'Are you sure you want to discard this timer without logging?')) {
         clearActiveTimer('pump');
+        closeModal();
+      }
+    } else if (isEditing) {
+      if (window.confirm(isDutch ? 'Ben je zeker dat je deze activiteit wil verwijderen?' : 'Are you sure you want to delete this event?')) {
+        deleteEvent(modalInitialData.id);
         closeModal();
       }
     }
@@ -268,7 +255,11 @@ export function PumpModal() {
             >
               <Pipette size={18} />
             </div>
-            <h2>{isEditing ? t('pumpModal.titleEdit') : t('pumpModal.titleAdd')}</h2>
+            <h2>
+              {isFromActiveTimer
+                ? (isDutch ? 'Kolven afronden' : 'Finish Pumping')
+                : (isEditing ? t('pumpModal.titleEdit') : t('pumpModal.titleAdd'))}
+            </h2>
           </div>
           <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label={t('common.close')}>
             <X size={20} />
@@ -630,24 +621,6 @@ export function PumpModal() {
                   <span>{isEditing ? t('common.delete') : (isDutch ? 'Wissen' : 'Delete')}</span>
                 </button>
               )}
-              {(isFromActiveTimer || isFromFinishedTimer) && (
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.35rem',
-                    color: 'var(--color-berry)',
-                    borderColor: 'var(--color-berry-light)',
-                    fontWeight: 700,
-                  }}
-                  onClick={handleResumeTimer}
-                >
-                  <Play size={15} fill="currentColor" />
-                  <span>{isDutch ? 'Hervat timer' : 'Resume timer'}</span>
-                </button>
-              )}
               <button type="button" className="btn-secondary" onClick={closeModal}>
                 {t('common.cancel')}
               </button>
@@ -656,7 +629,9 @@ export function PumpModal() {
                 className="btn-primary"
                 style={{ backgroundColor: 'var(--color-berry)' }}
               >
-                {isEditing ? t('pumpModal.submitEdit') : t('pumpModal.submitAdd')}
+                {isFromActiveTimer
+                  ? (isDutch ? 'Sessie opslaan' : 'Save Session')
+                  : (isEditing ? t('pumpModal.submitEdit') : t('pumpModal.submitAdd'))}
               </button>
             </div>
           </form>

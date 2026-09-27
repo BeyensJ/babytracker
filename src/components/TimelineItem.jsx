@@ -22,6 +22,7 @@ import {
 
 export function TimelineItem({ event }) {
   const {
+    activeTimers,
     preferences,
     deleteEvent,
     openModal,
@@ -242,30 +243,48 @@ export function TimelineItem({ event }) {
     }
   };
 
-  const handleResumeTimer = () => {
+  const handleResumeTimer = (e) => {
+    if (e) e.stopPropagation();
     setMenuOpen(false);
     triggerHaptic('medium', preferences?.haptics);
+
+    // If another timer is running of this type, ask for confirmation
+    if (event.type === 'BREAST' && activeTimers?.breast?.running && activeTimers?.breast?.resumedEventId !== event.id) {
+      if (!window.confirm(isDutch ? 'Er loopt al een borstvoedingstimer. Wil je deze vervangen door deze sessie te hervatten?' : 'A nursing timer is already running. Replace it by resuming this session?')) {
+        return;
+      }
+    } else if (event.type === 'SLEEP' && activeTimers?.sleep?.running && activeTimers?.sleep?.resumedEventId !== event.id) {
+      if (!window.confirm(isDutch ? 'Er loopt al een slaaptimer. Wil je deze vervangen door deze sessie te hervatten?' : 'A sleep timer is already running. Replace it by resuming this session?')) {
+        return;
+      }
+    } else if (event.type === 'PUMP' && activeTimers?.pump?.running && activeTimers?.pump?.resumedEventId !== event.id) {
+      if (!window.confirm(isDutch ? 'Er loopt al een kolftimer. Wil je deze vervangen door deze sessie te hervatten?' : 'A pump timer is already running. Replace it by resuming this session?')) {
+        return;
+      }
+    }
+
     if (event.type === 'SLEEP') {
-      resumeSleepTimerWithData({ beginDt: event.beginDt });
-      deleteEvent(event.id);
+      resumeSleepTimerWithData(event);
     } else if (event.type === 'BREAST') {
-      resumeBreastTimerWithData({
-        side: det.side || 'LEFT',
-        leftDurationMs: det.leftDurationMs || 0,
-        rightDurationMs: det.rightDurationMs || 0,
-        beginDt: event.beginDt,
-      });
-      deleteEvent(event.id);
+      resumeBreastTimerWithData(event);
     } else if (event.type === 'PUMP') {
-      resumePumpTimerWithData({
-        side: det.side || 'BOTH',
-        beginDt: event.beginDt,
-      });
-      deleteEvent(event.id);
+      resumePumpTimerWithData(event);
     }
   };
 
-  const isResumable = ['SLEEP', 'BREAST', 'PUMP'].includes(event.type);
+  const isCurrentlyRunning =
+    (event.type === 'BREAST' && activeTimers?.breast?.resumedEventId === event.id) ||
+    (event.type === 'SLEEP' && activeTimers?.sleep?.resumedEventId === event.id) ||
+    (event.type === 'PUMP' && activeTimers?.pump?.resumedEventId === event.id);
+
+  const endTs = event.endDt || (event.beginDt + (event.durationMs || 0));
+  const timeSinceEndMs = Date.now() - endTs;
+  // Resumable directly if within the last 2 hours (120 min)
+  const isRecent = timeSinceEndMs >= -5 * 60 * 1000 && timeSinceEndMs < 2 * 60 * 60 * 1000;
+  const isResumableType = ['SLEEP', 'BREAST', 'PUMP'].includes(event.type);
+  const isResumable = isResumableType && isRecent && !isCurrentlyRunning;
+
+  const resumeClass = event.type === 'BREAST' ? 'breast' : event.type === 'SLEEP' ? 'sleep' : 'pump';
 
   return (
     <div className="timeline-item-card">
@@ -296,98 +315,117 @@ export function TimelineItem({ event }) {
       </div>
 
       <div className="timeline-item-right">
-        <span className="item-time">{formatTime(event.beginDt, language)}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <span className="item-time">{formatTime(event.beginDt, language)}</span>
 
-        <div style={{ position: 'relative' }}>
-          <button
-            className="item-menu-btn"
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label={language === 'nl' ? 'Opties voor activiteit' : 'Activity menu'}
-          >
-            <MoreVertical size={16} />
-          </button>
+          <div style={{ position: 'relative' }}>
+            <button
+              className="item-menu-btn"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label={language === 'nl' ? 'Opties voor activiteit' : 'Activity menu'}
+            >
+              <MoreVertical size={16} />
+            </button>
 
-          {menuOpen && (
-            <>
-              <div
-                style={{ position: 'fixed', inset: 0, zIndex: 30 }}
-                onClick={() => setMenuOpen(false)}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  right: 0,
-                  backgroundColor: 'var(--bg-card)',
-                  borderRadius: 'var(--radius-md)',
-                  boxShadow: 'var(--shadow-lg)',
-                  border: '1px solid var(--border-subtle)',
-                  padding: '0.35rem',
-                  zIndex: 35,
-                  minWidth: 120,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.2rem',
-                }}
-              >
-                {isResumable && (
+            {menuOpen && (
+              <>
+                <div
+                  style={{ position: 'fixed', inset: 0, zIndex: 30 }}
+                  onClick={() => setMenuOpen(false)}
+                />
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    backgroundColor: 'var(--bg-card)',
+                    borderRadius: 'var(--radius-md)',
+                    boxShadow: 'var(--shadow-lg)',
+                    border: '1px solid var(--border-subtle)',
+                    padding: '0.35rem',
+                    zIndex: 35,
+                    minWidth: 120,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.2rem',
+                  }}
+                >
+                  {isResumableType && !isCurrentlyRunning && (
+                    <button
+                      onClick={handleResumeTimer}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.45rem 0.65rem',
+                        fontSize: '0.8rem',
+                        color: 'var(--color-terracotta)',
+                        fontWeight: 600,
+                        borderRadius: 'var(--radius-sm)',
+                        width: '100%',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <Play size={13} fill="currentColor" />
+                      {isDutch ? 'Sessie hervatten' : 'Resume session'}
+                    </button>
+                  )}
                   <button
-                    onClick={handleResumeTimer}
+                    onClick={handleEdit}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.5rem',
                       padding: '0.45rem 0.65rem',
                       fontSize: '0.8rem',
-                      color: 'var(--color-terracotta)',
-                      fontWeight: 600,
+                      color: 'var(--text-primary)',
                       borderRadius: 'var(--radius-sm)',
                       width: '100%',
                       textAlign: 'left',
                     }}
                   >
-                    <Play size={13} fill="currentColor" />
-                    {isDutch ? 'Timer hervatten' : 'Resume timer'}
+                    <Edit2 size={13} />
+                    {isDutch ? 'Bewerken' : 'Edit'}
                   </button>
-                )}
-                <button
-                  onClick={handleEdit}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: '0.45rem 0.65rem',
-                    fontSize: '0.8rem',
-                    color: 'var(--text-primary)',
-                    borderRadius: 'var(--radius-sm)',
-                    width: '100%',
-                    textAlign: 'left',
-                  }}
-                >
-                  <Edit2 size={13} />
-                  {isDutch ? 'Bewerken' : 'Edit'}
-                </button>
-                <button
-                  onClick={handleDelete}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: '0.45rem 0.65rem',
-                    fontSize: '0.8rem',
-                    color: 'var(--status-red)',
-                    borderRadius: 'var(--radius-sm)',
-                    width: '100%',
-                    textAlign: 'left',
-                  }}
-                >
-                  <Trash2 size={13} />
-                  {isDutch ? 'Verwijderen' : 'Delete'}
-                </button>
-              </div>
-            </>
-          )}
+                  <button
+                    onClick={handleDelete}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.45rem 0.65rem',
+                      fontSize: '0.8rem',
+                      color: 'var(--status-red)',
+                      borderRadius: 'var(--radius-sm)',
+                      width: '100%',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <Trash2 size={13} />
+                    {isDutch ? 'Verwijderen' : 'Delete'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
+
+        {isCurrentlyRunning ? (
+          <span className={`timeline-item-active-badge ${resumeClass}`}>
+            <span className="timeline-pulse-dot" />
+            <span>{isDutch ? 'Timer actief' : 'Timer active'}</span>
+          </span>
+        ) : isResumable ? (
+          <button
+            type="button"
+            className={`timeline-item-resume-btn ${resumeClass}`}
+            onClick={handleResumeTimer}
+            title={isDutch ? 'Sessie hervatten' : 'Resume session'}
+          >
+            <Play size={11} fill="currentColor" />
+            <span>{isDutch ? 'Hervatten' : 'Resume'}</span>
+          </button>
+        ) : null}
       </div>
     </div>
   );

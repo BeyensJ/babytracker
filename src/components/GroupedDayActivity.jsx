@@ -21,13 +21,49 @@ import {
   Award,
   BookOpen,
   Pipette,
+  Play,
 } from 'lucide-react';
 
 export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) {
-  const { preferences, openModal, deleteEvent, language, t } = useApp();
+  const {
+    activeTimers,
+    preferences,
+    openModal,
+    deleteEvent,
+    resumeBreastTimerWithData,
+    resumeSleepTimerWithData,
+    resumePumpTimerWithData,
+    language,
+    t,
+  } = useApp();
   const isDutch = language === 'nl';
   const isMetric = preferences.weightUnit === 'kg';
   const isMetricVol = preferences.volumeUnit === 'ml';
+
+  const handleResume = (event) => {
+    // If another timer is running of this type, ask for confirmation
+    if (event.type === 'BREAST' && activeTimers?.breast?.running && activeTimers?.breast?.resumedEventId !== event.id) {
+      if (!window.confirm(isDutch ? 'Er loopt al een borstvoedingstimer. Wil je deze vervangen door deze sessie te hervatten?' : 'A nursing timer is already running. Replace it by resuming this session?')) {
+        return;
+      }
+    } else if (event.type === 'SLEEP' && activeTimers?.sleep?.running && activeTimers?.sleep?.resumedEventId !== event.id) {
+      if (!window.confirm(isDutch ? 'Er loopt al een slaaptimer. Wil je deze vervangen door deze sessie te hervatten?' : 'A sleep timer is already running. Replace it by resuming this session?')) {
+        return;
+      }
+    } else if (event.type === 'PUMP' && activeTimers?.pump?.running && activeTimers?.pump?.resumedEventId !== event.id) {
+      if (!window.confirm(isDutch ? 'Er loopt al een kolftimer. Wil je deze vervangen door deze sessie te hervatten?' : 'A pump timer is already running. Replace it by resuming this session?')) {
+        return;
+      }
+    }
+
+    if (event.type === 'BREAST') {
+      resumeBreastTimerWithData(event);
+    } else if (event.type === 'SLEEP') {
+      resumeSleepTimerWithData(event);
+    } else if (event.type === 'PUMP') {
+      resumePumpTimerWithData(event);
+    }
+  };
 
   // Group events into 4 buckets
   const feeds = [];
@@ -142,7 +178,18 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
           summaryText={feedSummaryText}
           events={feeds}
           defaultOpen={defaultExpanded}
-          renderItem={(ev) => <FeedItemRow key={ev.id} event={ev} preferences={preferences} language={language} onEdit={openModal} onDelete={deleteEvent} />}
+          renderItem={(ev) => (
+            <FeedItemRow
+              key={ev.id}
+              event={ev}
+              preferences={preferences}
+              language={language}
+              onEdit={openModal}
+              onDelete={deleteEvent}
+              onResume={handleResume}
+              activeTimers={activeTimers}
+            />
+          )}
         />
       )}
 
@@ -157,7 +204,17 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
           summaryText={sleepSummaryText}
           events={sleeps}
           defaultOpen={defaultExpanded}
-          renderItem={(ev) => <SleepItemRow key={ev.id} event={ev} language={language} onEdit={openModal} onDelete={deleteEvent} />}
+          renderItem={(ev) => (
+            <SleepItemRow
+              key={ev.id}
+              event={ev}
+              language={language}
+              onEdit={openModal}
+              onDelete={deleteEvent}
+              onResume={handleResume}
+              activeTimers={activeTimers}
+            />
+          )}
         />
       )}
 
@@ -187,7 +244,18 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
           summaryText={isDutch ? `${others.length} registratie${others.length === 1 ? '' : 's'}` : `${others.length} Activities`}
           events={others}
           defaultOpen={defaultExpanded}
-          renderItem={(ev) => <OtherItemRow key={ev.id} event={ev} preferences={preferences} language={language} onEdit={openModal} onDelete={deleteEvent} />}
+          renderItem={(ev) => (
+            <OtherItemRow
+              key={ev.id}
+              event={ev}
+              preferences={preferences}
+              language={language}
+              onEdit={openModal}
+              onDelete={deleteEvent}
+              onResume={handleResume}
+              activeTimers={activeTimers}
+            />
+          )}
         />
       )}
     </div>
@@ -246,11 +314,17 @@ function CategoryCard({ categoryKey, title, icon: Icon, colorClass, count, summa
 /**
  * Feed Item Row
  */
-function FeedItemRow({ event, preferences, language, onEdit, onDelete }) {
+function FeedItemRow({ event, preferences, language, onEdit, onDelete, onResume, activeTimers }) {
   const isDutch = language === 'nl';
   const det = event.details || {};
   let label = isDutch ? 'Voeding' : 'Feed';
   let detailChip = '';
+
+  const isCurrentlyRunning = event.type === 'BREAST' && activeTimers?.breast?.resumedEventId === event.id;
+  const endTs = event.endDt || (event.beginDt + (event.durationMs || 0));
+  const timeSinceEndMs = Date.now() - endTs;
+  const isRecent = timeSinceEndMs >= -5 * 60 * 1000 && timeSinceEndMs < 2 * 60 * 60 * 1000;
+  const isResumable = event.type === 'BREAST' && isRecent && !isCurrentlyRunning;
 
   if (event.type === 'BREAST') {
     label = isDutch ? 'Borst' : 'Nurse';
@@ -294,6 +368,10 @@ function FeedItemRow({ event, preferences, language, onEdit, onDelete }) {
       language={language}
       onEdit={onEdit}
       onDelete={onDelete}
+      onResume={onResume}
+      isCurrentlyRunning={isCurrentlyRunning}
+      isResumable={isResumable}
+      categoryType="breast"
     />
   );
 }
@@ -301,7 +379,7 @@ function FeedItemRow({ event, preferences, language, onEdit, onDelete }) {
 /**
  * Sleep Item Row
  */
-function SleepItemRow({ event, language, onEdit, onDelete }) {
+function SleepItemRow({ event, language, onEdit, onDelete, onResume, activeTimers }) {
   const isDutch = language === 'nl';
   const det = event.details || {};
   const isOngoing = !event.durationMs && !event.endDt;
@@ -311,6 +389,12 @@ function SleepItemRow({ event, language, onEdit, onDelete }) {
     ? (isDutch ? 'Slaapt nu...' : 'Sleeping now...')
     : formatDurationMs(event.durationMs || (event.endDt - event.beginDt), language);
 
+  const isCurrentlyRunning = activeTimers?.sleep?.resumedEventId === event.id;
+  const endTs = event.endDt || (event.beginDt + (event.durationMs || 0));
+  const timeSinceEndMs = Date.now() - endTs;
+  const isRecent = timeSinceEndMs >= -5 * 60 * 1000 && timeSinceEndMs < 2 * 60 * 60 * 1000;
+  const isResumable = isRecent && !isCurrentlyRunning;
+
   return (
     <ItemRowTemplate
       event={event}
@@ -319,6 +403,10 @@ function SleepItemRow({ event, language, onEdit, onDelete }) {
       language={language}
       onEdit={onEdit}
       onDelete={onDelete}
+      onResume={onResume}
+      isCurrentlyRunning={isCurrentlyRunning}
+      isResumable={isResumable}
+      categoryType="sleep"
     />
   );
 }
@@ -353,11 +441,18 @@ function DiaperItemRow({ event, language, onEdit, onDelete }) {
 /**
  * Other Activities Row (Pump, Growth, Health, Routine, Milestone, Note)
  */
-function OtherItemRow({ event, preferences, language, onEdit, onDelete }) {
+function OtherItemRow({ event, preferences, language, onEdit, onDelete, onResume, activeTimers }) {
   const isDutch = language === 'nl';
   const det = event.details || {};
   let label = isDutch ? 'Activiteit' : 'Activity';
   let detailChip = '';
+
+  const isPump = event.type === 'PUMP';
+  const isCurrentlyRunning = isPump && activeTimers?.pump?.resumedEventId === event.id;
+  const endTs = event.endDt || (event.beginDt + (event.durationMs || 0));
+  const timeSinceEndMs = Date.now() - endTs;
+  const isRecent = timeSinceEndMs >= -5 * 60 * 1000 && timeSinceEndMs < 2 * 60 * 60 * 1000;
+  const isResumable = isPump && isRecent && !isCurrentlyRunning;
 
   if (event.type === 'PUMP') {
     label = isDutch ? 'Afkolven' : 'Pumping';
@@ -393,6 +488,10 @@ function OtherItemRow({ event, preferences, language, onEdit, onDelete }) {
       language={language}
       onEdit={onEdit}
       onDelete={onDelete}
+      onResume={onResume}
+      isCurrentlyRunning={isCurrentlyRunning}
+      isResumable={isResumable}
+      categoryType="pump"
     />
   );
 }
@@ -400,7 +499,18 @@ function OtherItemRow({ event, preferences, language, onEdit, onDelete }) {
 /**
  * Base Item Row Template
  */
-function ItemRowTemplate({ event, label, detailChip, language = 'nl', onEdit, onDelete }) {
+function ItemRowTemplate({
+  event,
+  label,
+  detailChip,
+  language = 'nl',
+  onEdit,
+  onDelete,
+  onResume,
+  isCurrentlyRunning = false,
+  isResumable = false,
+  categoryType = 'breast',
+}) {
   const isDutch = language === 'nl';
   const det = event.details || {};
 
@@ -424,6 +534,22 @@ function ItemRowTemplate({ event, label, detailChip, language = 'nl', onEdit, on
       </div>
 
       <div className="grouped-item-actions">
+        {isCurrentlyRunning ? (
+          <span className={`grouped-item-active-badge ${categoryType}`}>
+            <span className="timeline-pulse-dot" />
+            <span>{isDutch ? 'Actief' : 'Active'}</span>
+          </span>
+        ) : isResumable && onResume ? (
+          <button
+            type="button"
+            className={`grouped-item-resume-btn ${categoryType}`}
+            onClick={() => onResume(event)}
+            title={isDutch ? 'Sessie hervatten' : 'Resume session'}
+          >
+            <Play size={10} fill="currentColor" />
+            <span>{isDutch ? 'Hervatten' : 'Resume'}</span>
+          </button>
+        ) : null}
         <button
           className="grouped-item-btn"
           onClick={() => onEdit(event.type, event)}

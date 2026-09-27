@@ -14,7 +14,6 @@ export function BreastfeedModal() {
     deleteEvent,
     clearActiveTimer,
     startBreastTimer,
-    resumeBreastTimerWithData,
     preferences,
     t,
     language,
@@ -166,28 +165,16 @@ export function BreastfeedModal() {
     closeModal();
   };
 
-  const handleResumeTimer = () => {
-    triggerHaptic('medium', preferences?.haptics);
-    const beginDt = modalInitialData?.beginDt || (Date.now() - totalDurationMs);
-    resumeBreastTimerWithData({
-      side: side === 'RIGHT' ? 'RIGHT' : 'LEFT',
-      leftDurationMs: leftMs,
-      rightDurationMs: rightMs,
-      beginDt,
-    });
-    closeModal();
-  };
-
   const handleDelete = () => {
     triggerHaptic('warning', preferences?.haptics);
-    if (isEditing) {
-      if (window.confirm(isDutch ? 'Ben je zeker dat je deze activiteit wil verwijderen?' : 'Are you sure you want to delete this event?')) {
-        deleteEvent(modalInitialData.id);
-        closeModal();
-      }
-    } else if (isFromActiveTimer) {
+    if (isFromActiveTimer) {
       if (window.confirm(isDutch ? 'Weet je zeker dat je deze timer wilt wissen zonder op te slaan?' : 'Are you sure you want to discard this timer without logging?')) {
         clearActiveTimer('breast');
+        closeModal();
+      }
+    } else if (isEditing) {
+      if (window.confirm(isDutch ? 'Ben je zeker dat je deze activiteit wil verwijderen?' : 'Are you sure you want to delete this event?')) {
+        deleteEvent(modalInitialData.id);
         closeModal();
       }
     }
@@ -201,7 +188,11 @@ export function BreastfeedModal() {
             <div className="modal-title-icon" style={{ backgroundColor: 'var(--color-terracotta-light)', color: 'var(--color-terracotta)' }}>
               <Heart size={18} />
             </div>
-            <h2>{isEditing ? t('breastModal.titleEdit') : t('breastModal.titleAdd')}</h2>
+            <h2>
+              {isFromActiveTimer
+                ? (isDutch ? 'Borstvoeding afronden' : 'Finish Nursing')
+                : (isEditing ? t('breastModal.titleEdit') : t('breastModal.titleAdd'))}
+            </h2>
           </div>
           <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label={t('common.close')}>
             <X size={20} />
@@ -538,24 +529,6 @@ export function BreastfeedModal() {
                   <span>{isEditing ? t('common.delete') : (isDutch ? 'Wissen' : 'Delete')}</span>
                 </button>
               )}
-              {(isFromActiveTimer || isFromFinishedTimer) && (
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.35rem',
-                    color: 'var(--color-terracotta)',
-                    borderColor: 'var(--color-terracotta-light)',
-                    fontWeight: 700,
-                  }}
-                  onClick={handleResumeTimer}
-                >
-                  <Play size={15} fill="currentColor" />
-                  <span>{isDutch ? 'Hervat timer' : 'Resume timer'}</span>
-                </button>
-              )}
               <button type="button" className="btn-secondary" onClick={closeModal}>
                 {t('common.cancel')}
               </button>
@@ -564,7 +537,9 @@ export function BreastfeedModal() {
                 className="btn-primary"
                 style={{ backgroundColor: 'var(--color-terracotta)' }}
               >
-                {isEditing ? t('breastModal.submitEdit') : t('breastModal.submitAdd')}
+                {isFromActiveTimer
+                  ? (isDutch ? 'Sessie opslaan' : 'Save Session')
+                  : (isEditing ? t('breastModal.submitEdit') : t('breastModal.submitAdd'))}
               </button>
             </div>
           </form>

@@ -14,7 +14,6 @@ export function SleepModal() {
     deleteEvent,
     clearActiveTimer,
     startSleepTimer,
-    resumeSleepTimerWithData,
     preferences,
     t,
     language,
@@ -180,23 +179,16 @@ export function SleepModal() {
     closeModal();
   };
 
-  const handleResumeTimer = () => {
-    triggerHaptic('medium', preferences?.haptics);
-    const start = modalInitialData?.beginDt || startTs || (Date.now() - durationMs);
-    resumeSleepTimerWithData({ beginDt: start, startMs: start });
-    closeModal();
-  };
-
   const handleDelete = () => {
     triggerHaptic('warning', preferences?.haptics);
-    if (isEditing) {
-      if (window.confirm(isDutch ? 'Ben je zeker dat je deze activiteit wil verwijderen?' : 'Are you sure you want to delete this event?')) {
-        deleteEvent(modalInitialData.id);
-        closeModal();
-      }
-    } else if (isFromActiveTimer) {
+    if (isFromActiveTimer) {
       if (window.confirm(isDutch ? 'Weet je zeker dat je deze timer wilt wissen zonder op te slaan?' : 'Are you sure you want to discard this timer without logging?')) {
         clearActiveTimer('sleep');
+        closeModal();
+      }
+    } else if (isEditing) {
+      if (window.confirm(isDutch ? 'Ben je zeker dat je deze activiteit wil verwijderen?' : 'Are you sure you want to delete this event?')) {
+        deleteEvent(modalInitialData.id);
         closeModal();
       }
     }
@@ -210,7 +202,11 @@ export function SleepModal() {
             <div className="modal-title-icon" style={{ backgroundColor: 'var(--color-slate-light)', color: 'var(--color-slate)' }}>
               <Moon size={18} />
             </div>
-            <h2>{isEditing ? t('sleepModal.titleEdit') : t('sleepModal.titleAdd')}</h2>
+            <h2>
+              {isFromActiveTimer
+                ? (isDutch ? 'Slaap afronden' : 'Finish Sleep')
+                : (isEditing ? t('sleepModal.titleEdit') : t('sleepModal.titleAdd'))}
+            </h2>
           </div>
           <button onClick={closeModal} style={{ color: 'var(--text-tertiary)' }} aria-label={t('common.close')}>
             <X size={20} />
@@ -452,29 +448,13 @@ export function SleepModal() {
                   <span>{isEditing ? t('common.delete') : (isDutch ? 'Wissen' : 'Delete')}</span>
                 </button>
               )}
-              {(isFromActiveTimer || isFromFinishedTimer) && (
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.35rem',
-                    color: 'var(--color-slate)',
-                    borderColor: 'var(--color-slate-light)',
-                    fontWeight: 700,
-                  }}
-                  onClick={handleResumeTimer}
-                >
-                  <Play size={15} fill="currentColor" />
-                  <span>{isDutch ? 'Hervat timer' : 'Resume timer'}</span>
-                </button>
-              )}
               <button type="button" className="btn-secondary" onClick={closeModal}>
                 {t('common.cancel')}
               </button>
               <button type="submit" className="btn-primary" style={{ backgroundColor: 'var(--color-slate)' }}>
-                {isEditing ? t('sleepModal.submitEdit') : t('sleepModal.submitAdd')}
+                {isFromActiveTimer
+                  ? (isDutch ? 'Sessie opslaan' : 'Save Session')
+                  : (isEditing ? t('sleepModal.submitEdit') : t('sleepModal.submitAdd'))}
               </button>
             </div>
           </form>

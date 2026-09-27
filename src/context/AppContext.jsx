@@ -586,16 +586,26 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
 
     const totalDuration = finalLeft + finalRight;
     const beginDt = b?.sessionStartMs || (now - totalDuration);
+    const existing = b?.resumedEventId ? events.find(e => e.id === b.resumedEventId) : null;
 
     // Open log modal WITHOUT deleting timer immediately so cancel/close keeps it running
     openModal('BREAST', {
+      id: b?.resumedEventId || undefined,
       fromActiveTimer: 'breast',
+      resumedEventId: b?.resumedEventId || null,
       side: finalRight > 0 && finalLeft > 0 ? 'BOTH' : (finalRight > 0 ? 'RIGHT' : 'LEFT'),
       leftDurationMs: finalLeft,
       rightDurationMs: finalRight,
       durationMs: totalDuration,
       beginDt,
       endDt: now,
+      note: existing?.note || '',
+      details: {
+        ...(existing?.details || {}),
+        side: finalRight > 0 && finalLeft > 0 ? 'BOTH' : (finalRight > 0 ? 'RIGHT' : 'LEFT'),
+        leftDurationMs: finalLeft,
+        rightDurationMs: finalRight,
+      },
     });
   };
 
@@ -620,14 +630,21 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     const s = activeTimers.sleep;
     const now = Date.now();
     const start = s?.startMs || now - 30 * 60 * 1000;
+    const existing = s?.resumedEventId ? events.find(e => e.id === s.resumedEventId) : null;
 
     // Open log modal WITHOUT deleting timer immediately so cancel/close keeps it running
     openModal('SLEEP', {
+      id: s?.resumedEventId || undefined,
       fromActiveTimer: 'sleep',
+      resumedEventId: s?.resumedEventId || null,
       beginDt: start,
       endDt: now,
       durationMs: Math.max(0, now - start),
-      details: { sleepType: 'NAP' },
+      note: existing?.note || '',
+      details: {
+        sleepType: 'NAP',
+        ...(existing?.details || {}),
+      },
     });
   };
 
@@ -654,17 +671,22 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     const now = Date.now();
     const start = p?.startMs || now - 15 * 60 * 1000;
     const pumpSide = p?.side || 'BOTH';
+    const existing = p?.resumedEventId ? events.find(e => e.id === p.resumedEventId) : null;
 
     // Open log modal WITHOUT deleting timer immediately so cancel/close keeps it running
     openModal('PUMP', {
+      id: p?.resumedEventId || undefined,
       fromActiveTimer: 'pump',
+      resumedEventId: p?.resumedEventId || null,
       beginDt: start,
       endDt: now,
       durationMs: Math.max(0, now - start),
+      note: existing?.note || '',
       details: {
         side: pumpSide,
         leftFloz: pumpSide === 'RIGHT' ? 0 : 2.0,
         rightFloz: pumpSide === 'LEFT' ? 0 : 2.0,
+        ...(existing?.details || {}),
       },
     });
   };
@@ -689,10 +711,21 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
       notificationService.requestPermission().then(p => setNotificationPermission(p)).catch(() => {});
     }
     const now = Date.now();
-    const side = data.side === 'RIGHT' ? 'RIGHT' : 'LEFT';
-    const leftElapsedMs = Number(data.leftDurationMs || data.details?.leftDurationMs || data.leftElapsedMs) || 0;
-    const rightElapsedMs = Number(data.rightDurationMs || data.details?.rightDurationMs || data.rightElapsedMs) || 0;
+    const resumedEventId = data.id || data.resumedEventId || null;
+    const leftElapsedMs = Number(data.details?.leftDurationMs ?? data.leftDurationMs ?? data.leftElapsedMs) || 0;
+    const rightElapsedMs = Number(data.details?.rightDurationMs ?? data.rightDurationMs ?? data.rightElapsedMs) || 0;
     const sessionStartMs = data.beginDt || (now - (leftElapsedMs + rightElapsedMs));
+
+    // Smart default side: if previously fed on LEFT and right is 0, start on RIGHT, and vice versa
+    let side = data.side || data.details?.side;
+    if (leftElapsedMs > 0 && rightElapsedMs === 0) {
+      side = 'RIGHT';
+    } else if (rightElapsedMs > 0 && leftElapsedMs === 0) {
+      side = 'LEFT';
+    } else if (!side || side === 'BOTH') {
+      side = data.side === 'RIGHT' ? 'RIGHT' : 'LEFT';
+    }
+
     triggerHaptic('medium', preferences?.haptics);
 
     broadcastTimers(prev => ({
@@ -704,6 +737,7 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
         leftElapsedMs,
         rightElapsedMs,
         lastSideStartMs: now,
+        resumedEventId,
       },
     }));
   };
@@ -713,6 +747,7 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
       notificationService.requestPermission().then(p => setNotificationPermission(p)).catch(() => {});
     }
     const now = Date.now();
+    const resumedEventId = data.id || data.resumedEventId || null;
     const startMs = data.beginDt || data.startMs || (now - 30 * 60000);
     triggerHaptic('medium', preferences?.haptics);
 
@@ -721,6 +756,7 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
       sleep: {
         running: true,
         startMs,
+        resumedEventId,
       },
     }));
   };
@@ -730,6 +766,7 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
       notificationService.requestPermission().then(p => setNotificationPermission(p)).catch(() => {});
     }
     const now = Date.now();
+    const resumedEventId = data.id || data.resumedEventId || null;
     const startMs = data.beginDt || data.startMs || (now - 15 * 60000);
     const side = data.side || data.details?.side || 'BOTH';
     triggerHaptic('medium', preferences?.haptics);
@@ -740,6 +777,7 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
         running: true,
         startMs,
         side,
+        resumedEventId,
       },
     }));
   };

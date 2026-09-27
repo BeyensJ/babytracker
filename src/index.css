@@ -2072,6 +2072,141 @@ input, select, textarea {
   background-color: var(--bg-input);
 }
 
+/* Logged Entry Resume Button & Active Badge */
+.timeline-item-resume-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.24rem 0.65rem;
+  min-height: 28px;
+  background-color: var(--color-terracotta-light);
+  color: var(--color-terracotta);
+  border: 1px solid rgba(200, 92, 62, 0.28);
+  border-radius: var(--radius-full);
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.timeline-item-resume-btn.breast {
+  background-color: var(--color-terracotta-light);
+  color: var(--color-terracotta);
+  border-color: rgba(200, 92, 62, 0.28);
+}
+
+.timeline-item-resume-btn.sleep {
+  background-color: var(--color-slate-light);
+  color: var(--color-slate);
+  border-color: rgba(92, 107, 130, 0.28);
+}
+
+.timeline-item-resume-btn.pump {
+  background-color: var(--color-berry-light);
+  color: var(--color-berry);
+  border-color: rgba(162, 79, 114, 0.28);
+}
+
+.timeline-item-resume-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.95);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.timeline-item-resume-btn:active {
+  transform: translateY(0);
+}
+
+.grouped-item-resume-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.55rem;
+  min-height: 28px;
+  background-color: var(--color-terracotta-light);
+  color: var(--color-terracotta);
+  border: 1px solid rgba(200, 92, 62, 0.28);
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.grouped-item-resume-btn.breast {
+  background-color: var(--color-terracotta-light);
+  color: var(--color-terracotta);
+  border-color: rgba(200, 92, 62, 0.28);
+}
+
+.grouped-item-resume-btn.sleep {
+  background-color: var(--color-slate-light);
+  color: var(--color-slate);
+  border-color: rgba(92, 107, 130, 0.28);
+}
+
+.grouped-item-resume-btn.pump {
+  background-color: var(--color-berry-light);
+  color: var(--color-berry);
+  border-color: rgba(162, 79, 114, 0.28);
+}
+
+.grouped-item-resume-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.95);
+}
+
+.timeline-item-active-badge,
+.grouped-item-active-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.55rem;
+  background-color: rgba(200, 92, 62, 0.12);
+  color: var(--color-terracotta);
+  border: 1px solid rgba(200, 92, 62, 0.22);
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.timeline-item-active-badge.sleep,
+.grouped-item-active-badge.sleep {
+  background-color: rgba(92, 107, 130, 0.12);
+  color: var(--color-slate);
+  border-color: rgba(92, 107, 130, 0.22);
+}
+
+.timeline-item-active-badge.pump,
+.grouped-item-active-badge.pump {
+  background-color: rgba(162, 79, 114, 0.12);
+  color: var(--color-berry);
+  border-color: rgba(162, 79, 114, 0.22);
+}
+
+.timeline-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: currentColor;
+  animation: pulseDot 1.4s ease-in-out infinite;
+}
+
+@keyframes pulseDot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+}
+
 /* Empty State */
 .timeline-empty {
   text-align: center;
