@@ -22,6 +22,7 @@ import {
 
 export function TimelineItem({ event }) {
   const {
+    events,
     activeTimers,
     preferences,
     deleteEvent,
@@ -277,12 +278,26 @@ export function TimelineItem({ event }) {
     (event.type === 'SLEEP' && activeTimers?.sleep?.resumedEventId === event.id) ||
     (event.type === 'PUMP' && activeTimers?.pump?.resumedEventId === event.id);
 
+  const isResumableType = ['SLEEP', 'BREAST', 'PUMP'].includes(event.type);
+
+  // Find the last (most recent) event in this category
+  const lastEventOfCategory = isResumableType
+    ? (events || []).reduce((latest, cur) => {
+        if (cur.type !== event.type) return latest;
+        if (!latest) return cur;
+        const curTs = cur.endDt || cur.beginDt;
+        const latestTs = latest.endDt || latest.beginDt;
+        return curTs > latestTs ? cur : latest;
+      }, null)
+    : null;
+
+  const isLastOfCategory = lastEventOfCategory?.id === event.id;
+
   const endTs = event.endDt || (event.beginDt + (event.durationMs || 0));
   const timeSinceEndMs = Date.now() - endTs;
-  // Resumable directly if within the last 2 hours (120 min)
-  const isRecent = timeSinceEndMs >= -5 * 60 * 1000 && timeSinceEndMs < 2 * 60 * 60 * 1000;
-  const isResumableType = ['SLEEP', 'BREAST', 'PUMP'].includes(event.type);
-  const isResumable = isResumableType && isRecent && !isCurrentlyRunning;
+  // Resumable if within the last 12 hours, is the last timer in its category, and not running
+  const isRecent = timeSinceEndMs >= -5 * 60 * 1000 && timeSinceEndMs < 12 * 60 * 60 * 1000;
+  const isResumable = isResumableType && isLastOfCategory && isRecent && !isCurrentlyRunning;
 
   const resumeClass = event.type === 'BREAST' ? 'breast' : event.type === 'SLEEP' ? 'sleep' : 'pump';
 
@@ -350,7 +365,7 @@ export function TimelineItem({ event }) {
                     gap: '0.2rem',
                   }}
                 >
-                  {isResumableType && !isCurrentlyRunning && (
+                  {isResumable && (
                     <button
                       onClick={handleResumeTimer}
                       style={{

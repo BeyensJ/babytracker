@@ -26,6 +26,7 @@ import {
 
 export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) {
   const {
+    events: allEvents,
     activeTimers,
     preferences,
     openModal,
@@ -188,6 +189,7 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
               onDelete={deleteEvent}
               onResume={handleResume}
               activeTimers={activeTimers}
+              allEvents={allEvents}
             />
           )}
         />
@@ -213,6 +215,7 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
               onDelete={deleteEvent}
               onResume={handleResume}
               activeTimers={activeTimers}
+              allEvents={allEvents}
             />
           )}
         />
@@ -254,6 +257,7 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
               onDelete={deleteEvent}
               onResume={handleResume}
               activeTimers={activeTimers}
+              allEvents={allEvents}
             />
           )}
         />
@@ -314,17 +318,29 @@ function CategoryCard({ categoryKey, title, icon: Icon, colorClass, count, summa
 /**
  * Feed Item Row
  */
-function FeedItemRow({ event, preferences, language, onEdit, onDelete, onResume, activeTimers }) {
+function FeedItemRow({ event, preferences, language, onEdit, onDelete, onResume, activeTimers, allEvents }) {
   const isDutch = language === 'nl';
   const det = event.details || {};
   let label = isDutch ? 'Voeding' : 'Feed';
   let detailChip = '';
 
+  const isResumableType = event.type === 'BREAST';
+  const lastEvent = isResumableType
+    ? (allEvents || []).reduce((latest, cur) => {
+        if (cur.type !== event.type) return latest;
+        if (!latest) return cur;
+        const curTs = cur.endDt || cur.beginDt;
+        const latestTs = latest.endDt || latest.beginDt;
+        return curTs > latestTs ? cur : latest;
+      }, null)
+    : null;
+  const isLastOfCategory = lastEvent?.id === event.id;
+
   const isCurrentlyRunning = event.type === 'BREAST' && activeTimers?.breast?.resumedEventId === event.id;
   const endTs = event.endDt || (event.beginDt + (event.durationMs || 0));
   const timeSinceEndMs = Date.now() - endTs;
-  const isRecent = timeSinceEndMs >= -5 * 60 * 1000 && timeSinceEndMs < 2 * 60 * 60 * 1000;
-  const isResumable = event.type === 'BREAST' && isRecent && !isCurrentlyRunning;
+  const isRecent = timeSinceEndMs >= -5 * 60 * 1000 && timeSinceEndMs < 12 * 60 * 60 * 1000;
+  const isResumable = isResumableType && isLastOfCategory && isRecent && !isCurrentlyRunning;
 
   if (event.type === 'BREAST') {
     label = isDutch ? 'Borst' : 'Nurse';
@@ -379,7 +395,7 @@ function FeedItemRow({ event, preferences, language, onEdit, onDelete, onResume,
 /**
  * Sleep Item Row
  */
-function SleepItemRow({ event, language, onEdit, onDelete, onResume, activeTimers }) {
+function SleepItemRow({ event, language, onEdit, onDelete, onResume, activeTimers, allEvents }) {
   const isDutch = language === 'nl';
   const det = event.details || {};
   const isOngoing = !event.durationMs && !event.endDt;
@@ -389,11 +405,20 @@ function SleepItemRow({ event, language, onEdit, onDelete, onResume, activeTimer
     ? (isDutch ? 'Slaapt nu...' : 'Sleeping now...')
     : formatDurationMs(event.durationMs || (event.endDt - event.beginDt), language);
 
+  const lastEvent = (allEvents || []).reduce((latest, cur) => {
+    if (cur.type !== 'SLEEP') return latest;
+    if (!latest) return cur;
+    const curTs = cur.endDt || cur.beginDt;
+    const latestTs = latest.endDt || latest.beginDt;
+    return curTs > latestTs ? cur : latest;
+  }, null);
+  const isLastOfCategory = lastEvent?.id === event.id;
+
   const isCurrentlyRunning = activeTimers?.sleep?.resumedEventId === event.id;
   const endTs = event.endDt || (event.beginDt + (event.durationMs || 0));
   const timeSinceEndMs = Date.now() - endTs;
-  const isRecent = timeSinceEndMs >= -5 * 60 * 1000 && timeSinceEndMs < 2 * 60 * 60 * 1000;
-  const isResumable = isRecent && !isCurrentlyRunning;
+  const isRecent = timeSinceEndMs >= -5 * 60 * 1000 && timeSinceEndMs < 12 * 60 * 60 * 1000;
+  const isResumable = isLastOfCategory && isRecent && !isCurrentlyRunning;
 
   return (
     <ItemRowTemplate
@@ -441,18 +466,29 @@ function DiaperItemRow({ event, language, onEdit, onDelete }) {
 /**
  * Other Activities Row (Pump, Growth, Health, Routine, Milestone, Note)
  */
-function OtherItemRow({ event, preferences, language, onEdit, onDelete, onResume, activeTimers }) {
+function OtherItemRow({ event, preferences, language, onEdit, onDelete, onResume, activeTimers, allEvents }) {
   const isDutch = language === 'nl';
   const det = event.details || {};
   let label = isDutch ? 'Activiteit' : 'Activity';
   let detailChip = '';
 
   const isPump = event.type === 'PUMP';
+  const lastEvent = isPump
+    ? (allEvents || []).reduce((latest, cur) => {
+        if (cur.type !== 'PUMP') return latest;
+        if (!latest) return cur;
+        const curTs = cur.endDt || cur.beginDt;
+        const latestTs = latest.endDt || latest.beginDt;
+        return curTs > latestTs ? cur : latest;
+      }, null)
+    : null;
+  const isLastOfCategory = lastEvent?.id === event.id;
+
   const isCurrentlyRunning = isPump && activeTimers?.pump?.resumedEventId === event.id;
   const endTs = event.endDt || (event.beginDt + (event.durationMs || 0));
   const timeSinceEndMs = Date.now() - endTs;
-  const isRecent = timeSinceEndMs >= -5 * 60 * 1000 && timeSinceEndMs < 2 * 60 * 60 * 1000;
-  const isResumable = isPump && isRecent && !isCurrentlyRunning;
+  const isRecent = timeSinceEndMs >= -5 * 60 * 1000 && timeSinceEndMs < 12 * 60 * 60 * 1000;
+  const isResumable = isPump && isLastOfCategory && isRecent && !isCurrentlyRunning;
 
   if (event.type === 'PUMP') {
     label = isDutch ? 'Afkolven' : 'Pumping';
