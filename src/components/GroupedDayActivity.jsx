@@ -547,6 +547,7 @@ function ItemRowTemplate({
   isResumable = false,
   categoryType = 'breast',
 }) {
+  const { t } = useApp();
   const isDutch = language === 'nl';
   const det = event.details || {};
 

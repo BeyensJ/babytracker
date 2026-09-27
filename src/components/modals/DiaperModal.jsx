@@ -298,9 +298,6 @@ export function DiaperModal() {
           </div>
 
           <div className="modal-footer">
-            <button type="button" className="btn-secondary" onClick={closeModal}>
-              {t('common.cancel')}
-            </button>
             <button type="submit" className="btn-primary" style={{ backgroundColor: 'var(--color-sage)' }}>
               {isEditing ? t('diaperModal.submitEdit') : t('diaperModal.submitAdd')}
             </button>

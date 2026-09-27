@@ -448,9 +448,6 @@ export function SleepModal() {
                   <span>{isEditing ? t('common.delete') : (isDutch ? 'Wissen' : 'Delete')}</span>
                 </button>
               )}
-              <button type="button" className="btn-secondary" onClick={closeModal}>
-                {t('common.cancel')}
-              </button>
               <button type="submit" className="btn-primary" style={{ backgroundColor: 'var(--color-slate)' }}>
                 {isFromActiveTimer
                   ? (isDutch ? 'Sessie opslaan' : 'Save Session')

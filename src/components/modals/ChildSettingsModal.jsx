@@ -132,9 +132,6 @@ export function ChildSettingsModal() {
           </div>
 
           <div className="modal-footer">
-            <button type="button" className="btn-secondary" onClick={closeModal}>
-              {t('common.cancel')}
-            </button>
             <button type="submit" className="btn-primary">
               {isEditing ? t('childModal.submitEdit') : t('childModal.submitAdd')}
             </button>

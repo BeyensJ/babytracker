@@ -138,9 +138,6 @@ export function RoutineModal() {
           </div>
 
           <div className="modal-footer">
-            <button type="button" className="btn-secondary" onClick={closeModal}>
-              {t('common.cancel')}
-            </button>
             <button type="submit" className="btn-primary" style={{ backgroundColor: 'var(--color-mustard)' }}>
               {isEditing ? t('routineModal.submitEdit') : t('routineModal.submitAdd')}
             </button>

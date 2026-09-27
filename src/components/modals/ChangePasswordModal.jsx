@@ -181,14 +181,6 @@ export function ChangePasswordModal({ isOpen, onClose }) {
           {/* Actions */}
           <div className="modal-footer">
             <button
-              type="button"
-              className="btn-secondary"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              {t('common.cancel')}
-            </button>
-            <button
               type="submit"
               className="btn-primary"
               disabled={isSubmitting}

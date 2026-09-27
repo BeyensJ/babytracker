@@ -195,9 +195,6 @@ export function SolidsModal() {
           </div>
 
           <div className="modal-footer">
-            <button type="button" className="btn-secondary" onClick={closeModal}>
-              {t('common.cancel')}
-            </button>
             <button type="submit" className="btn-primary" style={{ backgroundColor: 'var(--color-terracotta)' }}>
               {isEditing ? t('solidsModal.submitEdit') : t('solidsModal.submitAdd')}
             </button>

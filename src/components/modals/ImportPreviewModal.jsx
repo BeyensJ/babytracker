@@ -304,9 +304,6 @@ export function ImportPreviewModal() {
         </div>
 
         <div className="modal-footer">
-          <button type="button" className="btn-secondary" onClick={closeModal}>
-            {t('common.cancel')}
-          </button>
           <button type="button" className="btn-primary" onClick={handleConfirm} id="confirm-import-btn">
             {t('importModal.confirmBtn', { count: summary.total })}
           </button>

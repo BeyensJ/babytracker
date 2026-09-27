@@ -202,14 +202,6 @@ export function ServerSetupModal({ isOpen, onClose }) {
 
           <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', padding: '0.75rem 1.25rem' }}>
             <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={onClose}
-              disabled={isSaving}
-            >
-              {t('common.cancel')}
-            </button>
-            <button
               type="submit"
               className="btn btn-primary"
               disabled={isSaving}

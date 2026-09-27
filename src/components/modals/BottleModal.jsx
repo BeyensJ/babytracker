@@ -379,9 +379,6 @@ export function BottleModal() {
           </div>
 
           <div className="modal-footer">
-            <button type="button" className="btn-secondary" onClick={closeModal}>
-              {t('common.cancel')}
-            </button>
             <button
               type="submit"
               className="btn-primary"
