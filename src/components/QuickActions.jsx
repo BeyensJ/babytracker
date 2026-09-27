@@ -24,11 +24,11 @@ export function QuickActions() {
     { id: 'BREAST', label: t('quickActions.breast'), icon: Heart, type: 'breast' },
     { id: 'BOTTLE', label: t('quickActions.bottle'), icon: Milk, type: 'bottle' },
     { id: 'SLEEP', label: t('quickActions.sleep'), icon: Moon, type: 'sleep' },
-    { id: 'DIAPER', label: t('quickActions.diaper'), icon: Sparkles, type: 'diaper' },
+    { id: 'PUMP', label: t('quickActions.pump') || t('quickActions.pumpLabel'), icon: Pipette, type: 'pump' },
   ];
 
   const moreActions = [
-    { id: 'PUMP', label: t('quickActions.pumpLabel'), icon: Pipette, desc: t('quickActions.pumpDesc') },
+    { id: 'DIAPER', label: t('quickActions.diaperLabel') || t('quickActions.diaper'), icon: Sparkles, desc: t('quickActions.diaperDesc') },
     { id: 'SOLIDS', label: t('quickActions.solidsLabel'), icon: Apple, desc: t('quickActions.solidsDesc') },
     { id: 'GROWTH', label: t('quickActions.growthLabel'), icon: Ruler, desc: t('quickActions.growthDesc') },
     { id: 'HEALTH', label: t('quickActions.healthLabel'), icon: Stethoscope, desc: t('quickActions.healthDesc') },

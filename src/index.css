@@ -795,6 +795,11 @@ input, select, textarea {
   color: var(--color-slate);
 }
 
+.glance-icon-wrap.pump {
+  background-color: var(--color-berry-light);
+  color: var(--color-berry);
+}
+
 .glance-content {
   display: flex;
   flex-direction: column;
@@ -1317,6 +1322,11 @@ input, select, textarea {
 .dock-icon-circle.sleep {
   background-color: var(--color-slate-light);
   color: var(--color-slate);
+}
+
+.dock-icon-circle.pump {
+  background-color: var(--color-berry-light);
+  color: var(--color-berry);
 }
 
 .dock-icon-circle.diaper {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatRelative, formatDurationMs, formatVolume, getWakeWindowStatus } from '../utils/formatters';
-import { Utensils, Moon, Sparkles, Sun, Clock, ChevronRight, Heart, Milk, Apple } from 'lucide-react';
+import { Utensils, Moon, Pipette, Sun, Clock, ChevronRight, Heart, Milk, Apple } from 'lucide-react';
 
 export function QuickStatusBanner() {
   const { events, activeChild, activeChildId, activeTimers, preferences, openModal, language, t } = useApp();
@@ -15,13 +15,14 @@ export function QuickStatusBanner() {
 
   const childEvents = events.filter(e => !e.childKey || e.childKey === activeChildId);
 
-  // Find latest Feed, Diaper, Sleep
+  // Find latest Feed, Sleep, Pump
   const latestFeed = childEvents.find(e => ['BREAST', 'BOTTLE', 'SOLIDS', 'COMBO'].includes(e.type));
-  const latestDiaper = childEvents.find(e => e.type === 'DIAPER');
   const latestSleep = childEvents.find(e => e.type === 'SLEEP');
+  const latestPump = childEvents.find(e => e.type === 'PUMP');
 
-  // Wake Window & Current Status Calculation
+  // Active state calculations
   const isSleeping = Boolean(activeTimers?.sleep?.running);
+  const isPumping = Boolean(activeTimers?.pump?.running);
   let awakeMs = 0;
 
   if (isSleeping) {
@@ -120,15 +121,53 @@ export function QuickStatusBanner() {
     };
   };
 
-  // Format diaper detail
-  const getDiaperDetail = (ev) => {
-    if (!ev) return isDutch ? 'Nog geen pampers' : 'No diapers yet';
+  // Format pump detail and visual metadata
+  const getPumpMeta = (ev) => {
+    if (isPumping) {
+      const pSide = activeTimers?.pump?.side || 'BOTH';
+      let sideBadge = isDutch ? 'Beide' : 'Both';
+      if (pSide === 'LEFT') sideBadge = isDutch ? 'Links' : 'Left';
+      else if (pSide === 'RIGHT') sideBadge = isDutch ? 'Rechts' : 'Right';
+
+      return {
+        icon: Pipette,
+        badge: isDutch ? 'Actief' : 'Active',
+        detail: isDutch ? `Kolven bezig (${sideBadge})` : `Pumping now (${sideBadge})`,
+        color: 'var(--color-berry)',
+        bg: 'var(--color-berry-light)',
+      };
+    }
+
+    if (!ev) {
+      return {
+        icon: Pipette,
+        badge: null,
+        detail: isDutch ? 'Nog niet gekolfd' : 'No pump yet',
+        color: 'var(--color-berry)',
+        bg: 'var(--color-berry-light)',
+      };
+    }
+
     const det = ev.details || {};
+    let sideBadge = null;
+    if (det.side === 'LEFT') sideBadge = isDutch ? 'Links' : 'Left';
+    else if (det.side === 'RIGHT') sideBadge = isDutch ? 'Rechts' : 'Right';
+    else if (det.side === 'BOTH') sideBadge = isDutch ? 'Beide' : 'Both';
+
     const parts = [];
-    if (det.pee) parts.push(isDutch ? 'Nat' : 'Wet');
-    if (det.poop) parts.push(isDutch ? 'Kaka' : 'Dirty');
-    if (det.dry) parts.push(isDutch ? 'Droog' : 'Dry');
-    return parts.length > 0 ? parts.join(' & ') : (isDutch ? 'Pamper ververst' : 'Diaper change');
+    const vol = det.totalFloz
+      ? formatVolume(det.totalFloz, preferences.volumeUnit)
+      : (det.totalAmount ? `${det.totalAmount} ${det.volumeUnit || preferences.volumeUnit}` : '');
+    if (vol) parts.push(vol);
+    if (ev.durationMs > 0) parts.push(formatDurationMs(ev.durationMs, language));
+
+    return {
+      icon: Pipette,
+      badge: sideBadge,
+      detail: parts.length > 0 ? parts.join(' · ') : (isDutch ? 'Kolfsessie' : 'Pump session'),
+      color: 'var(--color-berry)',
+      bg: 'var(--color-berry-light)',
+    };
   };
 
   // Format sleep detail
@@ -226,26 +265,7 @@ export function QuickStatusBanner() {
           );
         })()}
 
-        {/* Last Diaper */}
-        <button
-          type="button"
-          className="glance-pill diaper"
-          onClick={() => openModal('DIAPER')}
-          id="glance-diaper-btn"
-        >
-          <div className="glance-icon-wrap diaper">
-            <Sparkles size={15} />
-          </div>
-          <div className="glance-content">
-            <span className="glance-label">{isDutch ? 'Laatste pamper' : 'Last Diaper'}</span>
-            <span className="glance-time">
-              {latestDiaper ? formatRelative(latestDiaper.beginDt, now, language) : '—'}
-            </span>
-            <span className="glance-sub">{getDiaperDetail(latestDiaper)}</span>
-          </div>
-        </button>
-
-        {/* Last Sleep */}
+        {/* 2. Last Sleep */}
         <button
           type="button"
           className="glance-pill sleep"
@@ -263,6 +283,51 @@ export function QuickStatusBanner() {
             <span className="glance-sub">{getSleepDetail(latestSleep)}</span>
           </div>
         </button>
+
+        {/* 3. Last Pumped */}
+        {(() => {
+          const pumpMeta = getPumpMeta(latestPump);
+          const PumpIcon = pumpMeta.icon;
+          return (
+            <button
+              type="button"
+              className="glance-pill pump"
+              onClick={() => openModal('PUMP')}
+              id="glance-pump-btn"
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '0.2rem' }}>
+                <div className="glance-icon-wrap pump" style={{ backgroundColor: pumpMeta.bg, color: pumpMeta.color, marginBottom: 0 }}>
+                  <PumpIcon size={15} />
+                </div>
+                {pumpMeta.badge && (
+                  <span
+                    style={{
+                      fontSize: '0.66rem',
+                      fontWeight: 700,
+                      padding: '0.15rem 0.45rem',
+                      borderRadius: 'var(--radius-full)',
+                      backgroundColor: pumpMeta.bg,
+                      color: pumpMeta.color,
+                      letterSpacing: '0.02em',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {pumpMeta.badge}
+                  </span>
+                )}
+              </div>
+              <div className="glance-content">
+                <span className="glance-label">{isDutch ? 'Laatste kolf' : 'Last Pumped'}</span>
+                <span className="glance-time">
+                  {isPumping
+                    ? (activeTimers.pump.startMs ? formatRelative(activeTimers.pump.startMs, now, language) : (isDutch ? 'Zojuist' : 'Just now'))
+                    : (latestPump ? formatRelative(latestPump.endDt || latestPump.beginDt, now, language) : '—')}
+                </span>
+                <span className="glance-sub">{pumpMeta.detail}</span>
+              </div>
+            </button>
+          );
+        })()}
       </div>
     </div>
   );
