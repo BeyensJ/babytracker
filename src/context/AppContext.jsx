@@ -587,6 +587,7 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     const totalDuration = finalLeft + finalRight;
     const beginDt = b?.sessionStartMs || (now - totalDuration);
     const existing = b?.resumedEventId ? events.find(e => e.id === b.resumedEventId) : null;
+    const lastActiveSide = b?.activeSide || (finalRight > 0 && finalLeft === 0 ? 'RIGHT' : 'LEFT');
 
     // Open log modal WITHOUT deleting timer immediately so cancel/close keeps it running
     openModal('BREAST', {
@@ -594,6 +595,7 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
       fromActiveTimer: 'breast',
       resumedEventId: b?.resumedEventId || null,
       side: finalRight > 0 && finalLeft > 0 ? 'BOTH' : (finalRight > 0 ? 'RIGHT' : 'LEFT'),
+      lastActiveSide,
       leftDurationMs: finalLeft,
       rightDurationMs: finalRight,
       durationMs: totalDuration,
@@ -603,6 +605,7 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
       details: {
         ...(existing?.details || {}),
         side: finalRight > 0 && finalLeft > 0 ? 'BOTH' : (finalRight > 0 ? 'RIGHT' : 'LEFT'),
+        lastActiveSide,
         leftDurationMs: finalLeft,
         rightDurationMs: finalRight,
       },
@@ -716,14 +719,19 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     const rightElapsedMs = Number(data.details?.rightDurationMs ?? data.rightDurationMs ?? data.rightElapsedMs) || 0;
     const sessionStartMs = data.beginDt || (now - (leftElapsedMs + rightElapsedMs));
 
-    // Smart default side: if previously fed on LEFT and right is 0, start on RIGHT, and vice versa
-    let side = data.side || data.details?.side;
-    if (leftElapsedMs > 0 && rightElapsedMs === 0) {
-      side = 'RIGHT';
-    } else if (rightElapsedMs > 0 && leftElapsedMs === 0) {
-      side = 'LEFT';
-    } else if (!side || side === 'BOTH') {
-      side = data.side === 'RIGHT' ? 'RIGHT' : 'LEFT';
+    // Resume on the exact same side the timer stopped on
+    let side = data.details?.lastActiveSide || data.lastActiveSide;
+    if (!side) {
+      const explicitSide = (data.details?.side || data.side || '').toUpperCase();
+      if (explicitSide === 'RIGHT') {
+        side = 'RIGHT';
+      } else if (explicitSide === 'LEFT') {
+        side = 'LEFT';
+      } else if (rightElapsedMs > 0 && leftElapsedMs === 0) {
+        side = 'RIGHT';
+      } else {
+        side = 'LEFT';
+      }
     }
 
     triggerHaptic('medium', preferences?.haptics);

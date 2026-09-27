@@ -136,6 +136,15 @@ export function BreastfeedModal() {
     dateObj.setHours(h, m, 0, 0);
     const beginDt = dateObj.getTime();
 
+    let finalLastActiveSide = modalInitialData?.details?.lastActiveSide || modalInitialData?.lastActiveSide;
+    if (side === 'LEFT') {
+      finalLastActiveSide = 'LEFT';
+    } else if (side === 'RIGHT') {
+      finalLastActiveSide = 'RIGHT';
+    } else if (!finalLastActiveSide) {
+      finalLastActiveSide = rightMs > 0 && leftMs === 0 ? 'RIGHT' : 'LEFT';
+    }
+
     const eventPayload = {
       type: 'BREAST',
       beginDt,
@@ -143,6 +152,7 @@ export function BreastfeedModal() {
       durationMs: totalDurationMs,
       details: {
         side,
+        lastActiveSide: finalLastActiveSide,
         leftDurationMs: leftMs,
         rightDurationMs: rightMs,
         leftDurationSeconds: Math.round(leftMs / 1000),
