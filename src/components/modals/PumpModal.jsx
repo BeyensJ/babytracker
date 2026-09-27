@@ -189,6 +189,7 @@ export function PumpModal() {
     const m = parts[1] || 0;
     const dateObj = new Date(modalInitialData?.beginDt || Date.now());
     dateObj.setHours(h, m, 0, 0);
+    const beginDt = dateObj.getTime();
     const finalDurationMin = durationMin === '' ? 15 : (Math.max(0, Number(durationMin)) || 15);
     const durationMs = finalDurationMin * 60 * 1000;
 
