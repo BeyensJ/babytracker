@@ -263,3 +263,38 @@ export function formatTemp(valF, unit = 'F') {
   }
   return `${Math.round(valF * 10) / 10}°F`;
 }
+
+/**
+ * Routine activity name formatting and localization
+ * Supports both internal ID codes ('TUMMYTIME', 'BATH', etc.) and legacy/CSV text strings.
+ */
+export function formatRoutineName(name, lang = 'nl', withEmoji = false) {
+  if (!name) return lang === 'nl' ? 'Routine' : 'Routine';
+  const isDutch = lang === 'nl';
+  const upper = String(name).trim().toUpperCase();
+
+  const routineDict = {
+    TUMMYTIME: { nl: 'Buiktijd', en: 'Tummy Time', emoji: '🐢' },
+    TUMMY: { nl: 'Buiktijd', en: 'Tummy Time', emoji: '🐢' },
+    BATH: { nl: 'In badje', en: 'Bath Time', emoji: '🛁' },
+    BATHTIME: { nl: 'In badje', en: 'Bath Time', emoji: '🛁' },
+    OUTDOOR: { nl: 'Wandeling', en: 'Outdoor Walk', emoji: '🌳' },
+    WALK: { nl: 'Wandeling', en: 'Walk', emoji: '🌳' },
+    PLAY: { nl: 'Spelen & ontdekken', en: 'Active Play', emoji: '🧸' },
+    READ: { nl: 'Boekje voorlezen', en: 'Story Reading', emoji: '📖' },
+    READING: { nl: 'Boekje voorlezen', en: 'Story Reading', emoji: '📖' },
+    NAILTRIM: { nl: 'Nageltjes knippen', en: 'Nail Trim', emoji: '✂️' },
+    MASSAGE: { nl: 'Babymassage', en: 'Baby Massage', emoji: '💆' },
+    SKINCARE: { nl: 'Huidverzorging', en: 'Skin Care', emoji: '🧴' },
+    TEETHING: { nl: 'Tandjes poetsen', en: 'Teething Care', emoji: '🦷' },
+  };
+
+  const found = routineDict[upper];
+  if (found) {
+    const text = isDutch ? found.nl : found.en;
+    return withEmoji ? `${found.emoji} ${text}` : text;
+  }
+
+  return name;
+}
+

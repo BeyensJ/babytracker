@@ -22,20 +22,16 @@ export function RoutineModal() {
 
   if (activeModal !== 'ROUTINE') return null;
 
-  const routines = language === 'nl' ? [
-    { id: 'TUMMYTIME', label: '🐢 Buiktijd' },
-    { id: 'BATH', label: '🛁 In badje' },
-    { id: 'OUTDOOR', label: '🌳 Wandeling' },
-    { id: 'PLAY', label: '🧸 Spelen & ontdekken' },
-    { id: 'READ', label: '📖 Boekje voorlezen' },
-    { id: 'NAILTRIM', label: '✂️ Nageltjes knippen' },
-  ] : [
-    { id: 'TUMMYTIME', label: '🐢 Tummy Time' },
-    { id: 'BATH', label: '🛁 Bath Time' },
-    { id: 'OUTDOOR', label: '🌳 Outdoor Walk' },
-    { id: 'PLAY', label: '🧸 Active Play' },
-    { id: 'READ', label: '📖 Story Reading' },
-    { id: 'NAILTRIM', label: '✂️ Nail Trim' },
+  const routines = [
+    { id: 'TUMMYTIME', label: `🐢 ${t('routineModal.tummyTime')}` },
+    { id: 'BATH', label: `🛁 ${t('routineModal.bath')}` },
+    { id: 'OUTDOOR', label: `🌳 ${t('routineModal.walk')}` },
+    { id: 'PLAY', label: `🧸 ${t('routineModal.play')}` },
+    { id: 'READ', label: `📖 ${t('routineModal.reading')}` },
+    { id: 'NAILTRIM', label: `✂️ ${t('routineModal.nailTrim')}` },
+    { id: 'MASSAGE', label: `💆 ${t('routineModal.massage')}` },
+    { id: 'SKINCARE', label: `🧴 ${t('routineModal.skincare')}` },
+    { id: 'TEETHING', label: `🦷 ${t('routineModal.teething')}` },
   ];
 
   const handleSave = (e) => {

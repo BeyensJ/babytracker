@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { formatTime, formatDurationMs, formatVolume, formatWeight, formatLength, formatTemp } from '../utils/formatters';
+import { formatTime, formatDurationMs, formatVolume, formatWeight, formatLength, formatTemp, formatRoutineName } from '../utils/formatters';
 import {
   Utensils,
   Moon,
@@ -507,7 +507,7 @@ function OtherItemRow({ event, preferences, language, onEdit, onDelete, onResume
     label = det.medicineName ? (isDutch ? 'Medicatie' : 'Medication') : (det.temperatureC || det.temperatureF ? (isDutch ? 'Temperatuur' : 'Temperature') : (isDutch ? 'Gezondheid' : 'Health'));
     detailChip = det.medicineName || (det.temperatureC ? `${det.temperatureC}°C` : '');
   } else if (event.type === 'ROUTINE') {
-    label = det.routineName || (isDutch ? 'Routine' : 'Routine');
+    label = formatRoutineName(det.routineName, language, true);
     detailChip = formatDurationMs(event.durationMs, language);
   } else if (event.type === 'MILESTONE') {
     label = det.milestoneName || (isDutch ? 'Mijlpaal' : 'Milestone');

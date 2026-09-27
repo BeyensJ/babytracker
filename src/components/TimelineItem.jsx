@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { formatTime, formatDurationMs, formatVolume, formatWeight, formatLength, formatTemp } from '../utils/formatters';
+import { formatTime, formatDurationMs, formatVolume, formatWeight, formatLength, formatTemp, formatRoutineName } from '../utils/formatters';
 import {
   Heart,
   Milk,
@@ -205,7 +205,7 @@ export function TimelineItem({ event }) {
         return {
           icon: Clock,
           badgeClass: 'routine',
-          title: det.routineName || (isDutch ? 'Routine' : 'Routine'),
+          title: formatRoutineName(det.routineName, language, true),
           chips: [formatDurationMs(event.durationMs, language)],
         };
       case 'MILESTONE': {
