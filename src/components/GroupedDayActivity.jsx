@@ -221,7 +221,33 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
         />
       )}
 
-      {/* 2. Pumping Section */}
+      {/* 2. Sleep Section */}
+      {sleeps.length > 0 && (
+        <CategoryCard
+          categoryKey="sleep"
+          title={isDutch ? 'Slaap' : 'Sleep'}
+          icon={Moon}
+          colorClass="sleep"
+          count={sleeps.length}
+          summaryText={sleepSummaryText}
+          events={sleeps}
+          defaultOpen={defaultExpanded}
+          renderItem={(ev) => (
+            <SleepItemRow
+              key={ev.id}
+              event={ev}
+              language={language}
+              onEdit={openModal}
+              onDelete={deleteEvent}
+              onResume={handleResume}
+              activeTimers={activeTimers}
+              allEvents={allEvents}
+            />
+          )}
+        />
+      )}
+
+      {/* 3. Pumping Section */}
       {pumps.length > 0 && (
         <CategoryCard
           categoryKey="pumping"
@@ -237,32 +263,6 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
               key={ev.id}
               event={ev}
               preferences={preferences}
-              language={language}
-              onEdit={openModal}
-              onDelete={deleteEvent}
-              onResume={handleResume}
-              activeTimers={activeTimers}
-              allEvents={allEvents}
-            />
-          )}
-        />
-      )}
-
-      {/* 3. Sleep Section */}
-      {sleeps.length > 0 && (
-        <CategoryCard
-          categoryKey="sleep"
-          title={isDutch ? 'Slaap' : 'Sleep'}
-          icon={Moon}
-          colorClass="sleep"
-          count={sleeps.length}
-          summaryText={sleepSummaryText}
-          events={sleeps}
-          defaultOpen={defaultExpanded}
-          renderItem={(ev) => (
-            <SleepItemRow
-              key={ev.id}
-              event={ev}
               language={language}
               onEdit={openModal}
               onDelete={deleteEvent}
