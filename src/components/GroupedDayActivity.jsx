@@ -44,15 +44,15 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
   const handleResume = (event) => {
     // If another timer is running of this type, ask for confirmation
     if (event.type === 'BREAST' && activeTimers?.breast?.running && activeTimers?.breast?.resumedEventId !== event.id) {
-      if (!window.confirm(isDutch ? 'Er loopt al een borstvoedingstimer. Wil je deze vervangen door deze sessie te hervatten?' : 'A nursing timer is already running. Replace it by resuming this session?')) {
+      if (!window.confirm(t('timeline.resumeConfirmNursing'))) {
         return;
       }
     } else if (event.type === 'SLEEP' && activeTimers?.sleep?.running && activeTimers?.sleep?.resumedEventId !== event.id) {
-      if (!window.confirm(isDutch ? 'Er loopt al een slaaptimer. Wil je deze vervangen door deze sessie te hervatten?' : 'A sleep timer is already running. Replace it by resuming this session?')) {
+      if (!window.confirm(t('timeline.resumeConfirmSleep'))) {
         return;
       }
     } else if (event.type === 'PUMP' && activeTimers?.pump?.running && activeTimers?.pump?.resumedEventId !== event.id) {
-      if (!window.confirm(isDutch ? 'Er loopt al een kolftimer. Wil je deze vervangen door deze sessie te hervatten?' : 'A pump timer is already running. Replace it by resuming this session?')) {
+      if (!window.confirm(t('timeline.resumeConfirmPump'))) {
         return;
       }
     }
@@ -563,7 +563,7 @@ function ItemRowTemplate({
           {det.caregiver && (
             <div className="grouped-caregiver-tag">
               <User size={10} />
-              <span>{isDutch ? `Door ${det.caregiver}` : det.caregiver}</span>
+              <span>{t('timeline.loggedBy', { name: det.caregiver })}</span>
             </div>
           )}
         </div>
@@ -571,36 +571,39 @@ function ItemRowTemplate({
 
       <div className="grouped-item-actions">
         {isCurrentlyRunning ? (
-          <span className={`grouped-item-active-badge ${categoryType}`}>
+          <span className={`grouped-item-active-badge ${categoryType}`} title={t('timeline.activeTimer')}>
             <span className="timeline-pulse-dot" />
-            <span>{isDutch ? 'Actief' : 'Active'}</span>
+            <span className="grouped-active-text">{t('timeline.activeTimer')}</span>
           </span>
         ) : isResumable && onResume ? (
           <button
             type="button"
             className={`grouped-item-resume-btn ${categoryType}`}
             onClick={() => onResume(event)}
-            title={isDutch ? 'Sessie hervatten' : 'Resume session'}
+            title={t('timeline.resumeSession')}
+            aria-label={t('timeline.resumeSession')}
           >
             <Play size={10} fill="currentColor" />
-            <span>{isDutch ? 'Hervatten' : 'Resume'}</span>
+            <span className="grouped-resume-text">{t('timeline.resume')}</span>
           </button>
         ) : null}
         <button
           className="grouped-item-btn"
           onClick={() => onEdit(event.type, event)}
-          title={isDutch ? 'Bewerken' : 'Edit'}
+          title={t('timeline.edit')}
+          aria-label={t('timeline.edit')}
         >
           <Edit2 size={13} />
         </button>
         <button
           className="grouped-item-btn delete"
           onClick={() => {
-            if (window.confirm(isDutch ? 'Ben je zeker dat je deze activiteit wil verwijderen?' : 'Delete this entry?')) {
+            if (window.confirm(t('timeline.deleteConfirm'))) {
               onDelete(event.id);
             }
           }}
-          title={isDutch ? 'Verwijderen' : 'Delete'}
+          title={t('timeline.delete')}
+          aria-label={t('timeline.delete')}
         >
           <Trash2 size={13} />
         </button>

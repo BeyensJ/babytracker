@@ -178,12 +178,12 @@ export function BreastfeedModal() {
   const handleDelete = () => {
     triggerHaptic('warning', preferences?.haptics);
     if (isFromActiveTimer) {
-      if (window.confirm(isDutch ? 'Weet je zeker dat je deze timer wilt wissen zonder op te slaan?' : 'Are you sure you want to discard this timer without logging?')) {
+      if (window.confirm(t('common.discardTimerConfirm'))) {
         clearActiveTimer('breast');
         closeModal();
       }
     } else if (isEditing) {
-      if (window.confirm(isDutch ? 'Ben je zeker dat je deze activiteit wil verwijderen?' : 'Are you sure you want to delete this event?')) {
+      if (window.confirm(t('timeline.deleteConfirm'))) {
         deleteEvent(modalInitialData.id);
         closeModal();
       }

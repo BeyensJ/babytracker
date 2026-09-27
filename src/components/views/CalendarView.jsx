@@ -1020,7 +1020,8 @@ export function CalendarView() {
                     color: 'var(--text-tertiary)',
                     padding: 4,
                   }}
-                  title="Clear search"
+                  title={language === 'nl' ? 'Zoekopdracht wissen' : 'Clear search'}
+                  aria-label={language === 'nl' ? 'Zoekopdracht wissen' : 'Clear search'}
                 >
                   <X size={14} />
                 </button>

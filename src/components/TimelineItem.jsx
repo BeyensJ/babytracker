@@ -239,7 +239,7 @@ export function TimelineItem({ event }) {
   const handleDelete = () => {
     setMenuOpen(false);
     triggerHaptic('warning', preferences?.haptics);
-    if (window.confirm(isDutch ? 'Ben je zeker dat je deze activiteit wil verwijderen?' : 'Delete this logged activity?')) {
+    if (window.confirm(t('timeline.deleteConfirm'))) {
       deleteEvent(event.id);
     }
   };
@@ -251,15 +251,15 @@ export function TimelineItem({ event }) {
 
     // If another timer is running of this type, ask for confirmation
     if (event.type === 'BREAST' && activeTimers?.breast?.running && activeTimers?.breast?.resumedEventId !== event.id) {
-      if (!window.confirm(isDutch ? 'Er loopt al een borstvoedingstimer. Wil je deze vervangen door deze sessie te hervatten?' : 'A nursing timer is already running. Replace it by resuming this session?')) {
+      if (!window.confirm(t('timeline.resumeConfirmNursing'))) {
         return;
       }
     } else if (event.type === 'SLEEP' && activeTimers?.sleep?.running && activeTimers?.sleep?.resumedEventId !== event.id) {
-      if (!window.confirm(isDutch ? 'Er loopt al een slaaptimer. Wil je deze vervangen door deze sessie te hervatten?' : 'A sleep timer is already running. Replace it by resuming this session?')) {
+      if (!window.confirm(t('timeline.resumeConfirmSleep'))) {
         return;
       }
     } else if (event.type === 'PUMP' && activeTimers?.pump?.running && activeTimers?.pump?.resumedEventId !== event.id) {
-      if (!window.confirm(isDutch ? 'Er loopt al een kolftimer. Wil je deze vervangen door deze sessie te hervatten?' : 'A pump timer is already running. Replace it by resuming this session?')) {
+      if (!window.confirm(t('timeline.resumeConfirmPump'))) {
         return;
       }
     }
@@ -323,21 +323,39 @@ export function TimelineItem({ event }) {
           {det.caregiver && (
             <div className="item-caregiver-tag">
               <User size={11} />
-              <span>{isDutch ? `Gelogd door ${det.caregiver}` : `Logged by ${det.caregiver}`}</span>
+              <span>{t('timeline.loggedBy', { name: det.caregiver })}</span>
             </div>
           )}
         </div>
       </div>
 
       <div className="timeline-item-right">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+        <div className="item-actions-row">
           <span className="item-time">{formatTime(event.beginDt, language)}</span>
+
+          {isCurrentlyRunning ? (
+            <span className={`timeline-item-active-badge ${resumeClass}`} title={t('timeline.activeTimer')}>
+              <span className="timeline-pulse-dot" />
+              <span className="active-badge-text">{t('timeline.activeTimer')}</span>
+            </span>
+          ) : isResumable ? (
+            <button
+              type="button"
+              className={`timeline-item-resume-btn ${resumeClass}`}
+              onClick={handleResumeTimer}
+              title={t('timeline.resumeSession')}
+              aria-label={t('timeline.resumeSession')}
+            >
+              <Play size={11} fill="currentColor" />
+              <span className="resume-btn-text">{t('timeline.resume')}</span>
+            </button>
+          ) : null}
 
           <div style={{ position: 'relative' }}>
             <button
               className="item-menu-btn"
               onClick={() => setMenuOpen(!menuOpen)}
-              aria-label={language === 'nl' ? 'Opties voor activiteit' : 'Activity menu'}
+              aria-label={t('timeline.activityMenu')}
             >
               <MoreVertical size={16} />
             </button>
@@ -359,7 +377,7 @@ export function TimelineItem({ event }) {
                     border: '1px solid var(--border-subtle)',
                     padding: '0.35rem',
                     zIndex: 35,
-                    minWidth: 120,
+                    minWidth: 140,
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '0.2rem',
@@ -382,7 +400,7 @@ export function TimelineItem({ event }) {
                       }}
                     >
                       <Play size={13} fill="currentColor" />
-                      {isDutch ? 'Sessie hervatten' : 'Resume session'}
+                      {t('timeline.resumeSession')}
                     </button>
                   )}
                   <button
@@ -400,7 +418,7 @@ export function TimelineItem({ event }) {
                     }}
                   >
                     <Edit2 size={13} />
-                    {isDutch ? 'Bewerken' : 'Edit'}
+                    {t('timeline.edit')}
                   </button>
                   <button
                     onClick={handleDelete}
@@ -417,30 +435,13 @@ export function TimelineItem({ event }) {
                     }}
                   >
                     <Trash2 size={13} />
-                    {isDutch ? 'Verwijderen' : 'Delete'}
+                    {t('timeline.delete')}
                   </button>
                 </div>
               </>
             )}
           </div>
         </div>
-
-        {isCurrentlyRunning ? (
-          <span className={`timeline-item-active-badge ${resumeClass}`}>
-            <span className="timeline-pulse-dot" />
-            <span>{isDutch ? 'Timer actief' : 'Timer active'}</span>
-          </span>
-        ) : isResumable ? (
-          <button
-            type="button"
-            className={`timeline-item-resume-btn ${resumeClass}`}
-            onClick={handleResumeTimer}
-            title={isDutch ? 'Sessie hervatten' : 'Resume session'}
-          >
-            <Play size={11} fill="currentColor" />
-            <span>{isDutch ? 'Hervatten' : 'Resume'}</span>
-          </button>
-        ) : null}
       </div>
     </div>
   );

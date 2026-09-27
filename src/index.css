@@ -2048,6 +2048,13 @@ input, select, textarea {
   flex-direction: column;
   align-items: flex-end;
   gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.item-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .item-time {
@@ -2204,6 +2211,97 @@ input, select, textarea {
   50% {
     opacity: 0.35;
     transform: scale(0.8);
+  }
+}
+
+/* Responsive Timeline Item & Resume Pill */
+@media (max-width: 480px) {
+  .timeline-item-card {
+    padding: 0.75rem 0.85rem;
+    gap: 0.6rem;
+  }
+
+  .timeline-item-left {
+    gap: 0.65rem;
+    min-width: 0;
+  }
+
+  .item-content {
+    min-width: 0;
+  }
+
+  .item-actions-row {
+    gap: 0.25rem;
+  }
+
+  .timeline-item-resume-btn {
+    width: 26px;
+    height: 26px;
+    min-height: 26px;
+    padding: 0;
+    border-radius: var(--radius-full);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .timeline-item-resume-btn .resume-btn-text {
+    display: none;
+  }
+
+  .timeline-item-active-badge {
+    padding: 0.2rem 0.35rem;
+    font-size: 0.68rem;
+  }
+
+  .timeline-item-active-badge .active-badge-text {
+    display: none;
+  }
+
+  .grouped-item-resume-btn {
+    width: 26px;
+    height: 26px;
+    min-height: 26px;
+    padding: 0;
+    border-radius: var(--radius-full);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .grouped-item-resume-btn .grouped-resume-text {
+    display: none;
+  }
+
+  .grouped-item-active-badge .grouped-active-text {
+    display: none;
+  }
+}
+
+@media (max-width: 360px) {
+  .timeline-item-card {
+    padding: 0.65rem 0.7rem;
+    gap: 0.45rem;
+  }
+
+  .timeline-item-left {
+    gap: 0.45rem;
+  }
+
+  .item-badge-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+
+  .item-title {
+    font-size: 0.88rem;
+  }
+
+  .item-time {
+    font-size: 0.74rem;
   }
 }
 

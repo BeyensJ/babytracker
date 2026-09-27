@@ -102,7 +102,7 @@ function BreastTimerRow({ timer, now, onSwitch, onPause, onResume, onFinish, onU
           {timer.running && <span className="timer-pulse-ring" />}
         </div>
         <div>
-          <div className="timer-title">{language === 'nl' ? 'Borstvoedingstimer' : 'Nursing Timer'}</div>
+          <div className="timer-title">{t('timers.nursingTimer')}</div>
           <div className="timer-side-badges" style={{ marginTop: '0.2rem' }}>
             <span className={`side-badge ${timer.activeSide === 'LEFT' ? 'active' : ''}`}>
               L: {formatTimerClock(leftElapsed)}
@@ -119,7 +119,7 @@ function BreastTimerRow({ timer, now, onSwitch, onPause, onResume, onFinish, onU
               type="button"
               className="timer-adjust-link"
               onClick={() => setShowAdjust(!showAdjust)}
-              title={language === 'nl' ? 'Begintijd aanpassen' : 'Adjust starting time'}
+              title={t('timers.adjustStartTime')}
             >
               <Clock size={11} /> {t('timeline.edit')}
             </button>
@@ -140,9 +140,9 @@ function BreastTimerRow({ timer, now, onSwitch, onPause, onResume, onFinish, onU
         <div className="timer-actions">
           {timer.running ? (
             <>
-              <button className="timer-btn switch-side" onClick={onSwitch} title={language === 'nl' ? 'Wissel van borst' : 'Switch to other side'}>
+              <button className="timer-btn switch-side" onClick={onSwitch} title={t('timers.switchToOther')}>
                 <RefreshCw size={13} />
-                {timer.activeSide === 'LEFT' ? (language === 'nl' ? 'Naar R' : 'To R') : (language === 'nl' ? 'Naar L' : 'To L')}
+                {timer.activeSide === 'LEFT' ? t('timers.toRight') : t('timers.toLeft')}
               </button>
               <button className="timer-btn pause" onClick={onPause} title={t('timers.pause')}>
                 <Pause size={13} />
@@ -155,7 +155,7 @@ function BreastTimerRow({ timer, now, onSwitch, onPause, onResume, onFinish, onU
             </button>
           )}
 
-          <button className="timer-btn finish" onClick={onFinish} title={language === 'nl' ? 'Afronden en opslaan' : 'Finish and log'}>
+          <button className="timer-btn finish" onClick={onFinish} title={t('timers.finishAndLog')}>
             <Check size={14} />
             {t('common.done')}
           </button>
@@ -177,7 +177,7 @@ function SleepTimerRow({ timer, now, onFinish, onUpdateStartTime, t, language })
           <span className="timer-pulse-ring" />
         </div>
         <div>
-          <div className="timer-title">{language === 'nl' ? 'Slaapt nu' : 'Sleeping Now'}</div>
+          <div className="timer-title">{t('timers.sleepingNow')}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.15rem' }}>
             <span className="timer-subtitle">
               {t('timers.startedAt', { time: formatTime(timer.startMs, language, true) })}
@@ -186,7 +186,7 @@ function SleepTimerRow({ timer, now, onFinish, onUpdateStartTime, t, language })
               type="button"
               className="timer-adjust-link"
               onClick={() => setShowAdjust(!showAdjust)}
-              title={language === 'nl' ? 'Begintijd aanpassen' : 'Adjust starting time'}
+              title={t('timers.adjustStartTime')}
             >
               <Clock size={11} /> {t('timeline.edit')}
             </button>
@@ -206,7 +206,7 @@ function SleepTimerRow({ timer, now, onFinish, onUpdateStartTime, t, language })
         <div className="timer-digital-clock">{formatTimerClock(elapsed)}</div>
         <button className="timer-btn finish" onClick={onFinish}>
           <Check size={14} />
-          {language === 'nl' ? 'Wakker' : 'Woke Up'}
+          {t('timers.wokeUp')}
         </button>
       </div>
     </div>
@@ -225,7 +225,7 @@ function PumpTimerRow({ timer, now, onFinish, onUpdateStartTime, t, language }) 
           <span className="timer-pulse-ring" />
         </div>
         <div>
-          <div className="timer-title">{language === 'nl' ? 'Afkolftimer' : 'Pumping Session'}</div>
+          <div className="timer-title">{t('timers.pumpingSession')}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.15rem' }}>
             <span className="timer-subtitle">
               {t('timers.startedAt', { time: formatTime(timer.startMs, language, true) })}
@@ -234,7 +234,7 @@ function PumpTimerRow({ timer, now, onFinish, onUpdateStartTime, t, language }) 
               type="button"
               className="timer-adjust-link"
               onClick={() => setShowAdjust(!showAdjust)}
-              title={language === 'nl' ? 'Begintijd aanpassen' : 'Adjust starting time'}
+              title={t('timers.adjustStartTime')}
             >
               <Clock size={11} /> {t('timeline.edit')}
             </button>

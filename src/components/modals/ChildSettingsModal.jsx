@@ -86,7 +86,7 @@ export function ChildSettingsModal() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div className="form-group">
                 <label className="form-label">
-                  {language === 'nl' ? `Geboortegewicht (${isMetric ? 'kg' : 'lbs'})` : `Birth Weight (${isMetric ? 'kg' : 'lbs'})`}
+                  {t('childModal.birthWeight', { unit: isMetric ? 'kg' : 'lbs' })}
                 </label>
                 <input
                   type="number"
@@ -100,7 +100,7 @@ export function ChildSettingsModal() {
 
               <div className="form-group">
                 <label className="form-label">
-                  {language === 'nl' ? `Geboortelengte (${preferences?.lengthUnit === 'cm' ? 'cm' : 'in'})` : `Birth Length (${preferences?.lengthUnit === 'cm' ? 'cm' : 'in'})`}
+                  {t('childModal.birthHeight', { unit: preferences?.lengthUnit === 'cm' ? 'cm' : 'in' })}
                 </label>
                 <input
                   type="number"

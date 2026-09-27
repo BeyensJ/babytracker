@@ -108,7 +108,7 @@ export function ServerSetupModal({ isOpen, onClose }) {
             type="button"
             className="modal-close-btn"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('common.close')}
           >
             <X size={18} />
           </button>
