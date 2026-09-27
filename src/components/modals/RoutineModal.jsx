@@ -9,8 +9,10 @@ export function RoutineModal() {
 
   const [routineName, setRoutineName] = useState(() => modalInitialData?.details?.routineName || 'TUMMYTIME');
   const [durationMin, setDurationMin] = useState(() => {
-    const ms = modalInitialData?.durationMs || 10 * 60 * 1000;
-    return Math.round(ms / 60000);
+    if (modalInitialData?.durationMs) {
+      return Math.round(modalInitialData.durationMs / 60000);
+    }
+    return '';
   });
   const [note, setNote] = useState(modalInitialData?.note || '');
   const [timeStr, setTimeStr] = useState(() => {
@@ -42,7 +44,8 @@ export function RoutineModal() {
     const dateObj = new Date(modalInitialData?.beginDt || Date.now());
     dateObj.setHours(h, m, 0, 0);
     const beginDt = dateObj.getTime();
-    const durationMs = Number(durationMin) * 60000;
+    const finalDurationMin = durationMin === '' ? 10 : (Math.max(1, Number(durationMin)) || 10);
+    const durationMs = finalDurationMin * 60000;
 
     const eventPayload = {
       type: 'ROUTINE',
@@ -104,6 +107,7 @@ export function RoutineModal() {
                 min="1"
                 max="240"
                 className="form-input"
+                placeholder="10"
                 value={durationMin}
                 onChange={e => setDurationMin(e.target.value)}
               />

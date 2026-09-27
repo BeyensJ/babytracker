@@ -123,8 +123,9 @@ export function PumpModal() {
   if (activeModal !== 'PUMP') return null;
 
   const isMl = unit === 'ml';
-  const numLeft = side === 'RIGHT' ? 0 : (parseFloat(leftAmount) || 0);
-  const numRight = side === 'LEFT' ? 0 : (parseFloat(rightAmount) || 0);
+  const defaultSideVal = isMl ? 30 : 1.0;
+  const numLeft = side === 'RIGHT' ? 0 : (leftAmount === '' ? (rightAmount !== '' ? 0 : defaultSideVal) : (parseFloat(leftAmount) || 0));
+  const numRight = side === 'LEFT' ? 0 : (rightAmount === '' ? (leftAmount !== '' ? 0 : defaultSideVal) : (parseFloat(rightAmount) || 0));
   const totalAmount = isMl
     ? Math.round(numLeft + numRight)
     : Math.round((numLeft + numRight) * 10) / 10;
@@ -155,14 +156,15 @@ export function PumpModal() {
 
   const adjustSide = (target, delta) => {
     triggerHaptic('light', preferences?.haptics);
+    const startVal = isMl ? 30 : 1.0;
     if (target === 'LEFT') {
       setLeftAmount((prev) => {
-        const cur = prev === '' ? (delta > 0 ? (isMl ? 30 : 1.0) : 0) : (parseFloat(prev) || 0);
+        const cur = prev === '' ? startVal : (parseFloat(prev) || 0);
         return isMl ? Math.max(0, Math.round(cur + delta)) : Math.max(0, Math.round((cur + delta) * 10) / 10);
       });
     } else {
       setRightAmount((prev) => {
-        const cur = prev === '' ? (delta > 0 ? (isMl ? 30 : 1.0) : 0) : (parseFloat(prev) || 0);
+        const cur = prev === '' ? startVal : (parseFloat(prev) || 0);
         return isMl ? Math.max(0, Math.round(cur + delta)) : Math.max(0, Math.round((cur + delta) * 10) / 10);
       });
     }
@@ -505,7 +507,7 @@ export function PumpModal() {
                         step={isMl ? '1' : '0.1'}
                         min="0"
                         className="pump-amount-input"
-                        placeholder={isMl ? '60' : '2.0'}
+                        placeholder={isMl ? '30' : '1.0'}
                         value={leftAmount}
                         onChange={(e) => {
                           const val = parseFloat(e.target.value);
@@ -543,7 +545,7 @@ export function PumpModal() {
                         step={isMl ? '1' : '0.1'}
                         min="0"
                         className="pump-amount-input"
-                        placeholder={isMl ? '60' : '2.0'}
+                        placeholder={isMl ? '30' : '1.0'}
                         value={rightAmount}
                         onChange={(e) => {
                           const val = parseFloat(e.target.value);

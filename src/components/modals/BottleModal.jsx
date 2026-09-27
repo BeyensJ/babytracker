@@ -89,7 +89,8 @@ export function BottleModal() {
   const handleAdjust = (delta) => {
     triggerHaptic('light', preferences?.haptics);
     setAmount((prev) => {
-      const current = prev === '' ? (delta > 0 ? (isMl ? 60 : 2.0) : 0) : (parseFloat(prev) || 0);
+      const startVal = isMl ? 60 : 2.0;
+      const current = prev === '' ? startVal : (parseFloat(prev) || 0);
       const next = isMl
         ? Math.max(0, Math.min(maxVolume, Math.round(current + delta)))
         : Math.max(0, Math.min(maxVolume, Math.round((current + delta) * 10) / 10));
@@ -133,7 +134,7 @@ export function BottleModal() {
     const beginDt = dateObj.getTime();
 
     // Preserve exact fl oz conversion (default to placeholder value if left empty)
-    const numAmount = amount === '' ? (isMl ? 120 : 4.0) : (parseFloat(amount) || 0);
+    const numAmount = amount === '' ? (isMl ? 60 : 2.0) : (parseFloat(amount) || 0);
     const finalFloz = isMl ? numAmount / 29.5735 : numAmount;
 
     const eventPayload = {
@@ -243,7 +244,7 @@ export function BottleModal() {
                     step={isMl ? '1' : '0.1'}
                     min="0"
                     max={maxVolume}
-                    placeholder={isMl ? '120' : '4.0'}
+                    placeholder={isMl ? '60' : '2.0'}
                     value={amount}
                     onChange={(e) => {
                       const val = parseFloat(e.target.value);
