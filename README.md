@@ -87,6 +87,7 @@ services:
       - PORT=3001
       - DATA_DIR=/app/data
       - TZ=Europe/Brussels
+      - FAMILY_PASSWORD=babytracker
     volumes:
       - ./data:/app/data
     healthcheck:
@@ -108,8 +109,8 @@ docker compose up -d
 Navigate to **`http://<your-server-ip>:3001`**.
 
 > **🔒 Default Credentials:**
-> - **Default Family Password**: `baby2026`
-> - *You can change this password immediately under **Settings (⚙️) ➔ Security & Password**.*
+> - **Default Family Password**: `babytracker` (can be customized via `FAMILY_PASSWORD` in your docker-compose file)
+> - *You can also change this password anytime directly under **Settings (⚙️) ➔ Security & Password**.*
 
 ---
 

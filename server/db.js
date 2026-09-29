@@ -2,28 +2,25 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { parseCSVToRows, convertCsvRowsToEvents } from '../src/utils/csvParser.js';
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const dataDir = process.env.DATA_DIR || path.join(rootDir, 'data');
 const dbFilePath = path.join(dataDir, 'babytracker_db.json');
-const sampleCsvPath = path.join(rootDir, 'export_baby_20260922.csv');
 
 let state = null;
 
 const DEFAULT_CAREGIVERS = [
-  { id: 'cg_mom', name: 'Mom', role: 'Mom', color: '#CE6B4C' },
-  { id: 'cg_dad', name: 'Dad', role: 'Dad', color: '#546C7E' },
+  { id: 'cg_mom', name: 'Mama', role: 'Mom', color: '#CE6B4C' },
+  { id: 'cg_dad', name: 'Papa', role: 'Dad', color: '#546C7E' },
 ];
 
 const DEFAULT_CHILDREN = [
   {
     id: 'child_1',
     name: 'Baby',
-    birthdate: '2026-07-04',
-    sex: 'FEMALE',
+    birthdate: new Date().toISOString().split('T')[0],
+    sex: 'UNKNOWN',
     avatarColor: 'terracotta',
   },
 ];
@@ -41,12 +38,14 @@ function hashPassword(password, salt) {
 }
 
 /**
- * Initialize database from disk or auto-seed from CSV export
+ * Initialize database from disk or create clean initial state
  */
 export function initDb() {
   if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
   }
+
+  const defaultPassword = process.env.FAMILY_PASSWORD || 'babytracker';
 
   if (fs.existsSync(dbFilePath)) {
     try {
@@ -56,10 +55,13 @@ export function initDb() {
         const defaultSalt = crypto.randomBytes(16).toString('hex');
         state.auth = {
           salt: defaultSalt,
-          passwordHash: hashPassword('baby2026', defaultSalt),
+          passwordHash: hashPassword(defaultPassword, defaultSalt),
           sessions: {}
         };
         saveStateSync(state);
+      }
+      if (state.needsOnboarding === undefined) {
+        state.needsOnboarding = false;
       }
       console.log(`[DB] Loaded ${state.events?.length || 0} events from ${dbFilePath}`);
       return state;
@@ -69,43 +71,19 @@ export function initDb() {
     }
   }
 
-  // Seed from export CSV if available
-  console.log('[DB] Initializing new database...');
-  let seededEvents = [];
-  let detectedChild = DEFAULT_CHILDREN[0];
-
-  if (fs.existsSync(sampleCsvPath)) {
-    try {
-      const csvText = fs.readFileSync(sampleCsvPath, 'utf-8');
-      const rows = parseCSVToRows(csvText);
-      const parsed = convertCsvRowsToEvents(rows, 'child_1');
-      seededEvents = parsed.events || [];
-      if (parsed.detectedProfile) {
-        detectedChild = {
-          id: 'child_1',
-          name: parsed.detectedProfile.name || 'Baby',
-          birthdate: parsed.detectedProfile.birthdate || '2026-07-04',
-          sex: parsed.detectedProfile.sex || 'FEMALE',
-          avatarColor: 'terracotta',
-        };
-      }
-      console.log(`[DB] Successfully auto-seeded ${seededEvents.length} events from ${sampleCsvPath}`);
-    } catch (csvErr) {
-      console.error('[DB] Failed to parse sample CSV, starting empty:', csvErr);
-    }
-  }
-
+  console.log('[DB] Initializing new clean database...');
   const defaultSalt = crypto.randomBytes(16).toString('hex');
   state = {
-    children: [detectedChild],
-    activeChildId: detectedChild.id,
+    needsOnboarding: true,
+    children: DEFAULT_CHILDREN,
+    activeChildId: DEFAULT_CHILDREN[0].id,
     caregivers: DEFAULT_CAREGIVERS,
-    events: seededEvents.sort((a, b) => b.beginDt - a.beginDt),
+    events: [],
     activeTimers: {},
     preferences: DEFAULT_PREFERENCES,
     auth: {
       salt: defaultSalt,
-      passwordHash: hashPassword('baby2026', defaultSalt),
+      passwordHash: hashPassword(defaultPassword, defaultSalt),
       sessions: {}
     },
     lastModified: Date.now(),
@@ -298,8 +276,9 @@ export function updatePreferences(prefs) {
  */
 export function verifyPassword(password) {
   if (!state) initDb();
+  const defaultPassword = process.env.FAMILY_PASSWORD || 'babytracker';
   if (!state.auth || !state.auth.passwordHash || !state.auth.salt) {
-    return password === 'baby2026';
+    return password === defaultPassword;
   }
   try {
     const hash = hashPassword(password, state.auth.salt);
@@ -380,5 +359,63 @@ export function revokeSession(token) {
     return true;
   }
   return false;
+}
+
+export function checkNeedsOnboarding() {
+  if (!state) initDb();
+  return Boolean(state.needsOnboarding);
+}
+
+export function completeOnboarding({ baby, caregivers, password, activeCaregiverId }) {
+  if (!state) initDb();
+
+  const childId = `child_${Date.now()}`;
+  const initialChild = {
+    id: childId,
+    name: (baby?.name || '').trim() || 'Baby',
+    birthdate: baby?.birthdate || new Date().toISOString().split('T')[0],
+    sex: baby?.sex || 'UNKNOWN',
+    avatarColor: baby?.avatarColor || 'terracotta',
+  };
+
+  const formattedCaregivers = (Array.isArray(caregivers) && caregivers.length > 0)
+    ? caregivers.map((cg, idx) => ({
+        id: cg.id || `cg_${Date.now()}_${idx}`,
+        name: (cg.name || '').trim() || (idx === 0 ? 'Mama' : 'Papa'),
+        role: cg.role || (idx === 0 ? 'Mama' : 'Papa'),
+        color: cg.color || (idx === 0 ? '#CE6B4C' : '#546C7E'),
+      }))
+    : DEFAULT_CAREGIVERS;
+
+  const chosenActiveId = activeCaregiverId && formattedCaregivers.some(c => c.id === activeCaregiverId)
+    ? activeCaregiverId
+    : formattedCaregivers[0].id;
+
+  const salt = crypto.randomBytes(16).toString('hex');
+  const passwordHash = hashPassword((password || 'babytracker').trim(), salt);
+
+  state.children = [initialChild];
+  state.activeChildId = childId;
+  state.caregivers = formattedCaregivers;
+  state.events = [];
+  state.activeTimers = {};
+  state.needsOnboarding = false;
+  state.auth = {
+    salt,
+    passwordHash,
+    sessions: {},
+  };
+
+  const session = createSession(chosenActiveId, true);
+  saveStateSync(state);
+
+  return {
+    success: true,
+    token: session.token,
+    expiresAt: session.expiresAt,
+    caregiver: formattedCaregivers.find(c => c.id === chosenActiveId) || formattedCaregivers[0],
+    child: initialChild,
+    state: getState(),
+  };
 }
 

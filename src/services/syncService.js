@@ -312,7 +312,47 @@ class SyncService {
     return res;
   }
 
-  // --- Authentication API ---
+  // --- Authentication & Onboarding API ---
+
+  async checkAuthStatus() {
+    try {
+      const base = this.getServerBaseUrl();
+      const url = base ? `${base}/api/auth/status` : '/api/auth/status';
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      if (!res.ok) return { needsOnboarding: false, requiresAuth: true };
+      return await res.json();
+    } catch {
+      return { needsOnboarding: false, requiresAuth: true, offline: true };
+    }
+  }
+
+  async completeOnboarding({ baby, caregivers, password, activeCaregiverId }) {
+    const base = this.getServerBaseUrl();
+    const url = base ? `${base}/api/setup/complete` : '/api/setup/complete';
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ baby, caregivers, password, activeCaregiverId }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Onboarding failed');
+    }
+
+    if (data.token) {
+      this.setToken(data.token);
+      this.connect();
+    }
+    return data;
+  }
 
   async login(password, caregiverId, rememberMe = true) {
     const res = await fetch(this._buildUrl('/api/auth/login'), {

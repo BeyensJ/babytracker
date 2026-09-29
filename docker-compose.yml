@@ -10,6 +10,7 @@ services:
       - PORT=3001
       - DATA_DIR=/app/data
       - TZ=${TZ:-Europe/Brussels}
+      - FAMILY_PASSWORD=${FAMILY_PASSWORD:-babytracker}
     volumes:
       # Persistent host directory (created in the same folder as this compose file)
       - ${DATA_PATH:-./data}:/app/data

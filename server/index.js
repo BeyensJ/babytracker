@@ -113,7 +113,32 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// 1. Auth Routes (Public login, verified status)
+// 1. Auth & Setup Routes
+app.get('/api/auth/status', (req, res) => {
+  const needsOnboarding = db.checkNeedsOnboarding();
+  res.json({
+    needsOnboarding,
+    requiresAuth: true,
+  });
+});
+
+app.post('/api/setup/complete', (req, res) => {
+  try {
+    const { baby, caregivers, password, activeCaregiverId } = req.body;
+    if (!password || password.trim().length < 4) {
+      return res.status(400).json({ error: 'Password must be at least 4 characters long.' });
+    }
+    const result = db.completeOnboarding({ baby, caregivers, password, activeCaregiverId });
+    broadcast('CHILDREN_UPDATED', db.getState().children);
+    broadcast('CAREGIVERS_UPDATED', db.getState().caregivers);
+    broadcast('ACTIVE_CHILD_UPDATED', { activeChildId: db.getState().activeChildId });
+    broadcast('SYNC_STATE', db.getState());
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/auth/login', (req, res) => {
   try {
     const { password, caregiverId, rememberMe = true } = req.body;

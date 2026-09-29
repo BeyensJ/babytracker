@@ -19,11 +19,13 @@ export function LoginScreen() {
   const availableCaregivers = caregivers?.length > 0
     ? caregivers
     : [
-      { id: 'cg_mom', name: 'Mom', role: language === 'nl' ? 'Mama' : 'Mom', color: '#CE6B4C' },
-      { id: 'cg_dad', name: 'Dad', role: language === 'nl' ? 'Papa' : 'Dad', color: '#546C7E' },
+      { id: 'cg_mom', name: language === 'nl' ? 'Mama' : 'Mom', role: language === 'nl' ? 'Mama' : 'Mom', color: '#CE6B4C' },
+      { id: 'cg_dad', name: language === 'nl' ? 'Papa' : 'Dad', role: language === 'nl' ? 'Papa' : 'Dad', color: '#546C7E' },
     ];
 
-  const babyName = activeChild?.name || 'Baby';
+  const babyName = activeChild?.name && activeChild.name !== 'Baby'
+    ? activeChild.name
+    : (language === 'nl' ? 'je kleintje' : 'your baby');
 
   const handleSubmit = async (e) => {
     e.preventDefault();

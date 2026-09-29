@@ -18,6 +18,7 @@ const STORAGE_KEYS = {
   CAREGIVERS: 'babytracker_caregivers_v1',
   ACTIVE_CAREGIVER: 'babytracker_device_caregiver_id_v1',
   DEVICE_THEME: 'babytracker_device_theme_v1',
+  ONBOARDED: 'babytracker_onboarded_v1',
 };
 
 function getSavedStorage(key) {
@@ -34,15 +35,15 @@ const DEFAULT_CHILDREN = [
   {
     id: 'child_1',
     name: 'Baby',
-    birthdate: '2026-07-04',
-    sex: 'FEMALE',
+    birthdate: new Date().toISOString().split('T')[0],
+    sex: 'UNKNOWN',
     avatarColor: 'terracotta',
   },
 ];
 
 const DEFAULT_CAREGIVERS = [
-  { id: 'cg_mom', name: 'Mom', role: 'Mama', color: '#CE6B4C' },
-  { id: 'cg_dad', name: 'Dad', role: 'Papa', color: '#546C7E' },
+  { id: 'cg_mom', name: 'Mama', role: 'Mama', color: '#CE6B4C' },
+  { id: 'cg_dad', name: 'Papa', role: 'Papa', color: '#546C7E' },
 ];
 
 const DEFAULT_PREFERENCES = {
@@ -107,7 +108,7 @@ export function AppProvider({ children }) {
     } catch (e) {
       console.warn('Could not read saved events:', e);
     }
-    return generateSampleEvents('child_1');
+    return [];
   });
 
 function mergePreferencesPreservingDeviceTheme(prev, incoming) {
@@ -167,6 +168,7 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
   // 9. Family Authentication & Security
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   // --- Real-Time Backend & WebSocket Integration ---
   useEffect(() => {
@@ -178,32 +180,50 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
       setIsAuthenticated(false);
     });
 
-    // 3. Verify existing session token on device
-    syncService.verifySession().then(session => {
-      if (session && session.success) {
-        setIsAuthenticated(true);
-        if (session.caregiver?.id) {
-          setActiveCaregiverId(session.caregiver.id);
-        }
-        syncService.connect();
-        syncService.fetchFullState().then(serverState => {
-          if (serverState) {
-            if (serverState.children && serverState.children.length > 0) setChildList(serverState.children);
-            if (serverState.activeChildId) setActiveChildId(serverState.activeChildId);
-            if (serverState.caregivers && serverState.caregivers.length > 0) setCaregivers(serverState.caregivers);
-            if (serverState.events && serverState.events.length > 0) setEvents(serverState.events);
-            if (serverState.activeTimers) setActiveTimers(serverState.activeTimers);
-            if (serverState.preferences) setPreferences(prev => mergePreferencesPreservingDeviceTheme(prev, serverState.preferences));
+    // 3. Check if server needs onboarding first, then verify session
+    syncService.checkAuthStatus().then(status => {
+      if (status && status.needsOnboarding) {
+        setNeedsOnboarding(true);
+        setIsLoadingAuth(false);
+        return;
+      }
+
+      // Check if local-only mode needs onboarding
+      const isLocallyOnboarded = getSavedStorage(STORAGE_KEYS.ONBOARDED) === 'true';
+      if (status && status.offline && !isLocallyOnboarded && (!childList || childList.length === 0 || childList[0]?.name === 'Baby')) {
+        setNeedsOnboarding(true);
+        setIsLoadingAuth(false);
+        return;
+      }
+
+      syncService.verifySession().then(session => {
+        if (session && session.success) {
+          setIsAuthenticated(true);
+          if (session.caregiver?.id) {
+            setActiveCaregiverId(session.caregiver.id);
           }
-        }).catch(() => {});
-      } else {
+          syncService.connect();
+          syncService.fetchFullState().then(serverState => {
+            if (serverState) {
+              if (serverState.children && serverState.children.length > 0) setChildList(serverState.children);
+              if (serverState.activeChildId) setActiveChildId(serverState.activeChildId);
+              if (serverState.caregivers && serverState.caregivers.length > 0) setCaregivers(serverState.caregivers);
+              if (serverState.events && serverState.events.length > 0) setEvents(serverState.events);
+              if (serverState.activeTimers) setActiveTimers(serverState.activeTimers);
+              if (serverState.preferences) setPreferences(prev => mergePreferencesPreservingDeviceTheme(prev, serverState.preferences));
+            }
+          }).catch(() => {});
+        } else {
+          setIsAuthenticated(false);
+          syncService.setToken(null);
+        }
+      }).catch(() => {
         setIsAuthenticated(false);
         syncService.setToken(null);
-      }
+      }).finally(() => {
+        setIsLoadingAuth(false);
+      });
     }).catch(() => {
-      setIsAuthenticated(false);
-      syncService.setToken(null);
-    }).finally(() => {
       setIsLoadingAuth(false);
     });
 
@@ -962,9 +982,76 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     return await syncService.changePassword(currentPassword, newPassword);
   };
 
+  const completeOnboarding = async ({ baby, caregivers: newCaregivers, password, activeCaregiverId: chosenCaregiverId }) => {
+    try {
+      const res = await syncService.completeOnboarding({
+        baby,
+        caregivers: newCaregivers,
+        password,
+        activeCaregiverId: chosenCaregiverId,
+      });
+
+      const initialChild = res.child || {
+        id: `child_${Date.now()}`,
+        name: baby?.name || 'Baby',
+        birthdate: baby?.birthdate || new Date().toISOString().split('T')[0],
+        sex: baby?.sex || 'UNKNOWN',
+        avatarColor: baby?.avatarColor || 'terracotta',
+      };
+
+      setChildList([initialChild]);
+      setActiveChildId(initialChild.id);
+      if (res.state?.caregivers) {
+        setCaregivers(res.state.caregivers);
+      } else if (newCaregivers && newCaregivers.length > 0) {
+        setCaregivers(newCaregivers);
+      }
+      if (chosenCaregiverId) {
+        setActiveCaregiverId(chosenCaregiverId);
+      }
+      setEvents([]);
+      setActiveTimers({});
+
+      try {
+        localStorage.setItem(STORAGE_KEYS.ONBOARDED, 'true');
+      } catch {}
+
+      setNeedsOnboarding(false);
+      setIsAuthenticated(true);
+      return res;
+    } catch (err) {
+      if (err.message?.includes('fetch') || err.message?.includes('network') || !syncService.getServerBaseUrl()) {
+        const initialChild = {
+          id: `child_${Date.now()}`,
+          name: baby?.name || 'Baby',
+          birthdate: baby?.birthdate || new Date().toISOString().split('T')[0],
+          sex: baby?.sex || 'UNKNOWN',
+          avatarColor: baby?.avatarColor || 'terracotta',
+        };
+        setChildList([initialChild]);
+        setActiveChildId(initialChild.id);
+        if (newCaregivers && newCaregivers.length > 0) {
+          setCaregivers(newCaregivers);
+        }
+        if (chosenCaregiverId) {
+          setActiveCaregiverId(chosenCaregiverId);
+        }
+        try {
+          localStorage.setItem(STORAGE_KEYS.ONBOARDED, 'true');
+        } catch {}
+        setNeedsOnboarding(false);
+        setIsAuthenticated(true);
+        return { success: true };
+      }
+      throw err;
+    }
+  };
+
   const value = {
     isAuthenticated,
     isLoadingAuth,
+    needsOnboarding,
+    completeOnboarding,
     login,
     logout,
     changePassword,

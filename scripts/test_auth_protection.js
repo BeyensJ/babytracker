@@ -24,11 +24,11 @@ async function testAuthProtection() {
   const wrongData = await wrongLoginRes.json();
   console.log('✓ Login with incorrect password rejected:', wrongData.error);
 
-  // 3. Verify login with valid family password (baby2026) succeeds
+  // 3. Verify login with valid family password (babytracker) succeeds
   const loginRes = await fetch(`${BASE_URL}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password: 'baby2026', caregiverId: 'cg_mom', rememberMe: true }),
+    body: JSON.stringify({ password: 'babytracker', caregiverId: 'cg_mom', rememberMe: true }),
   });
   if (!loginRes.ok) {
     throw new Error(`Login failed with status ${loginRes.status}`);
@@ -115,7 +115,7 @@ async function testAuthProtection() {
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
-      currentPassword: 'baby2026',
+      currentPassword: 'babytracker',
       newPassword: 'newpass2026',
     }),
   });
@@ -126,12 +126,12 @@ async function testAuthProtection() {
   const oldLoginRes = await fetch(`${BASE_URL}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password: 'baby2026' }),
+    body: JSON.stringify({ password: 'babytracker' }),
   });
   if (oldLoginRes.status !== 401) {
     throw new Error('Old password was not revoked');
   }
-  console.log('✓ Old password baby2026 correctly rejected');
+  console.log('✓ Old password babytracker correctly rejected');
 
   // Verify new password works
   const newLoginRes = await fetch(`${BASE_URL}/api/auth/login`, {
@@ -143,7 +143,7 @@ async function testAuthProtection() {
   const newLoginData = await newLoginRes.json();
   console.log('✓ Logged in with new password newpass2026');
 
-  // Reset password back to baby2026 for user convenience
+  // Reset password back to babytracker for user convenience
   await fetch(`${BASE_URL}/api/auth/change-password`, {
     method: 'POST',
     headers: {
@@ -152,10 +152,10 @@ async function testAuthProtection() {
     },
     body: JSON.stringify({
       currentPassword: 'newpass2026',
-      newPassword: 'baby2026',
+      newPassword: 'babytracker',
     }),
   });
-  console.log('✓ Restored family password to default baby2026');
+  console.log('✓ Restored family password to default babytracker');
 
   // 9. Verify logout / token revocation
   const logoutRes = await fetch(`${BASE_URL}/api/auth/logout`, {

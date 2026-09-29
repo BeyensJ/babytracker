@@ -152,27 +152,6 @@ export function SettingsView() {
     setDragOver(false);
   };
 
-  // 1-Click loader for the provided example export file
-  const handleLoadBabyExport = async () => {
-    try {
-      const res = await fetch('/example_export.csv');
-      const csvText = await res.text();
-      const rows = parseCSVToRows(csvText);
-      const parsed = convertCsvRowsToEvents(rows, activeChildId);
-
-      openModal('IMPORT_PREVIEW', {
-        fileName: 'export_baby_20260922.csv',
-        parsedEvents: parsed.events,
-        detectedProfile: parsed.detectedProfile,
-        detectedUnits: parsed.detectedUnits,
-        detectedCaregivers: parsed.detectedCaregivers,
-        activeChildId,
-      });
-    } catch (err) {
-      alert('Failed to load example file: ' + err.message);
-    }
-  };
-
   const handleLoadDemoData = () => {
     if (events.length > 0 && !window.confirm(t('settings.sampleConfirm'))) {
       return;

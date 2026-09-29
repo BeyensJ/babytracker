@@ -71,7 +71,7 @@ async function testPWAAndNotifications() {
   const loginRes = await fetch('http://localhost:3001/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password: 'baby2026', caregiverId: 'cg_mom' }),
+    body: JSON.stringify({ password: 'babytracker', caregiverId: 'cg_mom' }),
   });
   const { token } = await loginRes.json();
   const authHeaders = {
@@ -97,7 +97,7 @@ async function testPWAAndNotifications() {
     body: JSON.stringify({
       action: 'finish_timer',
       timerType: 'sleep',
-      caregiver: 'Dad (Dad)'
+      caregiver: 'Dad'
     })
   });
   const actionData = await actionRes.json();

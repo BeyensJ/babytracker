@@ -22,3 +22,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Data & local databases
+data/
+*.db
+*.sqlite
+export_*.csv
+*.csv.bak*
+
+# Environment files
+.env
+.env.local

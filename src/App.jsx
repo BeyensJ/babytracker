@@ -8,13 +8,14 @@ import { TrendsView } from './components/views/TrendsView';
 import { SettingsView } from './components/views/SettingsView';
 import { ModalManager } from './components/modals/ModalManager';
 import { LoginScreen } from './components/LoginScreen';
+import { OnboardingScreen } from './components/OnboardingScreen';
 import { NotificationToast } from './components/NotificationToast';
 
 import { Capacitor } from '@capacitor/core';
 import { syncService } from './services/syncService';
 
 function AppContent() {
-  const { isAuthenticated, isLoadingAuth, openModal } = useApp();
+  const { isAuthenticated, isLoadingAuth, needsOnboarding, openModal } = useApp();
   const [activeTab, setActiveTab] = useState('today');
 
   // Auto-prompt server setup on native Android on first launch
@@ -71,6 +72,15 @@ function AppContent() {
           </svg>
         </div>
       </div>
+    );
+  }
+
+  if (needsOnboarding) {
+    return (
+      <>
+        <OnboardingScreen />
+        <ModalManager />
+      </>
     );
   }
 
