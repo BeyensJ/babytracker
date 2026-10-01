@@ -774,7 +774,7 @@ export const translations = {
       babyTitle: 'Vertel ons over je kleintje',
       babySubtitle: 'We stemmen wakkertijden, curves en mijlpalen nauwkeurig af op jouw kindje.',
       babyName: 'Naam van de baby',
-      babyNamePlaceholder: 'bv. Baby, Lucas, Emma...',
+      babyNamePlaceholder: 'bv. Olivia, Lucas, Emma...',
       birthdate: 'Geboortedatum / Uitgerekende datum',
       sex: 'Geslacht',
       sexGirl: 'Meisje',
