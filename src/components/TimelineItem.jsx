@@ -305,8 +305,29 @@ export function TimelineItem({ event }) {
 
   const resumeClass = event.type === 'BREAST' ? 'breast' : event.type === 'SLEEP' ? 'sleep' : 'pump';
 
+  const handleCardClick = (e) => {
+    // Only trigger if not clicking an interactive button
+    if (e.target.closest('button') || e.target.closest('.timeline-item-photo-btn')) {
+      return;
+    }
+    triggerHaptic('light', preferences?.haptics);
+    openModal('EVENT_DETAIL', event);
+  };
+
   return (
-    <div className="timeline-item-card">
+    <div
+      className="timeline-item-card clickable"
+      onClick={handleCardClick}
+      title={isDutch ? 'Tik om details te bekijken' : 'Tap to view details'}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openModal('EVENT_DETAIL', event);
+        }
+      }}
+    >
       <div className="timeline-item-left">
         <div className={`item-badge-icon ${config.badgeClass}`}>
           <Icon size={18} />
@@ -329,7 +350,10 @@ export function TimelineItem({ event }) {
               <button
                 type="button"
                 className="timeline-item-photo-btn"
-                onClick={() => setShowLightbox(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowLightbox(true);
+                }}
                 title={isDutch ? 'Foto bekijken' : 'View photo'}
                 aria-label={isDutch ? 'Foto bekijken' : 'View photo'}
               >

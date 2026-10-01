@@ -15,6 +15,8 @@ import { ImportPreviewModal } from './ImportPreviewModal';
 import { CaregiverModal } from './CaregiverModal';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import { ServerSetupModal } from './ServerSetupModal';
+import { EventDetailModal } from './EventDetailModal';
+import { CustomizeQuickModal } from './CustomizeQuickModal';
 
 export function ModalManager() {
   const { activeModal, closeModal } = useApp();
@@ -23,6 +25,8 @@ export function ModalManager() {
 
   return (
     <>
+      {activeModal === 'EVENT_DETAIL' && <EventDetailModal />}
+      {activeModal === 'CUSTOMIZE_QUICK' && <CustomizeQuickModal />}
       {activeModal === 'BREAST' && <BreastfeedModal />}
       {activeModal === 'BOTTLE' && <BottleModal />}
       {activeModal === 'SLEEP' && <SleepModal />}

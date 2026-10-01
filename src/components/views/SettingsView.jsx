@@ -493,6 +493,42 @@ export function SettingsView() {
             </button>
           </div>
         </div>
+
+        {/* Quick Status & Actions Customization */}
+        <div className="setting-row">
+          <div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('customizeQuick.title')}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+              {isDutch
+                ? 'Kies welke statuskaarten en actieknoppen getoond worden'
+                : 'Choose which status cards and dock buttons are displayed'}
+            </div>
+          </div>
+          <button
+            type="button"
+            className="action-pill-btn"
+            onClick={() => {
+              triggerHaptic('light', preferences?.haptics);
+              openModal('CUSTOMIZE_QUICK');
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              padding: '0.45rem 0.85rem',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              backgroundColor: 'var(--bg-card-subtle)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-full)',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+            }}
+          >
+            <Sliders size={13} />
+            <span>{isDutch ? 'Aanpassen' : 'Customize'}</span>
+          </button>
+        </div>
       </div>
 
       {/* 5. Live Notifications & Android Tray */}

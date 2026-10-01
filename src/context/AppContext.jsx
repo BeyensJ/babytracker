@@ -53,6 +53,8 @@ const DEFAULT_PREFERENCES = {
   theme: 'light',   // 'light' or 'dark' (pure pitch-black OLED)
   haptics: true,    // subtle vibration feedback
   language: 'nl',   // 'nl' (Nederlands / Vlaams) or 'en' (English)
+  quickStatusCards: ['FEEDS', 'SLEEP', 'PUMP'], // Displayed quick summary cards
+  quickActionButtons: ['BREAST', 'BOTTLE', 'SLEEP', 'PUMP'], // Displayed dock quick actions
 };
 
 export function AppProvider({ children }) {
@@ -120,7 +122,14 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
   }
   if (!currentTheme) currentTheme = 'light';
   const { theme: _ignoredTheme, ...sharedIncoming } = incoming;
-  return { ...prev, ...sharedIncoming, theme: currentTheme };
+  return {
+    ...DEFAULT_PREFERENCES,
+    ...prev,
+    ...sharedIncoming,
+    theme: currentTheme,
+    quickStatusCards: prev?.quickStatusCards || sharedIncoming?.quickStatusCards || DEFAULT_PREFERENCES.quickStatusCards,
+    quickActionButtons: prev?.quickActionButtons || sharedIncoming?.quickActionButtons || DEFAULT_PREFERENCES.quickActionButtons,
+  };
 }
 
   // 4. User Preferences (Theme is strictly device-local and never synced between devices)

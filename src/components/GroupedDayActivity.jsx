@@ -627,21 +627,42 @@ function ItemRowTemplate({
   isResumable = false,
   categoryType = 'breast',
 }) {
-  const { t } = useApp();
+  const { openModal, preferences, t } = useApp();
   const [showLightbox, setShowLightbox] = useState(false);
   const isDutch = language === 'nl';
   const det = event.details || {};
   const photoUrl = event.photoUrl || det.photoUrl;
 
+  const handleRowClick = (e) => {
+    if (e.target.closest('button')) return;
+    triggerHaptic('light', preferences?.haptics);
+    openModal('EVENT_DETAIL', event);
+  };
+
   return (
-    <div className="grouped-item-row">
+    <div
+      className="grouped-item-row clickable"
+      onClick={handleRowClick}
+      title={isDutch ? 'Tik om details te bekijken' : 'Tap to view details'}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openModal('EVENT_DETAIL', event);
+        }
+      }}
+    >
       <div className="grouped-item-left">
         <span className="grouped-item-time">{formatTime(event.beginDt, language)}</span>
         {photoUrl && (
           <button
             type="button"
             className="grouped-photo-thumb-btn"
-            onClick={() => setShowLightbox(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowLightbox(true);
+            }}
             title={isDutch ? 'Foto bekijken' : 'View photo'}
             aria-label={isDutch ? 'Foto bekijken' : 'View photo'}
           >
@@ -678,7 +699,10 @@ function ItemRowTemplate({
           <button
             type="button"
             className={`grouped-item-resume-btn ${categoryType}`}
-            onClick={() => onResume(event)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onResume(event);
+            }}
             title={t('timeline.resumeSession')}
             aria-label={t('timeline.resumeSession')}
           >
@@ -688,7 +712,10 @@ function ItemRowTemplate({
         ) : null}
         <button
           className="grouped-item-btn"
-          onClick={() => onEdit(event.type, event)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(event.type, event);
+          }}
           title={t('timeline.edit')}
           aria-label={t('timeline.edit')}
         >
@@ -696,7 +723,8 @@ function ItemRowTemplate({
         </button>
         <button
           className="grouped-item-btn delete"
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             if (window.confirm(t('timeline.deleteConfirm'))) {
               onDelete(event.id);
             }
