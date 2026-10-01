@@ -8,6 +8,7 @@ export function HealthModal() {
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
   const isCelsius = preferences.tempUnit === 'C';
+  const isDutch = language === 'nl';
 
   const [subType, setSubType] = useState(() => {
     if (modalInitialData?.details?.temperatureF || modalInitialData?.details?.temperatureC) return 'TEMP';

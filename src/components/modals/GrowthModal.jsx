@@ -8,6 +8,7 @@ export function GrowthModal() {
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
   const isMetric = preferences.weightUnit === 'kg';
+  const isDutch = language === 'nl';
 
   // Weight
   const [weightInput, setWeightInput] = useState(() => {
