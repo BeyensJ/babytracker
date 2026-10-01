@@ -45,6 +45,51 @@
   --color-mustard: #8C6718;
   --color-mustard-light: #FAF4E5;
 
+  /* Dedicated Distinct Activity Type Accent Colors (Light Mode) */
+  --color-breast: #E05353;
+  --color-breast-light: #FDF1F1;
+  --color-breast-hover: #C93E3E;
+
+  --color-bottle: #D97706;
+  --color-bottle-light: #FEF3C7;
+  --color-bottle-hover: #B45309;
+
+  --color-sleep: #3B6B9B;
+  --color-sleep-light: #EEF4F9;
+  --color-sleep-hover: #2E5379;
+
+  --color-diaper: #0D9488;
+  --color-diaper-light: #E6FFFA;
+  --color-diaper-hover: #0F766E;
+
+  --color-pump: #9333EA;
+  --color-pump-light: #F5E8FF;
+  --color-pump-hover: #7E22CE;
+
+  --color-solids: #65A30D;
+  --color-solids-light: #F7FEE7;
+  --color-solids-hover: #4D7C0F;
+
+  --color-growth: #16A34A;
+  --color-growth-light: #F0FDF4;
+  --color-growth-hover: #15803D;
+
+  --color-health: #E11D48;
+  --color-health-light: #FFF1F2;
+  --color-health-hover: #BE123C;
+
+  --color-routine: #6366F1;
+  --color-routine-light: #EEF2FF;
+  --color-routine-hover: #4F46E5;
+
+  --color-note: #92400E;
+  --color-note-light: #FEF3C7;
+  --color-note-hover: #78350F;
+
+  --color-milestone: #EA580C;
+  --color-milestone-light: #FFF7ED;
+  --color-milestone-hover: #C2410C;
+
   /* Status & Wake Windows */
   --status-green: #2E7339;
   --status-green-light: #EBF6EC;
@@ -102,29 +147,50 @@
 
   --modal-overlay-bg: rgba(0, 0, 0, 0.82);
 
-  /* Vibrant Category Accents optimized for OLED high contrast */
-  --color-terracotta: #FF7D62;
-  --color-terracotta-light: rgba(255, 125, 98, 0.18);
-  --color-terracotta-hover: #FF937D;
+  /* Activity Accent Colors (OLED High Contrast) */
+  --color-breast: #FF6B6B;
+  --color-breast-light: rgba(255, 107, 107, 0.18);
+  --color-breast-hover: #FF8787;
 
-  --color-sage: #5EC994;
-  --color-sage-light: rgba(94, 201, 148, 0.18);
-  --color-sage-hover: #75D4A6;
+  --color-bottle: #FBBF24;
+  --color-bottle-light: rgba(251, 191, 36, 0.18);
+  --color-bottle-hover: #FCD34D;
 
-  --color-caramel: #F7B04D;
-  --color-caramel-light: rgba(247, 176, 77, 0.18);
-  --color-caramel-hover: #F8BD66;
+  --color-sleep: #60A5FA;
+  --color-sleep-light: rgba(96, 165, 250, 0.18);
+  --color-sleep-hover: #93C5FD;
 
-  --color-slate: #74B2E6;
-  --color-slate-light: rgba(116, 178, 230, 0.18);
-  --color-slate-hover: #8DC1EC;
+  --color-diaper: #2DD4BF;
+  --color-diaper-light: rgba(45, 212, 191, 0.18);
+  --color-diaper-hover: #5EEAD4;
 
-  --color-berry: #D486B6;
-  --color-berry-light: rgba(212, 134, 182, 0.18);
-  --color-berry-hover: #DC96C2;
+  --color-pump: #C084FC;
+  --color-pump-light: rgba(192, 132, 252, 0.18);
+  --color-pump-hover: #D8B4FE;
 
-  --color-mustard: #F0D054;
-  --color-mustard-light: rgba(240, 208, 84, 0.18);
+  --color-solids: #A3E635;
+  --color-solids-light: rgba(163, 230, 53, 0.18);
+  --color-solids-hover: #BEF264;
+
+  --color-growth: #4ADE80;
+  --color-growth-light: rgba(74, 222, 128, 0.18);
+  --color-growth-hover: #86EFAC;
+
+  --color-health: #FB7185;
+  --color-health-light: rgba(251, 113, 133, 0.18);
+  --color-health-hover: #FDA4AF;
+
+  --color-routine: #818CF8;
+  --color-routine-light: rgba(129, 140, 248, 0.18);
+  --color-routine-hover: #A5B4FC;
+
+  --color-note: #F59E0B;
+  --color-note-light: rgba(245, 158, 11, 0.18);
+  --color-note-hover: #FBBF24;
+
+  --color-milestone: #FB923C;
+  --color-milestone-light: rgba(251, 146, 60, 0.18);
+  --color-milestone-hover: #FDBA74;
 
   /* Status Colors */
   --status-green: #50C878;
@@ -1310,28 +1376,59 @@ input, select, textarea {
 }
 
 .dock-icon-circle.breast {
-  background-color: var(--color-terracotta-light);
-  color: var(--color-terracotta);
+  background-color: var(--color-breast-light);
+  color: var(--color-breast);
 }
 
 .dock-icon-circle.bottle {
-  background-color: var(--color-caramel-light);
-  color: var(--color-caramel);
+  background-color: var(--color-bottle-light);
+  color: var(--color-bottle);
 }
 
 .dock-icon-circle.sleep {
-  background-color: var(--color-slate-light);
-  color: var(--color-slate);
-}
-
-.dock-icon-circle.pump {
-  background-color: var(--color-berry-light);
-  color: var(--color-berry);
+  background-color: var(--color-sleep-light);
+  color: var(--color-sleep);
 }
 
 .dock-icon-circle.diaper {
-  background-color: var(--color-sage-light);
-  color: var(--color-sage);
+  background-color: var(--color-diaper-light);
+  color: var(--color-diaper);
+}
+
+.dock-icon-circle.pump {
+  background-color: var(--color-pump-light);
+  color: var(--color-pump);
+}
+
+.dock-icon-circle.solids {
+  background-color: var(--color-solids-light);
+  color: var(--color-solids);
+}
+
+.dock-icon-circle.growth,
+.dock-icon-circle.grow {
+  background-color: var(--color-growth-light);
+  color: var(--color-growth);
+}
+
+.dock-icon-circle.health {
+  background-color: var(--color-health-light);
+  color: var(--color-health);
+}
+
+.dock-icon-circle.routine {
+  background-color: var(--color-routine-light);
+  color: var(--color-routine);
+}
+
+.dock-icon-circle.note {
+  background-color: var(--color-note-light);
+  color: var(--color-note);
+}
+
+.dock-icon-circle.milestone {
+  background-color: var(--color-milestone-light);
+  color: var(--color-milestone);
 }
 
 .dock-icon-circle.more {
@@ -1988,14 +2085,19 @@ input, select, textarea {
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
 }
 
-.item-badge-icon.feed { background-color: var(--color-terracotta-light); color: var(--color-terracotta); }
-.item-badge-icon.sleep { background-color: var(--color-slate-light); color: var(--color-slate); }
-.item-badge-icon.diaper { background-color: var(--color-sage-light); color: var(--color-sage); }
-.item-badge-icon.pump { background-color: var(--color-berry-light); color: var(--color-berry); }
-.item-badge-icon.grow { background-color: var(--color-caramel-light); color: var(--color-caramel); }
-.item-badge-icon.health { background-color: var(--color-sage-light); color: var(--color-sage); }
-.item-badge-icon.routine { background-color: var(--color-mustard-light); color: var(--color-mustard); }
-.item-badge-icon.note { background-color: var(--bg-card-subtle); color: var(--text-secondary); }
+.item-badge-icon.breast,
+.item-badge-icon.feed { background-color: var(--color-breast-light); color: var(--color-breast); }
+.item-badge-icon.bottle { background-color: var(--color-bottle-light); color: var(--color-bottle); }
+.item-badge-icon.sleep { background-color: var(--color-sleep-light); color: var(--color-sleep); }
+.item-badge-icon.diaper { background-color: var(--color-diaper-light); color: var(--color-diaper); }
+.item-badge-icon.pump { background-color: var(--color-pump-light); color: var(--color-pump); }
+.item-badge-icon.solids { background-color: var(--color-solids-light); color: var(--color-solids); }
+.item-badge-icon.growth,
+.item-badge-icon.grow { background-color: var(--color-growth-light); color: var(--color-growth); }
+.item-badge-icon.health { background-color: var(--color-health-light); color: var(--color-health); }
+.item-badge-icon.routine { background-color: var(--color-routine-light); color: var(--color-routine); }
+.item-badge-icon.note { background-color: var(--color-note-light); color: var(--color-note); }
+.item-badge-icon.milestone { background-color: var(--color-milestone-light); color: var(--color-milestone); }
 
 .item-content {
   display: flex;
@@ -5937,44 +6039,61 @@ input, select, textarea {
   flex-shrink: 0;
 }
 
+.event-detail-icon-circle.breast,
 .event-detail-icon-circle.feed {
-  background-color: var(--color-terracotta-light);
-  color: var(--color-terracotta);
+  background-color: var(--color-breast-light);
+  color: var(--color-breast);
+}
+
+.event-detail-icon-circle.bottle {
+  background-color: var(--color-bottle-light);
+  color: var(--color-bottle);
 }
 
 .event-detail-icon-circle.sleep {
-  background-color: var(--color-slate-light);
-  color: var(--color-slate);
+  background-color: var(--color-sleep-light);
+  color: var(--color-sleep);
 }
 
 .event-detail-icon-circle.diaper {
-  background-color: var(--color-caramel-light);
-  color: var(--color-caramel);
+  background-color: var(--color-diaper-light);
+  color: var(--color-diaper);
 }
 
 .event-detail-icon-circle.pump {
-  background-color: var(--color-berry-light);
-  color: var(--color-berry);
+  background-color: var(--color-pump-light);
+  color: var(--color-pump);
 }
 
+.event-detail-icon-circle.solids {
+  background-color: var(--color-solids-light);
+  color: var(--color-solids);
+}
+
+.event-detail-icon-circle.growth,
 .event-detail-icon-circle.grow {
-  background-color: var(--color-sage-light);
-  color: var(--color-sage);
+  background-color: var(--color-growth-light);
+  color: var(--color-growth);
 }
 
 .event-detail-icon-circle.health {
-  background-color: var(--status-red-light);
-  color: var(--status-red);
+  background-color: var(--color-health-light);
+  color: var(--color-health);
 }
 
 .event-detail-icon-circle.routine {
-  background-color: var(--color-slate-light);
-  color: var(--color-slate);
+  background-color: var(--color-routine-light);
+  color: var(--color-routine);
 }
 
 .event-detail-icon-circle.note {
-  background-color: var(--color-terracotta-light);
-  color: var(--color-terracotta);
+  background-color: var(--color-note-light);
+  color: var(--color-note);
+}
+
+.event-detail-icon-circle.milestone {
+  background-color: var(--color-milestone-light);
+  color: var(--color-milestone);
 }
 
 .event-detail-title-texts {

@@ -66,7 +66,7 @@ export function TimelineItem({ event }) {
         }
         return {
           icon: Heart,
-          badgeClass: 'feed',
+          badgeClass: 'breast',
           title: isDutch ? 'Borstvoeding' : 'Breastfeed',
           chips,
         };
@@ -74,7 +74,7 @@ export function TimelineItem({ event }) {
       case 'BOTTLE':
         return {
           icon: Milk,
-          badgeClass: 'feed',
+          badgeClass: 'bottle',
           title: isDutch ? 'Flesje' : 'Bottle Feed',
           chips: [
             det.volumeFloz ? formatVolume(det.volumeFloz, preferences.volumeUnit) : '',
@@ -86,7 +86,7 @@ export function TimelineItem({ event }) {
       case 'COMBO':
         return {
           icon: Heart,
-          badgeClass: 'feed',
+          badgeClass: 'breast',
           title: 'Combo Feed',
           chips: [
             det.volumeFloz ? formatVolume(det.volumeFloz, preferences.volumeUnit) : '',
@@ -96,7 +96,7 @@ export function TimelineItem({ event }) {
       case 'SOLIDS':
         return {
           icon: Apple,
-          badgeClass: 'feed',
+          badgeClass: 'solids',
           title: isDutch ? 'Vaste voeding' : 'Solid Food',
           chips: [det.food || (isDutch ? 'Hapje' : 'Meal'), det.reaction ? `${isDutch ? 'Reactie' : 'Reaction'}: ${det.reaction}` : ''].filter(Boolean),
         };
@@ -172,7 +172,7 @@ export function TimelineItem({ event }) {
 
         return {
           icon: Ruler,
-          badgeClass: 'grow',
+          badgeClass: 'growth',
           title,
           chips,
         };
@@ -216,7 +216,7 @@ export function TimelineItem({ event }) {
         const isFirst = det.isBabyFirst;
         return {
           icon: Award,
-          badgeClass: 'note',
+          badgeClass: 'milestone',
           title: det.milestoneName || (isFirst ? (isDutch ? 'Eerste keer' : 'Baby First') : (isDutch ? 'Mijlpaal' : 'Milestone')),
           chips: [isFirst ? (isDutch ? '🌟 Eerste keer' : '🌟 Baby First') : (isDutch ? '🏆 Mijlpaal' : '🏆 Milestone')],
         };

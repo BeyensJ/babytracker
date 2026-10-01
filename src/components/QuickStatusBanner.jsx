@@ -108,8 +108,8 @@ export function QuickStatusBanner() {
             detail: isDutch ? `Borst (${side})` : `Nursing (${side})`,
             icon: Heart,
             badge: isDutch ? 'Actief' : 'Active',
-            color: 'var(--color-terracotta)',
-            bg: 'var(--color-terracotta-light)',
+            color: 'var(--color-breast)',
+            bg: 'var(--color-breast-light)',
             actionModal: 'BREAST',
           };
         }
@@ -121,8 +121,8 @@ export function QuickStatusBanner() {
             detail: isDutch ? 'Nog geen voeding' : 'No feeds yet',
             icon: Utensils,
             badge: null,
-            color: 'var(--color-terracotta)',
-            bg: 'var(--color-terracotta-light)',
+            color: 'var(--color-breast)',
+            bg: 'var(--color-breast-light)',
             actionModal: 'BREAST',
           };
         }
@@ -141,8 +141,8 @@ export function QuickStatusBanner() {
             detail: dur ? `${isDutch ? 'Borst' : 'Nursing'} · ${dur}` : (isDutch ? 'Borstvoeding' : 'Nursing'),
             icon: Heart,
             badge: sideBadge,
-            color: 'var(--color-terracotta)',
-            bg: 'var(--color-terracotta-light)',
+            color: 'var(--color-breast)',
+            bg: 'var(--color-breast-light)',
             actionModal: 'BREAST',
           };
         }
@@ -155,8 +155,8 @@ export function QuickStatusBanner() {
             detail: vol ? `${isDutch ? 'Fles' : 'Bottle'} · ${vol}` : (isDutch ? 'Flesje' : 'Bottle'),
             icon: Milk,
             badge: isDutch ? 'Fles' : 'Bottle',
-            color: 'var(--color-caramel)',
-            bg: 'var(--color-caramel-light)',
+            color: 'var(--color-bottle)',
+            bg: 'var(--color-bottle-light)',
             actionModal: 'BOTTLE',
           };
         }
@@ -168,8 +168,8 @@ export function QuickStatusBanner() {
             detail: det.food ? (isDutch ? `Hapjes · ${det.food}` : `Solids · ${det.food}`) : (isDutch ? 'Vaste voeding' : 'Solid meal'),
             icon: Apple,
             badge: isDutch ? 'Hapjes' : 'Solids',
-            color: 'var(--color-sage)',
-            bg: 'var(--color-sage-light)',
+            color: 'var(--color-solids)',
+            bg: 'var(--color-solids-light)',
             actionModal: 'SOLIDS',
           };
         }
@@ -180,8 +180,8 @@ export function QuickStatusBanner() {
           detail: isDutch ? 'Voeding' : 'Feed',
           icon: Utensils,
           badge: isDutch ? 'Voeding' : 'Feed',
-          color: 'var(--color-terracotta)',
-          bg: 'var(--color-terracotta-light)',
+          color: 'var(--color-breast)',
+          bg: 'var(--color-breast-light)',
           actionModal: 'BREAST',
         };
       }
@@ -197,8 +197,8 @@ export function QuickStatusBanner() {
             detail: `${isDutch ? 'Aan de borst' : 'Nursing'} (${side})`,
             icon: Heart,
             badge: isDutch ? 'Actief' : 'Active',
-            color: 'var(--color-terracotta)',
-            bg: 'var(--color-terracotta-light)',
+            color: 'var(--color-breast)',
+            bg: 'var(--color-breast-light)',
             actionModal: 'BREAST',
           };
         }
@@ -210,8 +210,8 @@ export function QuickStatusBanner() {
             detail: isDutch ? 'Nog niet gevoed' : 'No nurse yet',
             icon: Heart,
             badge: null,
-            color: 'var(--color-terracotta)',
-            bg: 'var(--color-terracotta-light)',
+            color: 'var(--color-breast)',
+            bg: 'var(--color-breast-light)',
             actionModal: 'BREAST',
           };
         }
@@ -229,8 +229,8 @@ export function QuickStatusBanner() {
           detail: dur ? `${sideBadge ? `${sideBadge} · ` : ''}${dur}` : (isDutch ? 'Borstvoeding' : 'Nursing'),
           icon: Heart,
           badge: sideBadge,
-          color: 'var(--color-terracotta)',
-          bg: 'var(--color-terracotta-light)',
+          color: 'var(--color-breast)',
+          bg: 'var(--color-breast-light)',
           actionModal: 'BREAST',
         };
       }
@@ -245,8 +245,8 @@ export function QuickStatusBanner() {
             detail: isDutch ? 'Nog geen flesje' : 'No bottle yet',
             icon: Milk,
             badge: null,
-            color: 'var(--color-caramel)',
-            bg: 'var(--color-caramel-light)',
+            color: 'var(--color-bottle)',
+            bg: 'var(--color-bottle-light)',
             actionModal: 'BOTTLE',
           };
         }
@@ -260,8 +260,8 @@ export function QuickStatusBanner() {
           detail: vol ? `${vol}${det.formulaName ? ` (${det.formulaName})` : ''}` : milkTypeBadge,
           icon: Milk,
           badge: milkTypeBadge,
-          color: 'var(--color-caramel)',
-          bg: 'var(--color-caramel-light)',
+          color: 'var(--color-bottle)',
+          bg: 'var(--color-bottle-light)',
           actionModal: 'BOTTLE',
         };
       }
@@ -276,8 +276,8 @@ export function QuickStatusBanner() {
             detail: isDutch ? 'Slaapt momenteel' : 'Currently sleeping',
             icon: Moon,
             badge: isDutch ? 'Slaapt' : 'Sleeping',
-            color: 'var(--color-slate)',
-            bg: 'var(--color-slate-light)',
+            color: 'var(--color-sleep)',
+            bg: 'var(--color-sleep-light)',
             actionModal: 'SLEEP',
           };
         }
@@ -289,8 +289,8 @@ export function QuickStatusBanner() {
             detail: isDutch ? 'Nog geen slaap' : 'No sleep yet',
             icon: Moon,
             badge: null,
-            color: 'var(--color-slate)',
-            bg: 'var(--color-slate-light)',
+            color: 'var(--color-sleep)',
+            bg: 'var(--color-sleep-light)',
             actionModal: 'SLEEP',
           };
         }
@@ -304,8 +304,8 @@ export function QuickStatusBanner() {
           detail: dur ? `${type} · ${dur}` : type,
           icon: Moon,
           badge: type,
-          color: 'var(--color-slate)',
-          bg: 'var(--color-slate-light)',
+          color: 'var(--color-sleep)',
+          bg: 'var(--color-sleep-light)',
           actionModal: 'SLEEP',
         };
       }
@@ -320,8 +320,8 @@ export function QuickStatusBanner() {
             detail: isDutch ? 'Nog geen pamper' : 'No diaper yet',
             icon: Sparkles,
             badge: null,
-            color: 'var(--color-caramel)',
-            bg: 'var(--color-caramel-light)',
+            color: 'var(--color-diaper)',
+            bg: 'var(--color-diaper-light)',
             actionModal: 'DIAPER',
           };
         }
@@ -337,8 +337,8 @@ export function QuickStatusBanner() {
           detail: parts.join(' & ') || (isDutch ? 'Pamper ververst' : 'Diaper Change'),
           icon: Sparkles,
           badge: det.blowout ? (isDutch ? 'Doorgelekt' : 'Blowout') : (det.poop ? (isDutch ? 'Kaka' : 'Dirty') : (isDutch ? 'Nat' : 'Wet')),
-          color: 'var(--color-caramel)',
-          bg: 'var(--color-caramel-light)',
+          color: 'var(--color-diaper)',
+          bg: 'var(--color-diaper-light)',
           actionModal: 'DIAPER',
         };
       }
@@ -357,8 +357,8 @@ export function QuickStatusBanner() {
             detail: isDutch ? `Kolven bezig (${sideBadge})` : `Pumping now (${sideBadge})`,
             icon: PumpIcon,
             badge: isDutch ? 'Actief' : 'Active',
-            color: 'var(--color-berry)',
-            bg: 'var(--color-berry-light)',
+            color: 'var(--color-pump)',
+            bg: 'var(--color-pump-light)',
             actionModal: 'PUMP',
           };
         }
@@ -370,8 +370,8 @@ export function QuickStatusBanner() {
             detail: isDutch ? 'Nog niet gekolfd' : 'No pump yet',
             icon: PumpIcon,
             badge: null,
-            color: 'var(--color-berry)',
-            bg: 'var(--color-berry-light)',
+            color: 'var(--color-pump)',
+            bg: 'var(--color-pump-light)',
             actionModal: 'PUMP',
           };
         }
@@ -393,8 +393,8 @@ export function QuickStatusBanner() {
           detail: parts.length > 0 ? parts.join(' · ') : (isDutch ? 'Kolfsessie' : 'Pump session'),
           icon: PumpIcon,
           badge: sideBadge,
-          color: 'var(--color-berry)',
-          bg: 'var(--color-berry-light)',
+          color: 'var(--color-pump)',
+          bg: 'var(--color-pump-light)',
           actionModal: 'PUMP',
         };
       }
@@ -409,8 +409,8 @@ export function QuickStatusBanner() {
             detail: isDutch ? 'Nog geen hapje' : 'No solids yet',
             icon: Apple,
             badge: null,
-            color: 'var(--color-sage)',
-            bg: 'var(--color-sage-light)',
+            color: 'var(--color-solids)',
+            bg: 'var(--color-solids-light)',
             actionModal: 'SOLIDS',
           };
         }
@@ -422,8 +422,8 @@ export function QuickStatusBanner() {
           detail: det.food || (isDutch ? 'Hapje' : 'Solid meal'),
           icon: Apple,
           badge: det.reaction ? det.reaction : (isDutch ? 'Hapje' : 'Solid'),
-          color: 'var(--color-sage)',
-          bg: 'var(--color-sage-light)',
+          color: 'var(--color-solids)',
+          bg: 'var(--color-solids-light)',
           actionModal: 'SOLIDS',
         };
       }
@@ -438,8 +438,8 @@ export function QuickStatusBanner() {
             detail: isDutch ? 'Nog geen meting' : 'No growth data',
             icon: Ruler,
             badge: null,
-            color: 'var(--color-sage)',
-            bg: 'var(--color-sage-light)',
+            color: 'var(--color-growth)',
+            bg: 'var(--color-growth-light)',
             actionModal: 'GROWTH',
           };
         }
@@ -455,8 +455,8 @@ export function QuickStatusBanner() {
           detail: str || (isDutch ? 'Groei geregistreerd' : 'Growth recorded'),
           icon: Ruler,
           badge: isDutch ? 'Groei' : 'Growth',
-          color: 'var(--color-sage)',
-          bg: 'var(--color-sage-light)',
+          color: 'var(--color-growth)',
+          bg: 'var(--color-growth-light)',
           actionModal: 'GROWTH',
         };
       }
@@ -471,8 +471,8 @@ export function QuickStatusBanner() {
             detail: isDutch ? 'Geen registratie' : 'No records',
             icon: Stethoscope,
             badge: null,
-            color: 'var(--status-red)',
-            bg: 'var(--status-red-light)',
+            color: 'var(--color-health)',
+            bg: 'var(--color-health-light)',
             actionModal: 'HEALTH',
           };
         }
@@ -485,8 +485,8 @@ export function QuickStatusBanner() {
           detail: title,
           icon: Stethoscope,
           badge: det.medicineName ? (isDutch ? 'Medicatie' : 'Med') : (isDutch ? 'Medisch' : 'Health'),
-          color: 'var(--status-red)',
-          bg: 'var(--status-red-light)',
+          color: 'var(--color-health)',
+          bg: 'var(--color-health-light)',
           actionModal: 'HEALTH',
         };
       }
@@ -501,8 +501,8 @@ export function QuickStatusBanner() {
             detail: isDutch ? 'Nog geen routine' : 'No routines',
             icon: Clock,
             badge: null,
-            color: 'var(--color-slate)',
-            bg: 'var(--color-slate-light)',
+            color: 'var(--color-routine)',
+            bg: 'var(--color-routine-light)',
             actionModal: 'ROUTINE',
           };
         }
@@ -515,15 +515,14 @@ export function QuickStatusBanner() {
           detail: rName,
           icon: Clock,
           badge: isDutch ? 'Routine' : 'Routine',
-          color: 'var(--color-slate)',
-          bg: 'var(--color-slate-light)',
+          color: 'var(--color-routine)',
+          bg: 'var(--color-routine-light)',
           actionModal: 'ROUTINE',
         };
       }
 
-      case 'NOTE':
-      case 'MILESTONE': {
-        const ev = childEvents.find((e) => e.type === 'NOTE' || e.type === 'MILESTONE');
+      case 'NOTE': {
+        const ev = childEvents.find((e) => e.type === 'NOTE');
         if (!ev) {
           return {
             id: 'NOTE',
@@ -532,22 +531,49 @@ export function QuickStatusBanner() {
             detail: isDutch ? 'Nog geen notitie' : 'No notes',
             icon: BookOpen,
             badge: null,
-            color: 'var(--color-terracotta)',
-            bg: 'var(--color-terracotta-light)',
+            color: 'var(--color-note)',
+            bg: 'var(--color-note-light)',
             actionModal: 'NOTE',
           };
         }
-        const isM = ev.type === 'MILESTONE';
         return {
-          id: isM ? 'MILESTONE' : 'NOTE',
-          label: isM ? (isDutch ? 'Mijlpaal' : 'Milestone') : (isDutch ? 'Notitie' : 'Note'),
+          id: 'NOTE',
+          label: isDutch ? 'Notitie' : 'Note',
           timeText: formatRelative(ev.beginDt, now, language),
-          detail: ev.details?.milestoneName || ev.note || (isDutch ? 'Herinnering' : 'Memory'),
-          icon: isM ? Award : BookOpen,
-          badge: isM ? (isDutch ? 'Mijlpaal' : 'Milestone') : null,
-          color: 'var(--color-mustard)',
-          bg: 'var(--color-mustard-light)',
-          actionModal: isM ? 'MILESTONE' : 'NOTE',
+          detail: ev.note || (isDutch ? 'Dagboek' : 'Journal'),
+          icon: BookOpen,
+          badge: null,
+          color: 'var(--color-note)',
+          bg: 'var(--color-note-light)',
+          actionModal: 'NOTE',
+        };
+      }
+
+      case 'MILESTONE': {
+        const ev = childEvents.find((e) => e.type === 'MILESTONE');
+        if (!ev) {
+          return {
+            id: 'MILESTONE',
+            label: isDutch ? 'Mijlpaal' : 'Milestone',
+            timeText: '—',
+            detail: isDutch ? 'Nog geen mijlpaal' : 'No milestone',
+            icon: Award,
+            badge: null,
+            color: 'var(--color-milestone)',
+            bg: 'var(--color-milestone-light)',
+            actionModal: 'MILESTONE',
+          };
+        }
+        return {
+          id: 'MILESTONE',
+          label: isDutch ? 'Mijlpaal' : 'Milestone',
+          timeText: formatRelative(ev.beginDt, now, language),
+          detail: ev.details?.milestoneName || (isDutch ? 'Mijlpaal' : 'Milestone'),
+          icon: Award,
+          badge: ev.details?.isBabyFirst ? (isDutch ? 'Eerste keer' : 'Baby First') : null,
+          color: 'var(--color-milestone)',
+          bg: 'var(--color-milestone-light)',
+          actionModal: 'MILESTONE',
         };
       }
 

@@ -439,7 +439,7 @@ function FeedItemRow({ event, preferences, language, onEdit, onDelete, onResume,
       onResume={onResume}
       isCurrentlyRunning={isCurrentlyRunning}
       isResumable={isResumable}
-      categoryType="breast"
+      categoryType={event.type === 'BOTTLE' ? 'bottle' : event.type === 'SOLIDS' ? 'solids' : 'breast'}
     />
   );
 }
@@ -607,7 +607,7 @@ function OtherItemRow({ event, preferences, language, onEdit, onDelete }) {
       language={language}
       onEdit={onEdit}
       onDelete={onDelete}
-      categoryType="other"
+      categoryType={event.type.toLowerCase()}
     />
   );
 }
