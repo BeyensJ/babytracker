@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatTime, formatDurationMs, formatVolume, formatWeight, formatLength, formatTemp, formatRoutineName } from '../utils/formatters';
+import { syncService } from '../services/syncService';
+import { PhotoLightbox } from './PhotoLightbox';
 import {
   Heart,
   Milk,
@@ -17,6 +19,7 @@ import {
   Trash2,
   User,
   Play,
+  Camera,
 } from 'lucide-react';
 import { PumpIcon } from './icons/PumpIcon';
 
@@ -34,6 +37,7 @@ export function TimelineItem({ event }) {
     t,
   } = useApp();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showLightbox, setShowLightbox] = useState(false);
   const isDutch = language === 'nl';
 
   const det = event.details || {};
@@ -320,6 +324,29 @@ export function TimelineItem({ event }) {
 
           {event.note && <div className="item-note">{event.note}</div>}
 
+          {(event.photoUrl || det.photoUrl) && (
+            <div className="timeline-item-photo-wrap">
+              <button
+                type="button"
+                className="timeline-item-photo-btn"
+                onClick={() => setShowLightbox(true)}
+                title={isDutch ? 'Foto bekijken' : 'View photo'}
+                aria-label={isDutch ? 'Foto bekijken' : 'View photo'}
+              >
+                <img
+                  src={syncService.resolveMediaUrl(event.photoUrl || det.photoUrl)}
+                  alt={event.note || config.title}
+                  className="timeline-item-photo-img"
+                  loading="lazy"
+                />
+                <div className="timeline-photo-badge">
+                  <Camera size={11} />
+                  <span>{isDutch ? 'Foto' : 'Photo'}</span>
+                </div>
+              </button>
+            </div>
+          )}
+
           {det.caregiver && (
             <div className="item-caregiver-tag">
               <User size={11} />
@@ -443,6 +470,16 @@ export function TimelineItem({ event }) {
           </div>
         </div>
       </div>
+
+      {showLightbox && (event.photoUrl || det.photoUrl) && (
+        <PhotoLightbox
+          photoUrl={event.photoUrl || det.photoUrl}
+          caption={event.note || config.title}
+          timestamp={event.beginDt}
+          language={language}
+          onClose={() => setShowLightbox(false)}
+        />
+      )}
     </div>
   );
 }

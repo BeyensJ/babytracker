@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { formatDurationMs } from '../../utils/formatters';
 import { Moon, X, Play, Clock, Trash2 } from 'lucide-react';
 import { triggerHaptic } from '../../utils/haptics';
+import { PhotoUploadField } from '../PhotoUploadField';
 
 export function SleepModal() {
   const {
@@ -99,6 +100,7 @@ export function SleepModal() {
     return formatHHMM(modalInitialData?.endDt || Date.now());
   });
 
+  const [photoUrl, setPhotoUrl] = useState(() => modalInitialData?.photoUrl || modalInitialData?.details?.photoUrl || null);
   const [note, setNote] = useState(modalInitialData?.note || '');
 
   if (activeModal !== 'SLEEP') return null;
@@ -159,9 +161,11 @@ export function SleepModal() {
       beginDt: startTs,
       endDt: endTs,
       durationMs,
+      photoUrl: photoUrl || null,
       details: {
         sleepType,
         durationSeconds: Math.round(durationMs / 1000),
+        photoUrl: photoUrl || null,
       },
       note,
     };
@@ -422,6 +426,17 @@ export function SleepModal() {
                 <span style={{ fontSize: '1.15rem', fontWeight: 700 }}>
                   {formatDurationMs(durationMs, language)}
                 </span>
+              </div>
+
+              {/* Photo Upload */}
+              <div className="form-group">
+                <PhotoUploadField
+                  photoUrl={photoUrl}
+                  onChange={setPhotoUrl}
+                  language={language}
+                  haptics={preferences?.haptics}
+                  label={isDutch ? 'Foto toevoegen (optioneel) 📸' : 'Add Photo (Optional) 📸'}
+                />
               </div>
 
               {/* Notes */}

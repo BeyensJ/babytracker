@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatTime, formatDurationMs, formatVolume, formatWeight, formatLength, formatTemp, formatRoutineName } from '../utils/formatters';
+import { syncService } from '../services/syncService';
+import { PhotoLightbox } from './PhotoLightbox';
 import {
   Utensils,
   Moon,
@@ -626,13 +628,31 @@ function ItemRowTemplate({
   categoryType = 'breast',
 }) {
   const { t } = useApp();
+  const [showLightbox, setShowLightbox] = useState(false);
   const isDutch = language === 'nl';
   const det = event.details || {};
+  const photoUrl = event.photoUrl || det.photoUrl;
 
   return (
     <div className="grouped-item-row">
       <div className="grouped-item-left">
         <span className="grouped-item-time">{formatTime(event.beginDt, language)}</span>
+        {photoUrl && (
+          <button
+            type="button"
+            className="grouped-photo-thumb-btn"
+            onClick={() => setShowLightbox(true)}
+            title={isDutch ? 'Foto bekijken' : 'View photo'}
+            aria-label={isDutch ? 'Foto bekijken' : 'View photo'}
+          >
+            <img
+              src={syncService.resolveMediaUrl(photoUrl)}
+              alt={event.note || label}
+              className="grouped-photo-thumb-img"
+              loading="lazy"
+            />
+          </button>
+        )}
         <div className="grouped-item-content">
           <div className="grouped-item-main">
             <span className="grouped-item-label">{label}</span>
@@ -687,6 +707,16 @@ function ItemRowTemplate({
           <Trash2 size={13} />
         </button>
       </div>
+
+      {showLightbox && photoUrl && (
+        <PhotoLightbox
+          photoUrl={photoUrl}
+          caption={event.note || label}
+          timestamp={event.beginDt}
+          language={language}
+          onClose={() => setShowLightbox(false)}
+        />
+      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { triggerHaptic } from '../../utils/haptics';
 import { X, Plus, Minus, Play, Clock, Trash2 } from 'lucide-react';
 import { PumpIcon } from '../icons/PumpIcon';
 import { formatDurationMs } from '../../utils/formatters';
+import { PhotoUploadField } from '../PhotoUploadField';
 
 export function PumpModal() {
   const {
@@ -112,6 +113,7 @@ export function PumpModal() {
     return '';
   });
 
+  const [photoUrl, setPhotoUrl] = useState(() => modalInitialData?.photoUrl || modalInitialData?.details?.photoUrl || null);
   const [note, setNote] = useState(modalInitialData?.note || '');
 
   const [timeStr, setTimeStr] = useState(() => {
@@ -203,6 +205,7 @@ export function PumpModal() {
       beginDt,
       endDt: beginDt + durationMs,
       durationMs,
+      photoUrl: photoUrl || null,
       details: {
         side,
         volumeUnit: unit,
@@ -213,6 +216,7 @@ export function PumpModal() {
         rightFloz: Math.round(finalRightFloz * 10000) / 10000,
         totalFloz: Math.round(finalTotalFloz * 10000) / 10000,
         durationSeconds: Math.round(durationMs / 1000),
+        photoUrl: photoUrl || null,
       },
       note,
     };
@@ -589,6 +593,17 @@ export function PumpModal() {
                     ))}
                   </div>
                 </div>
+              </div>
+
+              {/* Photo Upload */}
+              <div className="form-group">
+                <PhotoUploadField
+                  photoUrl={photoUrl}
+                  onChange={setPhotoUrl}
+                  language={language}
+                  haptics={preferences?.haptics}
+                  label={isDutch ? 'Foto toevoegen (optioneel) 📸' : 'Add Photo (Optional) 📸'}
+                />
               </div>
 
               {/* Time & Notes */}

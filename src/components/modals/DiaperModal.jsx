@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Sparkles, X, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
 import { triggerHaptic } from '../../utils/haptics';
+import { PhotoUploadField } from '../PhotoUploadField';
 
 export function DiaperModal() {
   const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, t, language } = useApp();
@@ -45,6 +46,7 @@ export function DiaperModal() {
     return Boolean(modalInitialData?.details?.rash);
   });
 
+  const [photoUrl, setPhotoUrl] = useState(() => modalInitialData?.photoUrl || modalInitialData?.details?.photoUrl || null);
   const [note, setNote] = useState(modalInitialData?.note || '');
 
   const [timeStr, setTimeStr] = useState(() => {
@@ -105,6 +107,7 @@ export function DiaperModal() {
       beginDt,
       endDt: null,
       durationMs: 0,
+      photoUrl: photoUrl || null,
       details: {
         pee: dry ? false : pee,
         poop: dry ? false : poop,
@@ -113,6 +116,7 @@ export function DiaperModal() {
         texture: poop ? texture : '',
         blowout: poop ? blowout : false,
         rash,
+        photoUrl: photoUrl || null,
       },
       note,
     };
@@ -283,6 +287,17 @@ export function DiaperModal() {
                   onChange={e => setTimeStr(e.target.value)}
                 />
               </div>
+            </div>
+
+            {/* Photo Upload */}
+            <div className="form-group">
+              <PhotoUploadField
+                photoUrl={photoUrl}
+                onChange={setPhotoUrl}
+                language={language}
+                haptics={preferences?.haptics}
+                label={isDutch ? 'Foto toevoegen (bv. uitslag/stoelgang) 📸' : 'Add Photo (e.g. rash/stool) 📸'}
+              />
             </div>
 
             {/* Notes */}

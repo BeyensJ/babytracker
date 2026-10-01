@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { BookOpen, X, Award } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { PhotoUploadField } from '../PhotoUploadField';
 
 export function NoteModal() {
-  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, t, language } = useApp();
+  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, t, language } = useApp();
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
 
@@ -12,6 +13,7 @@ export function NoteModal() {
     return modalInitialData?.type === 'MILESTONE' || Boolean(modalInitialData?.details?.milestoneName);
   });
   const [milestoneName, setMilestoneName] = useState(() => modalInitialData?.details?.milestoneName || '');
+  const [photoUrl, setPhotoUrl] = useState(() => modalInitialData?.photoUrl || modalInitialData?.details?.photoUrl || null);
   const [note, setNote] = useState(() => modalInitialData?.note || '');
   const [timeStr, setTimeStr] = useState(() => {
     const d = new Date(modalInitialData?.beginDt || Date.now());
@@ -58,8 +60,10 @@ export function NoteModal() {
       beginDt,
       endDt: null,
       durationMs: 0,
+      photoUrl: photoUrl || null,
       details: {
         milestoneName: isMilestone ? (milestoneName.trim() || (language === 'nl' ? 'Mijlpaal in ontwikkeling' : 'Developmental Milestone')) : '',
+        photoUrl: photoUrl || null,
       },
       note: note.trim(),
     };
@@ -147,6 +151,17 @@ export function NoteModal() {
                 value={note}
                 onChange={e => setNote(e.target.value)}
                 required={!isMilestone}
+              />
+            </div>
+
+            {/* Photo Upload */}
+            <div className="form-group">
+              <PhotoUploadField
+                photoUrl={photoUrl}
+                onChange={setPhotoUrl}
+                language={language}
+                haptics={preferences?.haptics}
+                label={isMilestone ? (language === 'nl' ? 'Foto van de mijlpaal 📸' : 'Milestone Photo 📸') : (language === 'nl' ? 'Foto toevoegen (optioneel)' : 'Add Photo (Optional)')}
               />
             </div>
 

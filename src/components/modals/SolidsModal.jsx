@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Apple, X } from 'lucide-react';
+import { PhotoUploadField } from '../PhotoUploadField';
 
 export function SolidsModal() {
-  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, t, language } = useApp();
+  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, t, language } = useApp();
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
 
   const [food, setFood] = useState(() => modalInitialData?.details?.food || '');
   const [mealType, setMealType] = useState(() => modalInitialData?.details?.mealType || 'Breakfast');
   const [reaction, setReaction] = useState(() => modalInitialData?.details?.reaction || 'liked');
+  const [photoUrl, setPhotoUrl] = useState(() => modalInitialData?.photoUrl || modalInitialData?.details?.photoUrl || null);
   const [note, setNote] = useState(modalInitialData?.note || '');
   const [timeStr, setTimeStr] = useState(() => {
     const d = new Date(modalInitialData?.beginDt || Date.now());
@@ -72,10 +74,12 @@ export function SolidsModal() {
       beginDt,
       endDt: null,
       durationMs: 0,
+      photoUrl: photoUrl || null,
       details: {
         food: food.trim() || (language === 'nl' ? 'Vaste voeding' : 'Solid Food'),
         mealType,
         reaction,
+        photoUrl: photoUrl || null,
       },
       note,
     };
@@ -167,6 +171,17 @@ export function SolidsModal() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Photo Upload */}
+            <div className="form-group">
+              <PhotoUploadField
+                photoUrl={photoUrl}
+                onChange={setPhotoUrl}
+                language={language}
+                haptics={preferences?.haptics}
+                label={language === 'nl' ? 'Foto van het hapje / reactie 📸' : 'Photo of food / reaction 📸'}
+              />
             </div>
 
             {/* Time & Notes */}

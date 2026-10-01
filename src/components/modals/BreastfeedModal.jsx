@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { Heart, X, Clock, Play, Trash2 } from 'lucide-react';
 import { formatDurationMs } from '../../utils/formatters';
 import { triggerHaptic } from '../../utils/haptics';
+import { PhotoUploadField } from '../PhotoUploadField';
 
 export function BreastfeedModal() {
   const {
@@ -95,6 +96,7 @@ export function BreastfeedModal() {
     return '';
   });
 
+  const [photoUrl, setPhotoUrl] = useState(() => modalInitialData?.photoUrl || modalInitialData?.details?.photoUrl || null);
   const [note, setNote] = useState(modalInitialData?.note || '');
   const [timeStr, setTimeStr] = useState(() => {
     const d = new Date(modalInitialData?.beginDt || Date.now());
@@ -150,6 +152,7 @@ export function BreastfeedModal() {
       beginDt,
       endDt: beginDt + totalDurationMs,
       durationMs: totalDurationMs,
+      photoUrl: photoUrl || null,
       details: {
         side,
         lastActiveSide: finalLastActiveSide,
@@ -158,6 +161,7 @@ export function BreastfeedModal() {
         leftDurationSeconds: Math.round(leftMs / 1000),
         rightDurationSeconds: Math.round(rightMs / 1000),
         totalDurationSeconds: Math.round(totalDurationMs / 1000),
+        photoUrl: photoUrl || null,
       },
       note,
     };
@@ -513,6 +517,17 @@ export function BreastfeedModal() {
                     onChange={e => setTimeStr(e.target.value)}
                   />
                 </div>
+              </div>
+
+              {/* Photo Upload */}
+              <div className="form-group">
+                <PhotoUploadField
+                  photoUrl={photoUrl}
+                  onChange={setPhotoUrl}
+                  language={language}
+                  haptics={preferences?.haptics}
+                  label={isDutch ? 'Foto toevoegen (optioneel) 📸' : 'Add Photo (Optional) 📸'}
+                />
               </div>
 
               {/* Optional Notes */}

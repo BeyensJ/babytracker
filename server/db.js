@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
-const dataDir = process.env.DATA_DIR || path.join(rootDir, 'data');
+export const dataDir = process.env.DATA_DIR || path.join(rootDir, 'data');
 const dbFilePath = path.join(dataDir, 'babytracker_db.json');
 
 let state = null;

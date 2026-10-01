@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Clock, X } from 'lucide-react';
+import { PhotoUploadField } from '../PhotoUploadField';
 
 export function RoutineModal() {
-  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, t, language } = useApp();
+  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, t, language } = useApp();
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
 
@@ -14,6 +15,7 @@ export function RoutineModal() {
     }
     return '';
   });
+  const [photoUrl, setPhotoUrl] = useState(() => modalInitialData?.photoUrl || modalInitialData?.details?.photoUrl || null);
   const [note, setNote] = useState(modalInitialData?.note || '');
   const [timeStr, setTimeStr] = useState(() => {
     const d = new Date(modalInitialData?.beginDt || Date.now());
@@ -48,7 +50,11 @@ export function RoutineModal() {
       beginDt,
       endDt: beginDt + durationMs,
       durationMs,
-      details: { routineName },
+      photoUrl: photoUrl || null,
+      details: {
+        routineName,
+        photoUrl: photoUrl || null,
+      },
       note,
     };
 
@@ -117,6 +123,17 @@ export function RoutineModal() {
                 className="form-input"
                 value={timeStr}
                 onChange={e => setTimeStr(e.target.value)}
+              />
+            </div>
+
+            {/* Photo Upload */}
+            <div className="form-group">
+              <PhotoUploadField
+                photoUrl={photoUrl}
+                onChange={setPhotoUrl}
+                language={language}
+                haptics={preferences?.haptics}
+                label={language === 'nl' ? 'Foto van de activiteit 📸' : 'Activity Photo 📸'}
               />
             </div>
 

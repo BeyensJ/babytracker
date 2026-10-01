@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { getTranslation } from '../i18n/translations';
 import { generateSampleEvents } from '../utils/sampleData';
 import { exportEventsToCSV } from '../utils/csvParser';
 import { syncService } from '../services/syncService';
@@ -28,8 +29,6 @@ function getSavedStorage(key) {
     return null;
   }
 }
-
-import { getTranslation } from '../i18n/translations';
 
 const DEFAULT_CHILDREN = [
   {

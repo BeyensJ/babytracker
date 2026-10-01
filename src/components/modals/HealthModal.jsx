@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Stethoscope, X } from 'lucide-react';
+import { PhotoUploadField } from '../PhotoUploadField';
 
 export function HealthModal() {
   const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, t, language } = useApp();
@@ -28,6 +29,7 @@ export function HealthModal() {
     return '';
   });
   const [vaccineName, setVaccineName] = useState(() => modalInitialData?.details?.vaccineName || '');
+  const [photoUrl, setPhotoUrl] = useState(() => modalInitialData?.photoUrl || modalInitialData?.details?.photoUrl || null);
   const [note, setNote] = useState(modalInitialData?.note || '');
   const [timeStr, setTimeStr] = useState(() => {
     const d = new Date(modalInitialData?.beginDt || Date.now());
@@ -74,6 +76,7 @@ export function HealthModal() {
       beginDt,
       endDt: null,
       durationMs: 0,
+      photoUrl: photoUrl || null,
       details: {
         medicineName: subType === 'MED' ? medicineName : '',
         dosage: subType === 'MED' ? dosage : '',
@@ -81,6 +84,7 @@ export function HealthModal() {
         temperatureF: tempF,
         doctorName: subType === 'VISIT' ? doctorName : '',
         vaccineName: subType === 'VACCINE' ? vaccineName : '',
+        photoUrl: photoUrl || null,
       },
       note,
     };
@@ -238,6 +242,17 @@ export function HealthModal() {
                 />
               </div>
             )}
+
+            {/* Photo Upload */}
+            <div className="form-group">
+              <PhotoUploadField
+                photoUrl={photoUrl}
+                onChange={setPhotoUrl}
+                language={language}
+                haptics={preferences?.haptics}
+                label={isDutch ? 'Foto toevoegen (bv. uitslag/medicijn/temperatuur) 📸' : 'Add Photo (e.g. rash/med/temperature) 📸'}
+              />
+            </div>
 
             {/* Time & Notes */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '0.65rem' }}>

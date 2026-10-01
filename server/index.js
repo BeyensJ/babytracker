@@ -4,6 +4,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import crypto from 'node:crypto';
 import { WebSocketServer, WebSocket } from 'ws';
 import * as db from './db.js';
 
@@ -18,9 +19,18 @@ const PORT = process.env.PORT || 3001;
 // Initialize Database on server startup
 db.initDb();
 
+const uploadsDir = path.join(db.dataDir || process.env.DATA_DIR || path.join(rootDir, 'data'), 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 // Middlewares
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+
+// Serve uploaded photos statically
+app.use('/api/uploads', express.static(uploadsDir, { maxAge: '30d' }));
+app.use('/uploads', express.static(uploadsDir, { maxAge: '30d' }));
 
 // Setup WebSocket Server for Real-Time Sync
 const wss = new WebSocketServer({ server, path: '/ws' });
@@ -203,8 +213,48 @@ app.use('/api/timers', requireAuth);
 app.use('/api/caregivers', requireAuth);
 app.use('/api/children', requireAuth);
 app.use('/api/preferences', requireAuth);
+app.use('/api/upload', requireAuth);
 
 // --- REST API Endpoints ---
+
+// 0. Image / Photo Upload
+app.post('/api/upload', (req, res) => {
+  try {
+    const { image } = req.body;
+    if (!image || typeof image !== 'string') {
+      return res.status(400).json({ error: 'No image data provided' });
+    }
+
+    const matches = image.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      return res.status(400).json({ error: 'Invalid base64 image data' });
+    }
+
+    const mimeType = matches[1];
+    const base64Data = matches[2];
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    let ext = 'jpg';
+    if (mimeType.includes('png')) ext = 'png';
+    else if (mimeType.includes('webp')) ext = 'webp';
+    else if (mimeType.includes('gif')) ext = 'gif';
+
+    const safeName = `photo_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.${ext}`;
+    const filePath = path.join(uploadsDir, safeName);
+
+    fs.writeFileSync(filePath, buffer);
+
+    res.json({
+      success: true,
+      url: `/api/uploads/${safeName}`,
+      filename: safeName,
+      size: buffer.length,
+    });
+  } catch (err) {
+    console.error('[API] Error handling image upload:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // 1. Full State Sync
 app.get('/api/sync/state', (req, res) => {

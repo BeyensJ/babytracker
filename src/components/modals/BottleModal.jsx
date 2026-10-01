@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { triggerHaptic } from '../../utils/haptics';
 import { Milk, X, Plus, Minus, Calculator, ChevronDown, ChevronUp } from 'lucide-react';
+import { PhotoUploadField } from '../PhotoUploadField';
 
 export function BottleModal() {
   const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, t, language } = useApp();
@@ -51,6 +52,7 @@ export function BottleModal() {
     return modalInitialData?.details?.formulaName || '';
   });
 
+  const [photoUrl, setPhotoUrl] = useState(() => modalInitialData?.photoUrl || modalInitialData?.details?.photoUrl || null);
   const [note, setNote] = useState(modalInitialData?.note || '');
 
   const [timeStr, setTimeStr] = useState(() => {
@@ -142,6 +144,7 @@ export function BottleModal() {
       beginDt,
       endDt: null,
       durationMs: 15 * 60 * 1000,
+      photoUrl: photoUrl || null,
       details: {
         volumeFloz: Math.round(finalFloz * 10000) / 10000,
         volumeUnit: unit,
@@ -151,6 +154,7 @@ export function BottleModal() {
         calcMode: showCalc ? 'OFFERED_LEFT' : 'DIRECT',
         offeredAmount: showCalc ? offeredAmount : undefined,
         leftoverAmount: showCalc ? leftoverAmount : undefined,
+        photoUrl: photoUrl || null,
       },
       note,
     };
@@ -351,6 +355,17 @@ export function BottleModal() {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Photo Upload */}
+            <div className="form-group">
+              <PhotoUploadField
+                photoUrl={photoUrl}
+                onChange={setPhotoUrl}
+                language={language}
+                haptics={preferences?.haptics}
+                label={isDutch ? 'Foto toevoegen (optioneel) 📸' : 'Add Photo (Optional) 📸'}
+              />
             </div>
 
             {/* Time of Feed & Quick Note */}

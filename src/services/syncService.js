@@ -519,6 +519,32 @@ class SyncService {
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
     return await res.json();
   }
+
+  // --- Photo / Media Management ---
+
+  resolveMediaUrl(url) {
+    if (!url) return '';
+    if (url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    return this._buildUrl(url);
+  }
+
+  async uploadImage(dataUrl) {
+    if (!dataUrl) return null;
+    try {
+      const res = await this._fetch('/api/upload', {
+        method: 'POST',
+        body: JSON.stringify({ image: dataUrl }),
+      });
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+      const data = await res.json();
+      return data.url;
+    } catch (err) {
+      console.warn('[Sync] Server image upload failed or offline. Using local dataUrl:', err);
+      return dataUrl;
+    }
+  }
 }
 
 export const syncService = new SyncService();

@@ -21,6 +21,7 @@ export function TimelineFeed({ limitDays = null }) {
     if (activeFilter === 'SLEEP') return e.type === 'SLEEP';
     if (activeFilter === 'DIAPER') return e.type === 'DIAPER';
     if (activeFilter === 'PUMP') return e.type === 'PUMP';
+    if (activeFilter === 'PHOTOS') return Boolean(e.photoUrl || e.details?.photoUrl);
     if (activeFilter === 'OTHER') return ['GROWTH', 'HEALTH', 'ROUTINE', 'MILESTONE', 'NOTE'].includes(e.type);
     return true;
   });
@@ -44,6 +45,7 @@ export function TimelineFeed({ limitDays = null }) {
     { id: 'SLEEP', label: isDutch ? 'Slaap' : 'Sleep' },
     { id: 'DIAPER', label: isDutch ? 'Pampers' : 'Diapers' },
     { id: 'PUMP', label: isDutch ? 'Afkolven' : 'Pumping' },
+    { id: 'PHOTOS', label: isDutch ? "Foto's 📸" : 'Photos 📸' },
     { id: 'OTHER', label: isDutch ? 'Overige' : 'Other' },
   ];
 

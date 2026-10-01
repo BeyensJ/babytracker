@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Ruler, X } from 'lucide-react';
+import { PhotoUploadField } from '../PhotoUploadField';
 
 export function GrowthModal() {
   const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, t, language } = useApp();
@@ -46,6 +47,7 @@ export function GrowthModal() {
     return d.toISOString().split('T')[0];
   });
 
+  const [photoUrl, setPhotoUrl] = useState(() => modalInitialData?.photoUrl || modalInitialData?.details?.photoUrl || null);
   const [note, setNote] = useState(modalInitialData?.note || '');
 
   if (activeModal !== 'GROWTH') return null;
@@ -88,6 +90,7 @@ export function GrowthModal() {
       beginDt,
       endDt: null,
       durationMs: 0,
+      photoUrl: photoUrl || null,
       details: {
         weightKg,
         weightLb,
@@ -95,6 +98,7 @@ export function GrowthModal() {
         heightIn,
         headCm,
         headIn,
+        photoUrl: photoUrl || null,
       },
       note,
     };
@@ -183,6 +187,17 @@ export function GrowthModal() {
                   onChange={e => setDateStr(e.target.value)}
                 />
               </div>
+            </div>
+
+            {/* Photo Upload */}
+            <div className="form-group">
+              <PhotoUploadField
+                photoUrl={photoUrl}
+                onChange={setPhotoUrl}
+                language={language}
+                haptics={preferences?.haptics}
+                label={isDutch ? 'Foto toevoegen (bv. groeikaart / weegschaal) 📸' : 'Add Photo (e.g. growth chart / scale) 📸'}
+              />
             </div>
 
             {/* Notes */}

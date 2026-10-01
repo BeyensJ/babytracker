@@ -23,21 +23,21 @@ export function ModalManager() {
 
   return (
     <>
-      <BreastfeedModal />
-      <BottleModal />
-      <SleepModal />
-      <DiaperModal />
-      <PumpModal />
-      <SolidsModal />
-      <GrowthModal />
-      <HealthModal />
-      <RoutineModal />
-      <NoteModal />
-      <ChildSettingsModal />
-      <ImportPreviewModal />
-      <CaregiverModal />
-      <ChangePasswordModal isOpen={activeModal === 'CHANGE_PASSWORD'} onClose={closeModal} />
-      <ServerSetupModal isOpen={activeModal === 'SERVER_SETUP'} onClose={closeModal} />
+      {activeModal === 'BREAST' && <BreastfeedModal />}
+      {activeModal === 'BOTTLE' && <BottleModal />}
+      {activeModal === 'SLEEP' && <SleepModal />}
+      {activeModal === 'DIAPER' && <DiaperModal />}
+      {activeModal === 'PUMP' && <PumpModal />}
+      {activeModal === 'SOLIDS' && <SolidsModal />}
+      {activeModal === 'GROWTH' && <GrowthModal />}
+      {activeModal === 'HEALTH' && <HealthModal />}
+      {activeModal === 'ROUTINE' && <RoutineModal />}
+      {(activeModal === 'NOTE' || activeModal === 'MILESTONE') && <NoteModal />}
+      {activeModal === 'CHILD_SETTINGS' && <ChildSettingsModal />}
+      {activeModal === 'IMPORT_PREVIEW' && <ImportPreviewModal />}
+      {activeModal === 'CAREGIVER' && <CaregiverModal />}
+      {activeModal === 'CHANGE_PASSWORD' && <ChangePasswordModal isOpen={true} onClose={closeModal} />}
+      {activeModal === 'SERVER_SETUP' && <ServerSetupModal isOpen={true} onClose={closeModal} />}
     </>
   );
 }
