@@ -1,6 +1,6 @@
 # 🍼 Baby Tracker — Self-Hosted Baby Tracking PWA
 
-A calm, privacy-first, self-hosted baby tracking web application with **instant multi-device sync between partners**, **live stopwatches**, **WHO growth percentiles**, **visual 7-day schedules**, and a **pitch-black OLED dark mode** designed specifically for late-night nursery feeds.
+A calm, privacy-first, self-hosted baby tracking web application with **instant multi-device sync between parents**, **customizable quick action docks & status banners**, **distinct color-coded activities**, **live stopwatches & Android chronometers**, **WHO growth percentiles**, **visual 7-day schedules**, and a **pitch-black OLED dark mode** designed specifically for late-night nursery feeds.
 
 Zero subscriptions. Zero ads. Zero third-party telemetry. 100% of your baby's data stays on your own home server.
 
@@ -55,6 +55,7 @@ docker run -d \
   --restart unless-stopped \
   -p 3001:3001 \
   -e TZ=Europe/Brussels \
+  -e FAMILY_PASSWORD=babytracker \
   -v $(pwd)/data:/app/data \
   beyensj/babytracker:latest
 ```
@@ -63,10 +64,14 @@ docker run -d \
 
 ## 🌟 Key Features
 
-- **⏱️ Live Stateful Timers**: Breastfeeding (Left / Right / Both with side switching and retroactive start adjustments), Sleep & Naps, and Pumping.
+- **⏱️ Live Stateful Timers & 1-Tap Resuming**: Breastfeeding (Left / Right / Both with 1-tap switching and retroactive adjustments), Sleep & Naps, and Pumping.
 - **🔄 Real-Time Family Synchronization**: Powered by WebSockets (`/ws`). When Mom logs a feeding or starts a timer, Dad’s device updates instantly (<50ms) without refreshing.
+- **🎨 Color-Coded 11 Activity Types**: Breastfeeding, Bottle, Sleep, Diapers, Solids, Pumping, Growth, Health & Meds, Routines, Notes, and Milestones each feature their own dedicated accent colors.
+- **⚙️ Customizable Quick Status & Action Dock**: Each parent can personalize which quick status cards and bottom dock action buttons are visible and reorder them.
+- **🔍 Rich Interactive Item Detail Sheets**: Tap any logged activity to open a rich modal with complete metadata, hero metrics, photo lightbox preview, and 1-tap Edit/Delete/Resume/Share.
 - **🌙 True Pitch-Black OLED Mode**: Pure `#000000` canvas with WCAG AAA contrast ratio. Gentle on tired eyes and won't wake baby up during 3:00 AM feeds.
-- **📱 PWA & Android Notification Tray**: Installable on iOS Safari and Android Chrome. Live timers persist in the Android notification drawer with active countdowns and Stop buttons.
+- **📱 PWA & Android Notification Chronometer**: Installable on iOS Safari and Android Chrome, or use the native APK with live counting notification chronometer.
+- **👶 Multi-Child & Sibling Support**: Seamlessly switch between multiple children or track twins independently.
 - **📊 7-Day Visual Schedule**: Stacked Monday–Sunday multi-day rhythm with cross-midnight sleep slices and feeding/diaper pins.
 - **📈 WHO Growth Curves**: Official World Health Organization percentile curves (P3 to P97) for weight, length, and head circumference.
 - **📥 Universal Data Importer**: Import your historical data from Nara Baby CSV or JSON backups with deduplication and caregiver attribution.
@@ -79,7 +84,8 @@ docker run -d \
 | Variable | Default | Description |
 | :--- | :--- | :--- |
 | `PORT` | `3001` | Exposed port for web interface and WebSocket synchronization |
-| `DATA_DIR` | `/app/data` | Path inside container where database is stored |
+| `DATA_DIR` | `/app/data` | Path inside container where database and photos are stored |
+| `FAMILY_PASSWORD` | `babytracker` | Initial shared family password for access protection |
 | `NODE_ENV` | `production` | Set to `production` for optimized asset delivery |
 | `TZ` | `Europe/Brussels` | Timezone for timestamps and visual schedules |
 
@@ -89,7 +95,7 @@ docker run -d \
 
 | Host Path | Container Path | Purpose |
 | :--- | :--- | :--- |
-| `./data` | `/app/data` | Stores the persistent database (`babytracker_db.json`) |
+| `./data` | `/app/data` | Stores the persistent database (`babytracker_db.json`) and media folder |
 
 All data is kept in an atomic, human-readable JSON file. Backups are as simple as copying the `./data` directory or downloading a backup file directly from the in-app settings menu.
 

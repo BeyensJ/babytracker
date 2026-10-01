@@ -8,7 +8,7 @@
 [![OLED Friendly](https://img.shields.io/badge/OLED-True%20Black-000000?logo=apple&logoColor=white)](https://en.wikipedia.org/wiki/OLED)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A calm, privacy-first, self-hosted baby tracking progressive web application with **instant multi-device sync between parents**, **live timers**, **WHO growth percentiles**, **visual 7-day schedules**, and a **pitch-black OLED dark mode** designed specifically for late-night nursery feeds.
+A calm, privacy-first, self-hosted baby tracking progressive web application with **instant multi-device sync between parents**, **customizable quick action docks & status banners**, **distinct color-coded activities**, **live timers & Android notification chronometers**, **WHO growth percentiles**, **visual 7-day schedules**, and a **pitch-black OLED dark mode** designed specifically for late-night nursery feeds.
 
 ---
 
@@ -19,30 +19,53 @@ Most commercial baby apps lock your family's most intimate data behind steep rec
 **Baby Tracker** is built differently:
 - 🔒 **100% Self-Hosted & Private**: Your baby’s photos, feeding schedules, medical notes, and diaper logs stay entirely on your own hardware. Zero third-party telemetry, zero ads, zero subscriptions.
 - 🔄 **Real-Time Partner Synchronization**: When Mom logs a feeding or starts a sleep timer on her phone, Dad’s device updates instantly (<50ms via WebSockets) without needing a page refresh.
+- 🎨 **Unique Accent Colors for All 11 Activity Types**: Every activity (Breast, Bottle, Sleep, Diaper, Solids, Pump, Growth, Health, Routine, Note, Milestone) features a vibrant, dedicated accent color across Light, Dark, and OLED themes.
+- ⚙️ **Customizable Quick Status & Action Dock**: Each individual caregiver can choose exactly which quick status cards and bottom dock action buttons are displayed and reorder them to fit their personal routine.
+- 🔍 **Rich Interactive Item Detail Sheets**: Tap any logged activity on the timeline to view comprehensive details, hero metrics, baby's age at log, high-resolution photo previews with lightbox, and 1-tap Edit, Delete, Resume, or Share actions.
 - 🌙 **Pitch-Black OLED Mode**: Pure `#000000` canvas with WCAG AAA contrast ratios. Minimizes screen glare in dark nurseries so you don't wake the baby (and saves your phone's battery).
-- 📱 **True PWA Experience**: Installable on iOS and Android with home-screen shortcuts, offline resilience, and Android notification tray live stopwatch controls.
+- 📱 **True PWA & Native Android App**: Installable on iOS Safari and Android Chrome, or install the native Android APK with a real second-by-second live chronometer in your notification shade.
+- 👶 **Multi-Child & Sibling Support**: Seamlessly switch between multiple children or track twins independently with individual profiles, avatars, and growth percentiles.
 - 📥 **Universal Importer**: Effortlessly import your historical logs from Nara Baby CSV or JSON backups with automatic caregiver attribution and unit detection.
 
 ---
 
 ## 🌟 Key Features
 
-### ⏱️ Live Stateful Timers & Active Dock
+### ⏱️ Live Stateful Timers & Resumable Sessions
 - **Breastfeeding Stopwatch**: Left, Right, or Both sides with 1-tap switching and retroactive start time adjustments (e.g. *"Started 10m ago"*).
-- **Sleep & Nap Tracker**: Live timer with multi-day cross-midnight visualization.
-- **Pumping Stopwatch**: Double or single pump duration tracking with volume logged.
-- **Persistent Live Dock**: Running timers remain visible and accessible across all tabs.
-- **System Notification Drawer**: Timers persist in the Android notification tray with live countdowns and direct "Stop" action buttons.
+- **Sleep & Nap Tracker**: Live timer with multi-day cross-midnight visualization and wake window tracking.
+- **Pumping Stopwatch**: Double or single pump duration tracking with volume and storage location logged.
+- **1-Tap Resume**: Resume recently stopped nursing, sleep, or pump sessions directly from the timeline or detail sheet.
+- **Persistent Live Dock**: Active timers remain visible and accessible across all views.
+- **Android Notification Drawer**: Timers persist in the Android notification tray with native second-by-second counting chronometers and direct "Stop" action buttons.
 
-### 📋 Complete Daily Activity Tracking
-- **Feedings**: Nursing sessions (left/right durations), bottle feeds (breast milk or formula in ml/oz).
-- **Diapers**: Wet, Dirty, Wet + Dirty, or Dry. Detailed poop colors (Yellow, Mustard, Brown, Green) and textures (Soft, Runny, Seedy, Mucous).
-- **Sleep**: Full overnight stretches and day naps with wake window calculations and sleep continuity across midnight.
-- **Pumping**: Volume per side, total output, and time elapsed since previous pump.
-- **Growth**: Weight, Length/Height, and Head Circumference tracked over time with automatic percentiles.
-- **Health & Medical**: Temperatures, medications (e.g. Vitamin D, Vitamin K, Paracetamol), vaccines, doctor checkups, and illness logs.
-- **Milestones & Firsts**: Special moments (e.g. first social smile, rolling over) celebrated with animations and highlight badges.
-- **Journal & Notes**: Free-form notes and observations tagged by caregiver.
+### 🎨 Color-Coded 11 Activity Types
+Every activity category is uniquely styled with its own dedicated color palette in Light, Dark, and OLED modes:
+
+| Category | Icon | Light Mode Accent | Dark / OLED Accent | What is Tracked |
+| :--- | :---: | :--- | :--- | :--- |
+| **Breastfeeding** | 🤱 | Coral Rose (`#E05353`) | Vibrant Rose (`#FF6B6B`) | Left / Right / Both durations, last side, nursing notes |
+| **Bottle Feeding** | 🍼 | Warm Amber (`#D97706`) | Luminous Gold (`#FBBF24`) | Volume (ml/oz), milk type (breast milk, formula, cow milk, water), formula brand, leftovers |
+| **Sleep & Naps** | 🌙 | Slate Azure (`#3B6B9B`) | Sky Blue (`#60A5FA`) | Nap vs. Night sleep, duration, wake windows, sleep location, wake reasons |
+| **Diaper Changes** | ✨ | Pure Teal (`#0D9488`) | Bright Mint (`#2DD4BF`) | Wet, Dirty, Wet+Dirty, Dry, stool color & texture, blowout alert, rash & cream applied |
+| **Pumping** | 🥛 | Vivid Purple (`#9333EA`) | Electric Lavender (`#C084FC`) | Volume per side, total volume, duration, storage location (fridge, freezer, used) |
+| **Solid Food** | 🍎 | Fresh Lime (`#65A30D`) | Neon Lime (`#A3E635`) | Food item, meal type, portion size, baby's reaction, first-time foods |
+| **Growth & Measurements** | 📏 | Vibrant Emerald (`#16A34A`) | Spring Green (`#4ADE80`) | Weight, Length/Height, Head circumference, automatic WHO percentiles |
+| **Health & Medical** | 🩺 | Crimson Ruby (`#E11D48`) | Rosy Coral (`#FB7185`) | Temperatures, medications & dosages, vaccines, doctor checkups, illness symptoms |
+| **Routines & Play** | ⏰ | Royal Indigo (`#6366F1`) | Soft Indigo (`#818CF8`) | Tummy time, bath time, reading, outdoor walk, playtime durations |
+| **Journal & Notes** | 📝 | Warm Sienna (`#92400E`) | Golden Bronze (`#F59E0B`) | Free-form notes, observations, daily reflections tagged by caregiver |
+| **Milestones** | 🏆 | Deep Orange (`#EA580C`) | Bright Tangerine (`#FB923C`) | First smile, rolling over, first steps, baby's age at milestone, celebration confetti |
+
+### 🛠️ Customizable Quick Status & Action Dock
+- **Quick Status Header**: View quick glance counters (e.g. *Last Fed 1h 45m ago*, *Slept 3h 10m*, *4 Diapers*). Parents can customize which cards to show and hide via the customize modal.
+- **Quick Action Bottom Dock**: Pick your favorite 5-6 primary 1-tap logging buttons (or reorder them) while keeping all other activities instantly accessible in the "+ More" sheet.
+- **Per-Device / Per-Caregiver Preferences**: Each parent's device remembers its own quick action layout and view preferences.
+
+### 🔍 Interactive Event Details & Photo Lightbox
+- Tap any timeline event or grouped day row to open the **Event Detail Modal**.
+- Displays rich hero metrics, side-by-side attributes, caregiver attribution, and exact timestamps.
+- **Photo Lightbox**: Full-resolution photo preview with zoom, download, and close gestures.
+- **1-Tap Actions**: Edit details, Delete log, Resume timer, or Share/Copy formatted summary to clipboard.
 
 ### 📊 Visual Schedules & Analytics
 - **7-Day Stacked Visual Schedule**: See an entire week (Monday–Sunday) stacked horizontally from 00:00 to 24:00 with overnight sleep slices and vertical feed/diaper pins.
@@ -54,17 +77,17 @@ Most commercial baby apps lock your family's most intimate data behind steep rec
 ### 📈 WHO Growth Percentile Curves
 - Official **World Health Organization (WHO) Growth Standards** (0–24 months) integrated directly into the app.
 - Weight-for-age, Length-for-age, and Head circumference-for-age charts with standard percentiles (P3, P15, P50, P85, P97).
-- Automatically calculates and displays your baby’s exact percentile on every entry.
+- Automatically calculates and displays your baby’s exact percentile on every measurement entry.
 
 ### 👥 Multi-Caregiver Profiles & Security
-- **Mom & Dad Profiles**: Switch active caregiver with one tap in the header (e.g., Mom / Dad / Grandparent).
+- **Mom & Dad Profiles**: Switch active caregiver with one tap in the header (e.g., Mom / Dad / Grandparent / Babysitter).
 - **Event Attribution**: Every single log records who recorded it (*"Logged by Mom"* / *"Logged by Dad"*).
 - **Shared Family Password**: Protect your family’s tracker with a simple password/PIN and persistent session authentication.
 
 ### 🌐 Bilingual Support
 - Seamless one-tap language switcher in Settings:
   - 🇬🇧 **English**
-  - 🇳🇱 **Nederlands** (Dutch)
+  - 🇳🇱 **Nederlands** (Flemish / Dutch)
 
 ---
 
@@ -124,6 +147,7 @@ docker run -d \
   --restart unless-stopped \
   -p 3001:3001 \
   -e TZ=Europe/Brussels \
+  -e FAMILY_PASSWORD=babytracker \
   -v $(pwd)/data:/app/data \
   beyensj/babytracker:latest
 ```
@@ -135,7 +159,8 @@ docker run -d \
 | Variable | Default | Description |
 | :--- | :--- | :--- |
 | `PORT` | `3001` | The internal and exposed HTTP/WebSocket server port. |
-| `DATA_DIR` | `/app/data` | Container path where `babytracker_db.json` is stored. |
+| `DATA_DIR` | `/app/data` | Container path where `babytracker_db.json` and photos are stored. |
+| `FAMILY_PASSWORD` | `babytracker` | Initial shared family password for access protection. |
 | `NODE_ENV` | `production` | Set to `production` for optimized caching and static serving. |
 | `TZ` | `Europe/Brussels` | Server timezone (e.g. `UTC`, `America/New_York`, `Europe/Amsterdam`). |
 
@@ -180,11 +205,13 @@ baby.yourdomain.com {
 
 ## 💾 Data Persistence & Backups
 
-All data is stored in a clean, human-readable JSON database on disk:
+All data and attached photos are stored in clean, portable directories on disk:
 
 ```
 ./data/
-└── babytracker_db.json
+├── babytracker_db.json
+└── media/
+    └── *.webp
 ```
 
 - **Zero Database Engines Required**: No complex PostgreSQL or MongoDB setup needed.
@@ -192,13 +219,13 @@ All data is stored in a clean, human-readable JSON database on disk:
 - **Easy Backups**: Backing up your child’s entire history is as simple as copying the `./data` folder:
   ```bash
   # Create a timestamped backup
-  cp ./data/babytracker_db.json ./data/babytracker_backup_$(date +%Y%m%d).json
+  cp -r ./data ./data_backup_$(date +%Y%m%d)
   ```
 - **In-App JSON Export**: You can also download a complete JSON backup at any time from **Settings ➔ Backup & Data ➔ Export Backup**.
 
 ---
 
-## 📱 Installing the PWA on Your Phone
+## 📱 Installing on Your Phone
 
 Baby Tracker is designed to feel and behave like a native iOS and Android app.
 
@@ -208,13 +235,13 @@ Baby Tracker is designed to feel and behave like a native iOS and Android app.
 3. Scroll down and tap **Add to Home Screen**.
 4. Tap **Add**. The app will launch in full-screen standalone mode with no browser address bar.
 
-### 🤖 Android: Option A — Progressive Web App (PWA)
+### 🤖 Android: Progressive Web App (PWA)
 1. Open your Baby Tracker URL in **Chrome**.
 2. Tap the three dots (⋮) in the top-right corner.
 3. Tap **Install app** (or **Add to Home screen**).
-4. Enjoy home-screen access and lock-screen alerts.
+4. Enjoy home-screen access, quick shortcuts, and lock-screen alerts.
 
-### ⚡ Android: Option B — Native App (.apk) with Live Ticking Stopwatch
+### ⚡ Android: Native APK with Live Ticking Stopwatch
 For a real **second-by-second live ticking chronometer** in your Android notification shade without any battery drain, use the native Android app built with Capacitor:
 1. **Automated GitHub Builds**: Every push builds a ready-to-install debug APK via GitHub Actions.
 2. Go to the **Actions** tab on your GitHub repository.
@@ -266,6 +293,11 @@ npm run build
 Run linting:
 ```bash
 npm run lint
+```
+
+Sync Android Capacitor assets:
+```bash
+npx cap sync android
 ```
 
 Build the local container image:
