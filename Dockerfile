@@ -11,6 +11,10 @@ COPY index.html vite.config.js ./
 COPY public ./public
 COPY src ./src
 
+# Build argument for build number / version
+ARG VITE_APP_BUILD_NUMBER
+ENV VITE_APP_BUILD_NUMBER=$VITE_APP_BUILD_NUMBER
+
 # Build production bundle to /app/dist
 RUN npm run build
 
