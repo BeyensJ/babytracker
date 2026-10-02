@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatTime, formatDurationMs, formatVolume, formatWeight, formatLength, formatTemp, formatRoutineName } from '../utils/formatters';
 import { syncService } from '../services/syncService';
+import { triggerHaptic } from '../utils/haptics';
 import { PhotoLightbox } from './PhotoLightbox';
+import { SocialActionButtons } from './SocialActionButtons';
 import {
   Utensils,
   Moon,
@@ -15,14 +17,13 @@ import {
   Apple,
   Clock,
   User,
-  Edit2,
-  Trash2,
   MoreVertical,
   Scale,
   Stethoscope,
   Award,
   BookOpen,
   Play,
+  MessageCircle,
 } from 'lucide-react';
 import { PumpIcon } from './icons/PumpIcon';
 
@@ -627,11 +628,16 @@ function ItemRowTemplate({
   isResumable = false,
   categoryType = 'breast',
 }) {
-  const { openModal, preferences, t } = useApp();
+  const { openModal, preferences, t, toggleEventLike, activeCaregiver } = useApp();
   const [showLightbox, setShowLightbox] = useState(false);
   const isDutch = language === 'nl';
   const det = event.details || {};
   const photoUrl = event.photoUrl || det.photoUrl;
+
+  const likes = Array.isArray(event.likes) ? event.likes : [];
+  const comments = Array.isArray(event.comments) ? event.comments : [];
+  const activeCgId = activeCaregiver?.id || 'cg_mom';
+  const isLikedByMe = likes.some(l => (typeof l === 'string' ? l === activeCgId : l.caregiverId === activeCgId));
 
   const handleRowClick = (e) => {
     if (
@@ -688,9 +694,11 @@ function ItemRowTemplate({
           </div>
           {event.note && <div className="grouped-item-note">{event.note}</div>}
           {det.caregiver && (
-            <div className="grouped-caregiver-tag">
-              <User size={10} />
-              <span>{t('timeline.loggedBy', { name: det.caregiver })}</span>
+            <div className="grouped-item-footer-meta">
+              <div className="grouped-caregiver-tag">
+                <User size={10} />
+                <span>{t('timeline.loggedBy', { name: det.caregiver })}</span>
+              </div>
             </div>
           )}
         </div>
@@ -717,30 +725,8 @@ function ItemRowTemplate({
             <span className="grouped-resume-text">{t('timeline.resume')}</span>
           </button>
         ) : null}
-        <button
-          className="grouped-item-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit(event.type, event);
-          }}
-          title={t('timeline.edit')}
-          aria-label={t('timeline.edit')}
-        >
-          <Edit2 size={13} />
-        </button>
-        <button
-          className="grouped-item-btn delete"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (window.confirm(t('timeline.deleteConfirm'))) {
-              onDelete(event.id);
-            }
-          }}
-          title={t('timeline.delete')}
-          aria-label={t('timeline.delete')}
-        >
-          <Trash2 size={13} />
-        </button>
+
+        <SocialActionButtons event={event} />
       </div>
 
       {showLightbox && photoUrl && (
@@ -748,6 +734,7 @@ function ItemRowTemplate({
           photoUrl={photoUrl}
           caption={event.note || label}
           timestamp={event.beginDt}
+          event={event}
           language={language}
           onClose={() => setShowLightbox(false)}
         />

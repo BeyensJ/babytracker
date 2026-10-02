@@ -34,14 +34,34 @@ import {
   Camera,
   Check,
   Eye,
-  AlertTriangle,
-  Info,
-  Droplet,
-  Flame,
   Shield,
   Tag,
+  MessageCircle,
+  Send,
 } from 'lucide-react';
 import { PumpIcon } from '../icons/PumpIcon';
+
+const QUICK_EMOJIS = ['❤️', '😍', '🍼', '👶', '👏', '🎉', '😴', '💪'];
+
+function formatCommentTime(timestamp, language) {
+  if (!timestamp) return '';
+  const isDutch = language === 'nl';
+  const now = Date.now();
+  const diffSec = Math.floor((now - timestamp) / 1000);
+  if (diffSec < 45) return isDutch ? 'Zojuist' : 'Just now';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return isDutch ? `${diffMin}m geleden` : `${diffMin}m ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return isDutch ? `${diffHours}u geleden` : `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays === 1) return isDutch ? 'Gisteren' : 'Yesterday';
+  return new Date(timestamp).toLocaleDateString(isDutch ? 'nl-BE' : 'en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
 export function EventDetailModal() {
   const {
@@ -50,6 +70,12 @@ export function EventDetailModal() {
     closeModal,
     openModal,
     deleteEvent,
+    events,
+    activeCaregiver,
+    caregivers,
+    toggleEventLike,
+    addEventComment,
+    deleteEventComment,
     preferences,
     language,
     t,
@@ -63,14 +89,73 @@ export function EventDetailModal() {
 
   const [showLightbox, setShowLightbox] = useState(false);
   const [copiedToast, setCopiedToast] = useState(false);
+  const [commentText, setCommentText] = useState('');
 
   if (activeModal !== 'EVENT_DETAIL' || !event) return null;
 
   const isDutch = language === 'nl';
-  const det = event.details || {};
+  const currentEvent = (events || []).find((e) => e.id === event.id) || event;
+  const det = currentEvent.details || {};
   const isMetric = preferences.weightUnit === 'kg';
   const isMetricVol = preferences.volumeUnit === 'ml';
-  const photoUrl = event.photoUrl || det.photoUrl;
+  const photoUrl = currentEvent.photoUrl || det.photoUrl;
+
+  const likes = Array.isArray(currentEvent.likes) ? currentEvent.likes : [];
+  const comments = Array.isArray(currentEvent.comments) ? currentEvent.comments : [];
+  const activeCgId = activeCaregiver?.id || 'cg_mom';
+  const isLikedByMe = likes.some(l => (typeof l === 'string' ? l === activeCgId : l.caregiverId === activeCgId));
+
+  const handleToggleLike = (e) => {
+    if (e) e.stopPropagation();
+    toggleEventLike(currentEvent.id);
+  };
+
+  const handleAddComment = (e) => {
+    if (e) e.preventDefault();
+    if (!commentText.trim()) return;
+    addEventComment(currentEvent.id, commentText);
+    setCommentText('');
+  };
+
+  const handleDeleteComment = (commentId) => {
+    if (window.confirm(t('eventDetail.deleteCommentConfirm'))) {
+      deleteEventComment(currentEvent.id, commentId);
+    }
+  };
+
+  const getLikesSummaryText = () => {
+    if (likes.length === 0) return t('eventDetail.noLikesYet');
+    const myLiker = likes.find(l => (typeof l === 'string' ? l === activeCgId : l.caregiverId === activeCgId));
+    const otherLikers = likes.filter(l => (typeof l === 'string' ? l !== activeCgId : l.caregiverId !== activeCgId));
+
+    if (myLiker && otherLikers.length === 0) {
+      return t('eventDetail.likedByYou');
+    }
+    if (myLiker && otherLikers.length > 0) {
+      const otherNames = otherLikers.map(o => {
+        const found = (caregivers || []).find(c => c.id === (o.caregiverId || o));
+        return found?.name || o.caregiverName || 'Caregiver';
+      }).join(', ');
+      return t('eventDetail.likedByYouAnd', { name: otherNames });
+    }
+    const names = likes.map(o => {
+      const found = (caregivers || []).find(c => c.id === (o.caregiverId || o));
+      return found?.name || o.caregiverName || 'Caregiver';
+    }).join(', ');
+    return t('eventDetail.likedBy', { name: names });
+  };
+
+  const likesSummaryText = getLikesSummaryText();
+
+  const eventBegin = currentEvent?.beginDt || event?.beginDt || Date.now();
+  let dateIso = new Date().toISOString().split('T')[0];
+  try {
+    dateIso = new Date(eventBegin).toISOString().split('T')[0];
+  } catch {}
+  const dateStr = formatDateHeading(dateIso, language);
+  const startTimeStr = formatTime(eventBegin, language);
+  const endTimeStr = (currentEvent?.endDt || event?.endDt) ? formatTime(currentEvent?.endDt || event?.endDt, language) : null;
+  const durationStr = (currentEvent?.durationMs || event?.durationMs) ? formatDurationMs(currentEvent?.durationMs || event?.durationMs, language) : null;
 
   // Find associated baby
   const targetChild = (childList || []).find((c) => c.id === (event.childKey || event.childId)) || activeChild;
@@ -78,27 +163,25 @@ export function EventDetailModal() {
   // Calculate baby age at time of event
   const calculateAgeAtEvent = () => {
     if (!targetChild?.birthdate) return '';
-    const bDate = new Date(targetChild.birthdate).getTime();
-    const evDate = event.beginDt || Date.now();
-    const diffMs = evDate - bDate;
-    if (diffMs < 0) return '';
-    const days = Math.floor(diffMs / (24 * 60 * 60 * 1000));
-    const months = Math.floor(days / 30.4375);
-    const remDays = Math.floor(days % 30.4375);
-    if (months === 0) return isDutch ? `${days} dag${days === 1 ? '' : 'en'}` : `${days} day${days === 1 ? '' : 's'}`;
-    if (remDays === 0) return isDutch ? `${months} maand${months === 1 ? '' : 'en'}` : `${months} month${months === 1 ? '' : 's'}`;
-    return isDutch
-      ? `${months} mnd en ${remDays} dg`
-      : `${months} mo and ${remDays} d`;
+    try {
+      const bDate = new Date(targetChild.birthdate).getTime();
+      const evDate = eventBegin || Date.now();
+      const diffMs = evDate - bDate;
+      if (diffMs < 0) return '';
+      const days = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+      const months = Math.floor(days / 30.4375);
+      const remDays = Math.floor(days % 30.4375);
+      if (months === 0) return isDutch ? `${days} dag${days === 1 ? '' : 'en'}` : `${days} day${days === 1 ? '' : 's'}`;
+      if (remDays === 0) return isDutch ? `${months} maand${months === 1 ? '' : 'en'}` : `${months} month${months === 1 ? '' : 's'}`;
+      return isDutch
+        ? `${months} mnd en ${remDays} dg`
+        : `${months} mo and ${remDays} d`;
+    } catch {
+      return '';
+    }
   };
 
   const babyAgeAtLog = calculateAgeAtEvent();
-
-  // Date and Time strings
-  const dateStr = formatDateHeading(new Date(event.beginDt).toISOString().split('T')[0], language);
-  const startTimeStr = formatTime(event.beginDt, language);
-  const endTimeStr = event.endDt ? formatTime(event.endDt, language) : null;
-  const durationStr = event.durationMs ? formatDurationMs(event.durationMs, language) : null;
 
   // Resumability check
   const isCurrentlyRunning =
@@ -111,81 +194,6 @@ export function EventDetailModal() {
   const timeSinceEndMs = Date.now() - endTs;
   const isRecent = timeSinceEndMs >= -5 * 60 * 1000 && timeSinceEndMs < 12 * 60 * 60 * 1000;
   const isResumable = isResumableType && isRecent && !isCurrentlyRunning;
-
-  // Actions
-  const handleEdit = () => {
-    triggerHaptic('light', preferences?.haptics);
-    closeModal();
-    // Open the respective edit modal
-    const modalType = event.type === 'COMBO' ? 'BREAST' : event.type;
-    openModal(modalType, event);
-  };
-
-  const handleDelete = () => {
-    triggerHaptic('warning', preferences?.haptics);
-    if (window.confirm(t('eventDetail.deleteConfirm'))) {
-      deleteEvent(event.id);
-      closeModal();
-    }
-  };
-
-  const handleResume = () => {
-    triggerHaptic('medium', preferences?.haptics);
-    if (event.type === 'BREAST') {
-      if (activeTimers?.breast?.running && activeTimers?.breast?.resumedEventId !== event.id) {
-        if (!window.confirm(t('timeline.resumeConfirmNursing'))) return;
-      }
-      resumeBreastTimerWithData(event);
-    } else if (event.type === 'SLEEP') {
-      if (activeTimers?.sleep?.running && activeTimers?.sleep?.resumedEventId !== event.id) {
-        if (!window.confirm(t('timeline.resumeConfirmSleep'))) return;
-      }
-      resumeSleepTimerWithData(event);
-    } else if (event.type === 'PUMP') {
-      if (activeTimers?.pump?.running && activeTimers?.pump?.resumedEventId !== event.id) {
-        if (!window.confirm(t('timeline.resumeConfirmPump'))) return;
-      }
-      resumePumpTimerWithData(event);
-    }
-    closeModal();
-  };
-
-  const handleShare = async () => {
-    triggerHaptic('light', preferences?.haptics);
-    const summaryText = buildSummaryText();
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Baby Tracker - ${config.title}`,
-          text: summaryText,
-        });
-        return;
-      } catch (e) {
-        if (e.name !== 'AbortError') console.warn('Share failed:', e);
-      }
-    }
-
-    // Fallback: Copy to clipboard
-    try {
-      await navigator.clipboard.writeText(summaryText);
-      setCopiedToast(true);
-      setTimeout(() => setCopiedToast(false), 2500);
-    } catch {
-      alert(summaryText);
-    }
-  };
-
-  // Build summary text for sharing/exporting
-  const buildSummaryText = () => {
-    const lines = [
-      `👶 ${targetChild?.name || 'Baby'} · ${config.title}`,
-      `📅 ${dateStr} @ ${startTimeStr}${endTimeStr ? ` – ${endTimeStr}` : ''}${durationStr ? ` (${durationStr})` : ''}`,
-    ];
-    if (det.caregiver) lines.push(`👤 ${t('eventDetail.caregiver')}: ${det.caregiver}`);
-    if (event.note) lines.push(`📝 ${event.note}`);
-    return lines.join('\n');
-  };
 
   // Category Configuration & Detailed Content
   const getCategoryConfig = () => {
@@ -225,6 +233,23 @@ export function EventDetailModal() {
               label: t('eventDetail.lastSide'),
               value: det.lastSide === 'LEFT' ? t('eventDetail.leftBreast') : t('eventDetail.rightBreast'),
             },
+          ].filter(Boolean),
+        };
+      }
+
+      case 'COMBO': {
+        return {
+          icon: Heart,
+          categoryName: isDutch ? 'Combinatievoeding' : 'Combo Feed',
+          title: isDutch ? 'Combo voeding' : 'Combo Feed',
+          themeColor: 'var(--color-breast)',
+          themeBg: 'var(--color-breast-light)',
+          badgeClass: 'breast',
+          heroValue: det.volumeFloz ? formatVolume(det.volumeFloz, preferences?.volumeUnit) : (durationStr || '—'),
+          heroSub: isDutch ? 'Borst + Fles' : 'Nurse + Bottle',
+          sections: [
+            det.volumeFloz && { label: t('eventDetail.volumeFed'), value: formatVolume(det.volumeFloz, preferences?.volumeUnit) },
+            durationStr && { label: t('eventDetail.totalNursing'), value: durationStr },
           ].filter(Boolean),
         };
       }
@@ -506,6 +531,76 @@ export function EventDetailModal() {
   const config = getCategoryConfig();
   const Icon = config.icon;
 
+  const buildSummaryText = () => {
+    let summary = `${config.categoryName}: ${config.title}\n`;
+    summary += `📅 ${dateStr} · ${startTimeStr}${endTimeStr ? ` - ${endTimeStr}` : ''}\n`;
+    if (config.sections && config.sections.length > 0) {
+      config.sections.forEach((s) => {
+        summary += `• ${s.label}: ${s.value}\n`;
+      });
+    }
+    if (event.note) {
+      summary += `📝 ${event.note}\n`;
+    }
+    if (likes.length > 0) {
+      summary += `❤️ ${likes.length} like${likes.length > 1 ? 's' : ''}\n`;
+    }
+    if (comments.length > 0) {
+      summary += `💬 ${comments.length} comment${comments.length > 1 ? 's' : ''}\n`;
+    }
+    return summary.trim();
+  };
+
+  const handleShare = async () => {
+    const text = buildSummaryText();
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: config.title,
+          text,
+        });
+        return;
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Error sharing:', err);
+        }
+      }
+    }
+    // Fallback: Copy to clipboard
+    if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(text);
+        setCopiedToast(true);
+        setTimeout(() => setCopiedToast(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy text:', err);
+      }
+    }
+  };
+
+  const handleDelete = () => {
+    if (window.confirm(t('common.confirmDelete') || 'Are you sure you want to delete this event?')) {
+      deleteEvent(event.id);
+      closeModal();
+    }
+  };
+
+  const handleEdit = () => {
+    closeModal();
+    openModal(event.type, event);
+  };
+
+  const handleResume = () => {
+    if (event.type === 'BREAST') {
+      resumeBreastTimerWithData(event);
+    } else if (event.type === 'SLEEP') {
+      resumeSleepTimerWithData(event);
+    } else if (event.type === 'PUMP') {
+      resumePumpTimerWithData(event);
+    }
+    closeModal();
+  };
+
   return (
     <div className="modal-overlay" onClick={closeModal}>
       <div className="event-detail-modal-card" onClick={(e) => e.stopPropagation()}>
@@ -633,6 +728,135 @@ export function EventDetailModal() {
             </div>
           )}
 
+          {/* Likes & Hearts Social Bar */}
+          <div className="event-detail-likes-section">
+            <div className="event-detail-likes-row">
+              <button
+                type="button"
+                className={`event-detail-like-btn ${isLikedByMe ? 'liked' : ''}`}
+                onClick={handleToggleLike}
+                title={isLikedByMe ? t('eventDetail.unlike') : t('eventDetail.like')}
+                aria-label={isLikedByMe ? t('eventDetail.unlike') : t('eventDetail.like')}
+              >
+                <Heart size={18} fill={isLikedByMe ? 'currentColor' : 'none'} className="like-heart-icon" />
+                <span className="like-btn-text">
+                  {isLikedByMe ? (isDutch ? 'Vind ik leuk' : 'Liked') : (isDutch ? 'Vind ik leuk' : 'Like')}
+                </span>
+                {likes.length > 0 && <span className="like-count-badge">{likes.length}</span>}
+              </button>
+
+              <div className="event-detail-likes-info">
+                {likes.length > 0 ? (
+                  <div className="likes-summary-wrap">
+                    <div className="likes-avatars-group">
+                      {likes.slice(0, 3).map((liker, idx) => {
+                        const likerCg = (caregivers || []).find(c => c.id === (liker.caregiverId || liker)) || liker;
+                        const likerColor = likerCg?.color || liker?.caregiverColor || '#CE6B4C';
+                        const likerInitial = (likerCg?.name || liker?.caregiverName || 'C')[0].toUpperCase();
+                        return (
+                          <span
+                            key={idx}
+                            className="like-avatar-circle"
+                            style={{ backgroundColor: likerColor }}
+                            title={likerCg?.name || liker?.caregiverName}
+                          >
+                            {likerInitial}
+                          </span>
+                        );
+                      })}
+                    </div>
+                    <span className="likes-names-text">
+                      {likesSummaryText}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="likes-empty-text">{t('eventDetail.noLikesYet')}</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Comments Thread Section */}
+          <div className="event-detail-section comments-section">
+            <div className="event-detail-section-title">
+              <MessageCircle size={15} />
+              <span>{t('eventDetail.commentsCount', { count: comments.length })}</span>
+            </div>
+
+            {/* Comment List */}
+            <div className="event-detail-comments-list">
+              {comments.length === 0 ? (
+                <div className="event-detail-no-comments">
+                  <p>{t('eventDetail.noCommentsYet')}</p>
+                </div>
+              ) : (
+                comments.map((cmt) => {
+                  const cAuthor = (caregivers || []).find(c => c.id === cmt.caregiverId) || { name: cmt.caregiverName, color: cmt.caregiverColor };
+                  const cColor = cAuthor?.color || cmt.caregiverColor || '#CE6B4C';
+                  const cInitial = (cAuthor?.name || cmt.caregiverName || 'C')[0].toUpperCase();
+
+                  return (
+                    <div key={cmt.id} className="event-comment-item">
+                      <div className="comment-avatar" style={{ backgroundColor: cColor }}>
+                        {cInitial}
+                      </div>
+                      <div className="comment-bubble">
+                        <div className="comment-header-row">
+                          <span className="comment-author-name">{cAuthor?.name || cmt.caregiverName || 'Caregiver'}</span>
+                          <span className="comment-time">{formatCommentTime(cmt.timestamp, language)}</span>
+                          <button
+                            type="button"
+                            className="comment-delete-btn"
+                            onClick={() => handleDeleteComment(cmt.id)}
+                            title={t('eventDetail.deleteComment')}
+                            aria-label={t('eventDetail.deleteComment')}
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                        <div className="comment-text-content">{cmt.text}</div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Quick Emoji Bar */}
+            <div className="event-comment-quick-emojis">
+              {QUICK_EMOJIS.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  className="quick-emoji-btn"
+                  onClick={() => setCommentText(prev => prev + emoji)}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+
+            {/* Add Comment Input Composer */}
+            <form className="event-comment-composer" onSubmit={handleAddComment}>
+              <input
+                type="text"
+                className="event-comment-input"
+                placeholder={t('eventDetail.writeCommentPlaceholder')}
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+              />
+              <button
+                type="submit"
+                className="event-comment-submit-btn"
+                disabled={!commentText.trim()}
+                title={t('eventDetail.postComment')}
+                aria-label={t('eventDetail.postComment')}
+              >
+                <Send size={15} />
+              </button>
+            </form>
+          </div>
+
           {/* Meta & Audit Info */}
           <div className="event-detail-meta-box">
             <div className="event-detail-meta-row">
@@ -714,6 +938,7 @@ export function EventDetailModal() {
             photoUrl={photoUrl}
             caption={event.note || config.title}
             timestamp={event.beginDt}
+            event={currentEvent || event}
             language={language}
             onClose={() => setShowLightbox(false)}
           />

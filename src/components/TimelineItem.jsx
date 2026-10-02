@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatTime, formatDurationMs, formatVolume, formatWeight, formatLength, formatTemp, formatRoutineName } from '../utils/formatters';
 import { syncService } from '../services/syncService';
+import { triggerHaptic } from '../utils/haptics';
 import { PhotoLightbox } from './PhotoLightbox';
+import { SocialActionButtons } from './SocialActionButtons';
 import {
   Heart,
   Milk,
@@ -14,12 +16,10 @@ import {
   Clock,
   BookOpen,
   Award,
-  MoreVertical,
-  Edit2,
-  Trash2,
   User,
   Play,
   Camera,
+  MessageCircle,
 } from 'lucide-react';
 import { PumpIcon } from './icons/PumpIcon';
 
@@ -28,20 +28,24 @@ export function TimelineItem({ event }) {
     events,
     activeTimers,
     preferences,
-    deleteEvent,
     openModal,
     resumeBreastTimerWithData,
     resumeSleepTimerWithData,
     resumePumpTimerWithData,
+    toggleEventLike,
+    activeCaregiver,
     language,
     t,
   } = useApp();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
   const isDutch = language === 'nl';
 
   const det = event.details || {};
   const isMetric = preferences.weightUnit === 'kg';
+  const likes = Array.isArray(event.likes) ? event.likes : [];
+  const comments = Array.isArray(event.comments) ? event.comments : [];
+  const activeCgId = activeCaregiver?.id || 'cg_mom';
+  const isLikedByMe = likes.some(l => (typeof l === 'string' ? l === activeCgId : l.caregiverId === activeCgId));
 
   // Config by category
   const getConfig = () => {
@@ -235,22 +239,8 @@ export function TimelineItem({ event }) {
   const config = getConfig();
   const Icon = config.icon;
 
-  const handleEdit = () => {
-    setMenuOpen(false);
-    openModal(event.type, event);
-  };
-
-  const handleDelete = () => {
-    setMenuOpen(false);
-    triggerHaptic('warning', preferences?.haptics);
-    if (window.confirm(t('timeline.deleteConfirm'))) {
-      deleteEvent(event.id);
-    }
-  };
-
   const handleResumeTimer = (e) => {
     if (e) e.stopPropagation();
-    setMenuOpen(false);
     triggerHaptic('medium', preferences?.haptics);
 
     // If another timer is running of this type, ask for confirmation
@@ -377,9 +367,11 @@ export function TimelineItem({ event }) {
           )}
 
           {det.caregiver && (
-            <div className="item-caregiver-tag">
-              <User size={11} />
-              <span>{t('timeline.loggedBy', { name: det.caregiver })}</span>
+            <div className="timeline-item-footer-meta">
+              <div className="item-caregiver-tag">
+                <User size={11} />
+                <span>{t('timeline.loggedBy', { name: det.caregiver })}</span>
+              </div>
             </div>
           )}
         </div>
@@ -407,96 +399,7 @@ export function TimelineItem({ event }) {
             </button>
           ) : null}
 
-          <div style={{ position: 'relative' }}>
-            <button
-              className="item-menu-btn"
-              onClick={() => setMenuOpen(!menuOpen)}
-              aria-label={t('timeline.activityMenu')}
-            >
-              <MoreVertical size={16} />
-            </button>
-
-            {menuOpen && (
-              <>
-                <div
-                  style={{ position: 'fixed', inset: 0, zIndex: 30 }}
-                  onClick={() => setMenuOpen(false)}
-                />
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '100%',
-                    right: 0,
-                    backgroundColor: 'var(--bg-card)',
-                    borderRadius: 'var(--radius-md)',
-                    boxShadow: 'var(--shadow-lg)',
-                    border: '1px solid var(--border-subtle)',
-                    padding: '0.35rem',
-                    zIndex: 35,
-                    minWidth: 140,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.2rem',
-                  }}
-                >
-                  {isResumable && (
-                    <button
-                      onClick={handleResumeTimer}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        padding: '0.45rem 0.65rem',
-                        fontSize: '0.8rem',
-                        color: 'var(--color-terracotta)',
-                        fontWeight: 600,
-                        borderRadius: 'var(--radius-sm)',
-                        width: '100%',
-                        textAlign: 'left',
-                      }}
-                    >
-                      <Play size={13} fill="currentColor" />
-                      {t('timeline.resumeSession')}
-                    </button>
-                  )}
-                  <button
-                    onClick={handleEdit}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.45rem 0.65rem',
-                      fontSize: '0.8rem',
-                      color: 'var(--text-primary)',
-                      borderRadius: 'var(--radius-sm)',
-                      width: '100%',
-                      textAlign: 'left',
-                    }}
-                  >
-                    <Edit2 size={13} />
-                    {t('timeline.edit')}
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.45rem 0.65rem',
-                      fontSize: '0.8rem',
-                      color: 'var(--status-red)',
-                      borderRadius: 'var(--radius-sm)',
-                      width: '100%',
-                      textAlign: 'left',
-                    }}
-                  >
-                    <Trash2 size={13} />
-                    {t('timeline.delete')}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+          <SocialActionButtons event={event} />
         </div>
       </div>
 
@@ -505,6 +408,7 @@ export function TimelineItem({ event }) {
           photoUrl={event.photoUrl || det.photoUrl}
           caption={event.note || config.title}
           timestamp={event.beginDt}
+          event={event}
           language={language}
           onClose={() => setShowLightbox(false)}
         />

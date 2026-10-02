@@ -288,6 +288,50 @@ app.put('/api/events/:id', (req, res) => {
   }
 });
 
+app.post('/api/events/:id/like', (req, res) => {
+  try {
+    const caregiver = req.body?.caregiver || req.session?.caregiver;
+    const result = db.toggleLike(req.params.id, caregiver);
+    if (!result) return res.status(404).json({ error: 'Event not found' });
+    broadcast('EVENT_UPDATED', result.event);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/events/:id/comments', (req, res) => {
+  try {
+    const caregiver = req.body?.caregiver || req.session?.caregiver;
+    const commentData = {
+      text: req.body?.text,
+      caregiverId: caregiver?.id,
+      caregiverName: caregiver?.name,
+      caregiverColor: caregiver?.color,
+    };
+    if (!commentData.text || !commentData.text.trim()) {
+      return res.status(400).json({ error: 'Comment text is required' });
+    }
+    const result = db.addComment(req.params.id, commentData, caregiver);
+    if (!result) return res.status(404).json({ error: 'Event not found' });
+    broadcast('EVENT_UPDATED', result.event);
+    res.status(201).json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/events/:id/comments/:commentId', (req, res) => {
+  try {
+    const result = db.deleteComment(req.params.id, req.params.commentId);
+    if (!result) return res.status(404).json({ error: 'Event or comment not found' });
+    broadcast('EVENT_UPDATED', result.event);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.delete('/api/events/:id', (req, res) => {
   try {
     const success = db.deleteEvent(req.params.id);

@@ -448,6 +448,32 @@ class SyncService {
     return await res.json();
   }
 
+  async toggleLike(eventId, caregiver) {
+    const res = await this._fetch(`/api/events/${encodeURIComponent(eventId)}/like`, {
+      method: 'POST',
+      body: JSON.stringify({ caregiver }),
+    });
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return await res.json();
+  }
+
+  async addComment(eventId, text, caregiver) {
+    const res = await this._fetch(`/api/events/${encodeURIComponent(eventId)}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ text, caregiver }),
+    });
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return await res.json();
+  }
+
+  async deleteComment(eventId, commentId) {
+    const res = await this._fetch(`/api/events/${encodeURIComponent(eventId)}/comments/${encodeURIComponent(commentId)}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return await res.json();
+  }
+
   async importEvents(events, mode = 'merge') {
     const res = await this._fetch('/api/events/import', {
       method: 'POST',

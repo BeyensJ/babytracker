@@ -134,6 +134,8 @@ export function addEvent(eventData) {
     durationMs: eventData.durationMs || 0,
     note: eventData.note || '',
     details: eventData.details || {},
+    likes: Array.isArray(eventData.likes) ? eventData.likes : [],
+    comments: Array.isArray(eventData.comments) ? eventData.comments : [],
     ...eventData,
   };
 
@@ -160,6 +162,102 @@ export function updateEvent(eventId, updates) {
     saveStateSync(state);
   }
   return updatedEvent;
+}
+
+/**
+ * Toggle like for an event by caregiver
+ */
+export function toggleLike(eventId, caregiver) {
+  if (!state) initDb();
+  let targetEvent = null;
+  const caregiverId = caregiver?.id || 'cg_mom';
+  const caregiverName = caregiver?.name || 'Caregiver';
+  const caregiverColor = caregiver?.color || '#CE6B4C';
+
+  state.events = state.events.map(ev => {
+    if (ev.id === eventId) {
+      const currentLikes = Array.isArray(ev.likes) ? [...ev.likes] : [];
+      const existingIdx = currentLikes.findIndex(l => (typeof l === 'string' ? l === caregiverId : l.caregiverId === caregiverId));
+      if (existingIdx >= 0) {
+        currentLikes.splice(existingIdx, 1);
+      } else {
+        currentLikes.push({
+          caregiverId,
+          caregiverName,
+          caregiverColor,
+          timestamp: Date.now(),
+        });
+      }
+      targetEvent = { ...ev, likes: currentLikes };
+      return targetEvent;
+    }
+    return ev;
+  });
+
+  if (targetEvent) {
+    saveStateSync(state);
+    return { event: targetEvent, likes: targetEvent.likes };
+  }
+  return null;
+}
+
+/**
+ * Add a comment to an event
+ */
+export function addComment(eventId, commentData, caregiver) {
+  if (!state) initDb();
+  let targetEvent = null;
+  const caregiverId = caregiver?.id || commentData.caregiverId || 'cg_mom';
+  const caregiverName = caregiver?.name || commentData.caregiverName || 'Caregiver';
+  const caregiverColor = caregiver?.color || commentData.caregiverColor || '#CE6B4C';
+
+  const newComment = {
+    id: commentData.id || `cmt_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+    caregiverId,
+    caregiverName,
+    caregiverColor,
+    text: (commentData.text || '').trim(),
+    timestamp: commentData.timestamp || Date.now(),
+  };
+
+  state.events = state.events.map(ev => {
+    if (ev.id === eventId) {
+      const currentComments = Array.isArray(ev.comments) ? [...ev.comments] : [];
+      currentComments.push(newComment);
+      targetEvent = { ...ev, comments: currentComments };
+      return targetEvent;
+    }
+    return ev;
+  });
+
+  if (targetEvent) {
+    saveStateSync(state);
+    return { event: targetEvent, comment: newComment };
+  }
+  return null;
+}
+
+/**
+ * Delete a comment from an event
+ */
+export function deleteComment(eventId, commentId) {
+  if (!state) initDb();
+  let targetEvent = null;
+
+  state.events = state.events.map(ev => {
+    if (ev.id === eventId) {
+      const currentComments = Array.isArray(ev.comments) ? ev.comments.filter(c => c.id !== commentId) : [];
+      targetEvent = { ...ev, comments: currentComments };
+      return targetEvent;
+    }
+    return ev;
+  });
+
+  if (targetEvent) {
+    saveStateSync(state);
+    return { event: targetEvent, success: true };
+  }
+  return null;
 }
 
 /**

@@ -439,6 +439,85 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     triggerHaptic('light', preferences?.haptics);
   };
 
+  const toggleEventLike = (eventId) => {
+    let isNowLiked = false;
+    const cgId = activeCaregiver?.id || 'cg_mom';
+    const cgName = activeCaregiver?.name || 'Caregiver';
+    const cgColor = activeCaregiver?.color || '#CE6B4C';
+
+    setEvents(prev =>
+      prev.map(ev => {
+        if (ev.id === eventId) {
+          const currentLikes = Array.isArray(ev.likes) ? [...ev.likes] : [];
+          const existingIdx = currentLikes.findIndex(l => (typeof l === 'string' ? l === cgId : l.caregiverId === cgId));
+          if (existingIdx >= 0) {
+            currentLikes.splice(existingIdx, 1);
+            isNowLiked = false;
+          } else {
+            currentLikes.push({
+              caregiverId: cgId,
+              caregiverName: cgName,
+              caregiverColor: cgColor,
+              timestamp: Date.now(),
+            });
+            isNowLiked = true;
+          }
+          return { ...ev, likes: currentLikes };
+        }
+        return ev;
+      }).sort((a, b) => b.beginDt - a.beginDt)
+    );
+
+    triggerHaptic(isNowLiked ? 'medium' : 'light', preferences?.haptics);
+    syncService.toggleLike(eventId, activeCaregiver).catch(err => console.warn('[Sync] Offline: toggleLike saved locally', err));
+    return isNowLiked;
+  };
+
+  const addEventComment = (eventId, text) => {
+    if (!text || !text.trim()) return null;
+    const cgId = activeCaregiver?.id || 'cg_mom';
+    const cgName = activeCaregiver?.name || 'Caregiver';
+    const cgColor = activeCaregiver?.color || '#CE6B4C';
+
+    const newComment = {
+      id: `cmt_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+      caregiverId: cgId,
+      caregiverName: cgName,
+      caregiverColor: cgColor,
+      text: text.trim(),
+      timestamp: Date.now(),
+    };
+
+    setEvents(prev =>
+      prev.map(ev => {
+        if (ev.id === eventId) {
+          const currentComments = Array.isArray(ev.comments) ? [...ev.comments] : [];
+          return { ...ev, comments: [...currentComments, newComment] };
+        }
+        return ev;
+      }).sort((a, b) => b.beginDt - a.beginDt)
+    );
+
+    triggerHaptic('success', preferences?.haptics);
+    syncService.addComment(eventId, text.trim(), activeCaregiver).catch(err => console.warn('[Sync] Offline: addComment saved locally', err));
+    return newComment;
+  };
+
+  const deleteEventComment = (eventId, commentId) => {
+    setEvents(prev =>
+      prev.map(ev => {
+        if (ev.id === eventId) {
+          const currentComments = Array.isArray(ev.comments) ? ev.comments.filter(c => c.id !== commentId) : [];
+          return { ...ev, comments: currentComments };
+        }
+        return ev;
+      }).sort((a, b) => b.beginDt - a.beginDt)
+    );
+
+    triggerHaptic('warning', preferences?.haptics);
+    syncService.deleteComment(eventId, commentId).catch(err => console.warn('[Sync] Offline: deleteComment saved locally', err));
+  };
+
   const deleteEvent = (eventId) => {
     setEvents(prev => prev.filter(ev => ev.id !== eventId));
     syncService.deleteEvent(eventId).catch(err => console.warn('[Sync] Offline: deleteEvent saved locally', err));
@@ -1083,6 +1162,9 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     addEvent,
     updateEvent,
     deleteEvent,
+    toggleEventLike,
+    addEventComment,
+    deleteEventComment,
     importEvents,
     resetToSample,
     clearAllData,

@@ -1,12 +1,20 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Calendar, Download } from 'lucide-react';
+import { X, Calendar, Download, Heart, MessageCircle } from 'lucide-react';
 import { formatTime, formatDateHeading } from '../utils/formatters';
 import { syncService } from '../services/syncService';
+import { useApp } from '../context/AppContext';
 
-export function PhotoLightbox({ photoUrl, caption, timestamp, language = 'nl', onClose }) {
+export function PhotoLightbox({ photoUrl, caption, timestamp, event, language = 'nl', onClose }) {
   const isClosingRef = useRef(false);
   const isBackdropPointerDownRef = useRef(false);
+  const { toggleEventLike, openModal, activeCaregiver, events } = useApp();
+
+  const currentEvent = event ? ((events || []).find(e => e.id === event.id) || event) : null;
+  const likes = currentEvent && Array.isArray(currentEvent.likes) ? currentEvent.likes : [];
+  const comments = currentEvent && Array.isArray(currentEvent.comments) ? currentEvent.comments : [];
+  const activeCgId = activeCaregiver?.id || 'cg_mom';
+  const isLikedByMe = likes.some(l => (typeof l === 'string' ? l === activeCgId : l.caregiverId === activeCgId));
 
   const handleClose = useCallback((e) => {
     if (e) {
@@ -94,6 +102,17 @@ export function PhotoLightbox({ photoUrl, caption, timestamp, language = 'nl', o
     isBackdropPointerDownRef.current = false;
   };
 
+  const handleOpenComments = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (currentEvent) {
+      handleClose();
+      openModal('EVENT_DETAIL', currentEvent);
+    }
+  };
+
   const content = (
     <div
       className="photo-lightbox-overlay"
@@ -118,6 +137,33 @@ export function PhotoLightbox({ photoUrl, caption, timestamp, language = 'nl', o
             )}
           </div>
           <div className="photo-lightbox-actions">
+            {currentEvent && (
+              <>
+                <button
+                  type="button"
+                  className={`photo-lightbox-btn like-btn ${isLikedByMe ? 'liked' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleEventLike(currentEvent.id);
+                  }}
+                  title={isLikedByMe ? (language === 'nl' ? 'Vind ik leuk' : 'Liked') : (language === 'nl' ? 'Vind ik leuk' : 'Like')}
+                  aria-label={isLikedByMe ? (language === 'nl' ? 'Vind ik leuk' : 'Liked') : (language === 'nl' ? 'Vind ik leuk' : 'Like')}
+                >
+                  <Heart size={18} fill={isLikedByMe ? 'currentColor' : 'none'} />
+                  {likes.length > 0 && <span className="lightbox-social-count">{likes.length}</span>}
+                </button>
+                <button
+                  type="button"
+                  className="photo-lightbox-btn"
+                  onClick={handleOpenComments}
+                  title={language === 'nl' ? 'Reacties bekijken' : 'View comments'}
+                  aria-label={language === 'nl' ? 'Reacties bekijken' : 'View comments'}
+                >
+                  <MessageCircle size={18} />
+                  {comments.length > 0 && <span className="lightbox-social-count">{comments.length}</span>}
+                </button>
+              </>
+            )}
             <button
               type="button"
               className="photo-lightbox-btn"
