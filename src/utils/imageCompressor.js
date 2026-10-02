@@ -1,23 +1,20 @@
 /**
- * Compresses and resizes an image file (e.g. from camera or photo library)
- * using an offscreen HTML5 canvas to keep uploads lightweight and fast.
+ * Compresses and resizes an image file or dataUrl string
+ * (e.g. from camera or photo library) using an offscreen HTML5 canvas
+ * to keep uploads lightweight and snappy.
  *
- * @param {File|Blob} file - Original image file
+ * @param {File|Blob|string} source - Original image file, blob, or dataUrl string
  * @param {number} maxDimension - Max width or height (default 1280px)
  * @param {number} quality - JPEG compression quality (0.0 to 1.0, default 0.82)
  * @returns {Promise<{ dataUrl: string, width: number, height: number, sizeBytes: number }>}
  */
-export function compressImage(file, maxDimension = 1280, quality = 0.82) {
+export function compressImage(source, maxDimension = 1280, quality = 0.82) {
   return new Promise((resolve, reject) => {
-    if (!file || !file.type.startsWith('image/')) {
-      return reject(new Error('Selected file is not an image'));
+    if (!source) {
+      return reject(new Error('No image source provided'));
     }
 
-    const reader = new FileReader();
-
-    reader.onerror = () => reject(new Error('Failed to read image file'));
-
-    reader.onload = (event) => {
+    const processDataUrl = (srcDataUrl, originalSizeBytes = 0) => {
       const img = new Image();
 
       img.onerror = () => reject(new Error('Failed to load image for compression'));
@@ -44,10 +41,10 @@ export function compressImage(file, maxDimension = 1280, quality = 0.82) {
         const ctx = canvas.getContext('2d', { alpha: false });
         if (!ctx) {
           return resolve({
-            dataUrl: event.target.result,
+            dataUrl: srcDataUrl,
             width: img.width,
             height: img.height,
-            sizeBytes: file.size,
+            sizeBytes: originalSizeBytes,
           });
         }
 
@@ -71,9 +68,21 @@ export function compressImage(file, maxDimension = 1280, quality = 0.82) {
         });
       };
 
-      img.src = event.target.result;
+      img.src = srcDataUrl;
     };
 
-    reader.readAsDataURL(file);
+    if (typeof source === 'string') {
+      const base64Length = source.length - (source.indexOf(',') + 1);
+      processDataUrl(source, Math.round((base64Length * 3) / 4));
+    } else if (source instanceof Blob || (typeof File !== 'undefined' && source instanceof File)) {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('Failed to read image file'));
+      reader.onload = (event) => {
+        processDataUrl(event.target.result, source.size);
+      };
+      reader.readAsDataURL(source);
+    } else {
+      reject(new Error('Invalid image source type'));
+    }
   });
 }

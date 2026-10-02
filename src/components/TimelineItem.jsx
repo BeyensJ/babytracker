@@ -306,8 +306,13 @@ export function TimelineItem({ event }) {
   const resumeClass = event.type === 'BREAST' ? 'breast' : event.type === 'SLEEP' ? 'sleep' : 'pump';
 
   const handleCardClick = (e) => {
-    // Only trigger if not clicking an interactive button
-    if (e.target.closest('button') || e.target.closest('.timeline-item-photo-btn')) {
+    // Only trigger if not clicking an interactive button or lightbox
+    if (
+      e.target.closest('button') ||
+      e.target.closest('.timeline-item-photo-btn') ||
+      e.target.closest('.photo-lightbox-overlay') ||
+      e.target.closest('.photo-lightbox-container')
+    ) {
       return;
     }
     triggerHaptic('light', preferences?.haptics);

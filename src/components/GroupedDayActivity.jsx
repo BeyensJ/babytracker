@@ -634,7 +634,14 @@ function ItemRowTemplate({
   const photoUrl = event.photoUrl || det.photoUrl;
 
   const handleRowClick = (e) => {
-    if (e.target.closest('button')) return;
+    if (
+      e.target.closest('button') ||
+      e.target.closest('.grouped-photo-thumb-btn') ||
+      e.target.closest('.photo-lightbox-overlay') ||
+      e.target.closest('.photo-lightbox-container')
+    ) {
+      return;
+    }
     triggerHaptic('light', preferences?.haptics);
     openModal('EVENT_DETAIL', event);
   };

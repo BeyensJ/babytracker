@@ -592,7 +592,21 @@ export function EventDetailModal() {
                 <Camera size={14} />
                 <span>{t('eventDetail.photo')}</span>
               </div>
-              <div className="event-detail-photo-card" onClick={() => setShowLightbox(true)}>
+              <div
+                className="event-detail-photo-card"
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowLightbox(true);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setShowLightbox(true);
+                  }
+                }}
+              >
                 <img
                   src={syncService.resolveMediaUrl(photoUrl)}
                   alt={event.note || config.title}

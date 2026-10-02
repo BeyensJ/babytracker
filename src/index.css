@@ -5781,6 +5781,141 @@ input, select, textarea {
   background-color: rgba(220, 53, 69, 0.18);
 }
 
+/* Photo Source Action Sheet / Modal */
+.photo-source-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--modal-overlay-bg);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 2500;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  animation: fadeIn 0.18s ease-out;
+  overscroll-behavior: contain;
+  touch-action: manipulation;
+}
+
+@media (min-width: 640px) {
+  .photo-source-overlay {
+    align-items: center;
+    padding: 1.5rem;
+  }
+}
+
+.photo-source-sheet {
+  width: 100%;
+  max-width: 440px;
+  background: var(--bg-card);
+  border-top-left-radius: var(--radius-xl);
+  border-top-right-radius: var(--radius-xl);
+  border: 1px solid var(--border-subtle);
+  border-bottom: none;
+  padding: 1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
+  animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .photo-source-sheet {
+    border-radius: var(--radius-xl);
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 1.5rem;
+  }
+}
+
+.photo-source-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.photo-source-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.photo-source-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.photo-source-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  background: var(--bg-card-subtle);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.photo-source-btn:hover {
+  background: var(--color-terracotta-light);
+  border-color: var(--color-terracotta);
+}
+
+.photo-source-btn-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-terracotta);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.photo-source-btn-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.photo-source-btn-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.photo-source-btn-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.photo-source-cancel {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.25rem;
+  transition: background-color var(--transition-fast);
+}
+
+.photo-source-cancel:hover {
+  background: var(--bg-card-subtle);
+  color: var(--text-primary);
+}
+
 /* Timeline Item & Grouped Activity Photo Attachment */
 .timeline-item-photo-wrap {
   margin-top: 0.6rem;
@@ -5859,12 +5994,15 @@ input, select, textarea {
   inset: 0;
   background: rgba(0, 0, 0, 0.88);
   backdrop-filter: blur(8px);
-  z-index: 1000;
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 3000;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
   animation: fadeIn 0.2s ease-out;
+  touch-action: manipulation;
+  overscroll-behavior: contain;
 }
 
 .photo-lightbox-container {
