@@ -444,10 +444,14 @@ export function QuickStatusBanner() {
           };
         }
         const det = ev.details || {};
-        let str = '';
-        if (det.weightKg && isMetric) str = `${det.weightKg} kg`;
-        else if (det.weightLb) str = formatWeight(det.weightLb, preferences.weightUnit);
-        else if (det.heightCm) str = `${det.heightCm} cm`;
+        const parts = [];
+        if (det.weightKg && isMetric) parts.push(`${det.weightKg} kg`);
+        else if (det.weightLb) parts.push(formatWeight(det.weightLb, preferences.weightUnit));
+        if (det.heightCm && preferences.lengthUnit === 'cm') parts.push(`${det.heightCm} cm`);
+        else if (det.heightIn) parts.push(formatLength(det.heightIn, preferences.lengthUnit));
+        if (det.headCm && preferences.lengthUnit === 'cm') parts.push(`${isDutch ? 'Hoofd' : 'Head'}: ${det.headCm} cm`);
+        else if (det.headIn) parts.push(`${isDutch ? 'Hoofd' : 'Head'}: ${formatLength(det.headIn, preferences.lengthUnit)}`);
+        const str = parts.join(' • ');
         return {
           id: 'GROWTH',
           label: isDutch ? 'Laatste meting' : 'Last Growth',

@@ -163,6 +163,7 @@ export function TimelineItem({ event }) {
         const hasHead = det.headCm || det.headIn;
 
         if (hasWeight && !hasHeight && !hasHead) title = isDutch ? 'Gewichtsmeting' : 'Weight Check';
+        else if (hasHeight && !hasWeight && !hasHead) title = isDutch ? 'Lengtemeting' : 'Height Check';
         else if (hasHead && !hasWeight && !hasHeight) title = isDutch ? 'Hoofdomtrek' : 'Head Circumference';
 
         if (det.weightKg && isMetric) chips.push(`${det.weightKg} kg`);

@@ -271,9 +271,19 @@ export function TrendsView() {
                     </div>
 
                     <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
-                      {det.weightKg && isMetric ? `${det.weightKg} kg` : (det.weightLb ? formatWeight(det.weightLb, preferences.weightUnit) : '')}
-                      {det.heightCm && preferences.lengthUnit === 'cm' ? ` • ${det.heightCm} cm` : (det.heightIn ? ` • ${formatLength(det.heightIn, preferences.lengthUnit)}` : '')}
-                      {det.headCm && preferences.lengthUnit === 'cm' ? ` • ${t('trends.headCirc', { value: det.headCm + ' cm' })}` : (det.headIn ? ` • ${t('trends.headCirc', { value: formatLength(det.headIn, preferences.lengthUnit) })}` : '')}
+                      {(() => {
+                        const parts = [];
+                        if (det.weightKg && isMetric) parts.push(`${det.weightKg} kg`);
+                        else if (det.weightLb) parts.push(formatWeight(det.weightLb, preferences.weightUnit));
+
+                        if (det.heightCm && preferences.lengthUnit === 'cm') parts.push(`${det.heightCm} cm`);
+                        else if (det.heightIn) parts.push(formatLength(det.heightIn, preferences.lengthUnit));
+
+                        if (det.headCm && preferences.lengthUnit === 'cm') parts.push(t('trends.headCirc', { value: det.headCm + ' cm' }));
+                        else if (det.headIn) parts.push(t('trends.headCirc', { value: formatLength(det.headIn, preferences.lengthUnit) }));
+
+                        return parts.join(' • ') || (ev.note ? ev.note : (language === 'nl' ? 'Meting' : 'Measurement'));
+                      })()}
                     </span>
                   </div>
                 );

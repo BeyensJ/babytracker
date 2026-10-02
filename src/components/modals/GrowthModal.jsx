@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Ruler, X } from 'lucide-react';
+import { Ruler, X, AlertCircle } from 'lucide-react';
 import { PhotoUploadField } from '../PhotoUploadField';
 
 export function GrowthModal() {
@@ -50,6 +50,7 @@ export function GrowthModal() {
 
   const [photoUrl, setPhotoUrl] = useState(() => modalInitialData?.photoUrl || modalInitialData?.details?.photoUrl || null);
   const [note, setNote] = useState(modalInitialData?.note || '');
+  const [errorMsg, setErrorMsg] = useState('');
 
   if (activeModal !== 'GROWTH') return null;
 
@@ -84,6 +85,11 @@ export function GrowthModal() {
     if (hasHead) {
       headCm = preferences.lengthUnit === 'cm' ? parsedHead : Math.round(parsedHead * 2.54 * 10) / 10;
       headIn = preferences.lengthUnit === 'cm' ? Math.round((parsedHead / 2.54) * 10) / 10 : parsedHead;
+    }
+
+    if (!hasWeight && !hasHeight && !hasHead && !photoUrl && !note.trim()) {
+      setErrorMsg(t('growthModal.atLeastOneRequired') || (isDutch ? 'Vul minimaal één meting in (bv. alleen gewicht, lengte of hoofdomtrek).' : 'Please fill in at least one measurement (e.g. weight, length, or head circumference).'));
+      return;
     }
 
     const eventPayload = {
@@ -130,6 +136,25 @@ export function GrowthModal() {
 
         <form onSubmit={handleSave}>
           <div className="modal-body">
+            {errorMsg && (
+              <div
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  color: 'var(--color-danger, #ef4444)',
+                  padding: '0.6rem 0.8rem',
+                  borderRadius: 'var(--radius-md, 8px)',
+                  fontSize: '0.82rem',
+                  marginBottom: '0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                }}
+              >
+                <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
             {/* Weight & Length side-by-side */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
               <div className="form-group">
@@ -137,13 +162,15 @@ export function GrowthModal() {
                 <input
                   type="number"
                   step="0.01"
-                  min="1"
+                  min="0.1"
                   max="100"
                   className="form-input"
                   placeholder={isMetric ? '4.25' : '9.4'}
                   value={weightInput}
-                  onChange={e => setWeightInput(e.target.value)}
-                  required
+                  onChange={e => {
+                    setWeightInput(e.target.value);
+                    if (errorMsg) setErrorMsg('');
+                  }}
                 />
               </div>
 
@@ -157,8 +184,10 @@ export function GrowthModal() {
                   className="form-input"
                   placeholder={preferences.lengthUnit === 'cm' ? '54.5' : '21.5'}
                   value={heightInput}
-                  onChange={e => setHeightInput(e.target.value)}
-                  required
+                  onChange={e => {
+                    setHeightInput(e.target.value);
+                    if (errorMsg) setErrorMsg('');
+                  }}
                 />
               </div>
             </div>
@@ -175,7 +204,10 @@ export function GrowthModal() {
                   className="form-input"
                   placeholder={t('growthModal.headPlaceholder')}
                   value={headInput}
-                  onChange={e => setHeadInput(e.target.value)}
+                  onChange={e => {
+                    setHeadInput(e.target.value);
+                    if (errorMsg) setErrorMsg('');
+                  }}
                 />
               </div>
 
@@ -194,7 +226,10 @@ export function GrowthModal() {
             <div className="form-group">
               <PhotoUploadField
                 photoUrl={photoUrl}
-                onChange={setPhotoUrl}
+                onChange={url => {
+                  setPhotoUrl(url);
+                  if (errorMsg) setErrorMsg('');
+                }}
                 language={language}
                 haptics={preferences?.haptics}
                 label={isDutch ? 'Foto toevoegen (bv. groeikaart / weegschaal) 📸' : 'Add Photo (e.g. growth chart / scale) 📸'}
@@ -209,7 +244,10 @@ export function GrowthModal() {
                 className="form-input"
                 placeholder={language === 'nl' ? 'Controle bij Kind & Gezin / kinderarts...' : 'Pediatrician checkup notes...'}
                 value={note}
-                onChange={e => setNote(e.target.value)}
+                onChange={e => {
+                  setNote(e.target.value);
+                  if (errorMsg) setErrorMsg('');
+                }}
               />
             </div>
           </div>

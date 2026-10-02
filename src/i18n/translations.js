@@ -475,6 +475,7 @@ export const translations = {
       whoRef: 'Compared automatically against WHO Guidelines',
       submitAdd: 'Save Measurement',
       submitEdit: 'Save Changes',
+      atLeastOneRequired: 'Please fill in at least one measurement (e.g. weight, length, or head circumference).',
     },
 
     // Health Modal
@@ -1226,6 +1227,7 @@ export const translations = {
       whoRef: 'Wordt vergeleken met de officiële WHO-groeicurve',
       submitAdd: 'Meting opslaan',
       submitEdit: 'Wijzigingen opslaan',
+      atLeastOneRequired: 'Vul minimaal één meting in (bv. alleen gewicht, lengte of hoofdomtrek).',
     },
 
     // Gezondheid Dialoog

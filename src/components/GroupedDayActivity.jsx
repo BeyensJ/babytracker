@@ -586,6 +586,9 @@ function OtherItemRow({ event, preferences, language, onEdit, onDelete }) {
     if (det.weightKg && isMetric) parts.push(`${det.weightKg} kg`);
     else if (det.weightLb) parts.push(formatWeight(det.weightLb, preferences.weightUnit));
     if (det.heightCm && preferences.lengthUnit === 'cm') parts.push(`${det.heightCm} cm`);
+    else if (det.heightIn) parts.push(formatLength(det.heightIn, preferences.lengthUnit));
+    if (det.headCm && preferences.lengthUnit === 'cm') parts.push(`${isDutch ? 'Hoofd' : 'Head'}: ${det.headCm} cm`);
+    else if (det.headIn) parts.push(`${isDutch ? 'Hoofd' : 'Head'}: ${formatLength(det.headIn, preferences.lengthUnit)}`);
     detailChip = parts.join(' • ');
   } else if (event.type === 'HEALTH') {
     label = det.medicineName ? (isDutch ? 'Medicatie' : 'Medication') : (det.temperatureC || det.temperatureF ? (isDutch ? 'Temperatuur' : 'Temperature') : (isDutch ? 'Gezondheid' : 'Health'));
