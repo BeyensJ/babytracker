@@ -1,16 +1,27 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Apple, X } from 'lucide-react';
+import { Apple, X, Bell } from 'lucide-react';
 import { PhotoUploadField } from '../PhotoUploadField';
 
 export function SolidsModal() {
-  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, t, language } = useApp();
+  const {
+    activeModal,
+    modalInitialData,
+    closeModal,
+    openModal,
+    addEvent,
+    updateEvent,
+    completeReminder,
+    preferences,
+    t,
+    language
+  } = useApp();
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
 
-  const [food, setFood] = useState(() => modalInitialData?.details?.food || '');
-  const [mealType, setMealType] = useState(() => modalInitialData?.details?.mealType || 'Breakfast');
-  const [reaction, setReaction] = useState(() => modalInitialData?.details?.reaction || 'liked');
+  const [food, setFood] = useState(() => modalInitialData?.food || modalInitialData?.details?.food || '');
+  const [mealType, setMealType] = useState(() => modalInitialData?.mealType || modalInitialData?.details?.mealType || 'Breakfast');
+  const [reaction, setReaction] = useState(() => modalInitialData?.reaction || modalInitialData?.details?.reaction || 'liked');
   const [photoUrl, setPhotoUrl] = useState(() => modalInitialData?.photoUrl || modalInitialData?.details?.photoUrl || null);
   const [note, setNote] = useState(modalInitialData?.note || '');
   const [timeStr, setTimeStr] = useState(() => {
@@ -90,7 +101,26 @@ export function SolidsModal() {
       addEvent(eventPayload);
     }
 
+    if (modalInitialData?.sourceReminderId) {
+      completeReminder(modalInitialData.sourceReminderId, false);
+    }
+
     closeModal();
+  };
+
+  const handleCreateReminderFromModal = () => {
+    openModal('REMINDERS', {
+      tab: 'create',
+      activityType: 'SOLIDS',
+      title: food ? `${food} (${mealType})` : (isDutch ? 'Vaste voeding' : 'Solids'),
+      prefilledData: {
+        food,
+        mealType,
+        reaction,
+        note,
+      },
+      note,
+    });
   };
 
   return (
@@ -209,8 +239,22 @@ export function SolidsModal() {
             </div>
           </div>
 
-          <div className="modal-footer">
-            <button type="submit" className="btn-primary" style={{ backgroundColor: 'var(--color-terracotta)' }}>
+          <div className="modal-footer" style={{ display: 'flex', gap: '0.6rem' }}>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleCreateReminderFromModal}
+              title={t('reminders.setReminderButton')}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              <Bell size={16} />
+              <span>{t('reminders.setReminderButton')}</span>
+            </button>
+            <button
+              type="submit"
+              className="btn-primary"
+              style={{ backgroundColor: 'var(--color-terracotta)', flex: 1 }}
+            >
               {isEditing ? t('solidsModal.submitEdit') : t('solidsModal.submitAdd')}
             </button>
           </div>

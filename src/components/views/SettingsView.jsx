@@ -13,6 +13,8 @@ export function SettingsView() {
     activeChildId,
     setActiveChildId,
     events,
+    reminders,
+    dueReminders,
     openModal,
     preferences,
     setPreferences,
@@ -343,6 +345,51 @@ export function SettingsView() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* 3b. Reminders & Schedules */}
+      <div className="trend-card">
+        <div className="trend-card-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: 'var(--color-caramel-light)', color: 'var(--color-caramel)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Bell size={16} />
+            </div>
+            <div>
+              <h3>{t('reminders.title')}</h3>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('reminders.subtitle')}</div>
+            </div>
+          </div>
+
+          <button
+            className="btn-secondary"
+            style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
+            onClick={() => openModal('REMINDERS')}
+          >
+            <Plus size={14} style={{ marginRight: 3 }} />
+            {t('reminders.addReminder')}
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', backgroundColor: 'var(--bg-card-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>
+              {isDutch ? 'Actieve herinneringen voor' : 'Active reminders for'} {activeChild?.name || 'Baby'}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
+              {dueReminders?.length > 0
+                ? (isDutch ? `⚠️ ${dueReminders.length} herinnering(en) te laat om uit te voeren` : `⚠️ ${dueReminders.length} reminder(s) due now`)
+                : (isDutch ? `✓ ${reminders?.length || 0} schema('s) actief ingesteld` : `✓ ${reminders?.length || 0} active schedule(s)`)}
+            </div>
+          </div>
+
+          <button
+            className="btn-primary"
+            style={{ padding: '0.45rem 0.85rem', fontSize: '0.8rem', backgroundColor: 'var(--color-caramel)' }}
+            onClick={() => openModal('REMINDERS')}
+          >
+            {t('reminders.manageReminders')}
+          </button>
         </div>
       </div>
 

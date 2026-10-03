@@ -7,6 +7,7 @@ import { pwaService } from '../services/pwaService';
 import { notificationService } from '../services/notificationService';
 import { triggerHaptic } from '../utils/haptics';
 import { downloadFile } from '../utils/fileDownloader';
+import { computeNextDueTime, isReminderDue, createTimelineEventPayload, RECURRENCE_TYPES } from '../utils/reminderUtils';
 
 const AppContext = createContext();
 
@@ -14,6 +15,7 @@ const STORAGE_KEYS = {
   CHILDREN: 'babytracker_children_v1',
   ACTIVE_CHILD: 'babytracker_active_child_v1',
   EVENTS: 'babytracker_events_v1',
+  REMINDERS: 'babytracker_reminders_v1',
   PREFERENCES: 'babytracker_preferences_v1',
   ACTIVE_TIMERS: 'babytracker_active_timers_v1',
   CAREGIVERS: 'babytracker_caregivers_v1',
@@ -108,6 +110,20 @@ export function AppProvider({ children }) {
       }
     } catch (e) {
       console.warn('Could not read saved events:', e);
+    }
+    return [];
+  });
+
+  // 3b. Reminders state
+  const [reminders, setReminders] = useState(() => {
+    try {
+      const saved = getSavedStorage(STORAGE_KEYS.REMINDERS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.warn('Could not read saved reminders:', e);
     }
     return [];
   });
@@ -217,6 +233,7 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
               if (serverState.activeChildId) setActiveChildId(serverState.activeChildId);
               if (serverState.caregivers && serverState.caregivers.length > 0) setCaregivers(serverState.caregivers);
               if (serverState.events && serverState.events.length > 0) setEvents(serverState.events);
+              if (serverState.reminders) setReminders(serverState.reminders);
               if (serverState.activeTimers) setActiveTimers(serverState.activeTimers);
               if (serverState.preferences) setPreferences(prev => mergePreferencesPreservingDeviceTheme(prev, serverState.preferences));
             }
@@ -260,6 +277,29 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
         }
       }),
 
+      syncService.on('REMINDER_ADDED', (newReminder) => {
+        setReminders(prev => {
+          if (prev.some(r => r.id === newReminder.id)) return prev;
+          return [newReminder, ...prev];
+        });
+      }),
+
+      syncService.on('REMINDER_UPDATED', (updatedReminder) => {
+        setReminders(prev =>
+          prev.map(r => (r.id === updatedReminder.id ? updatedReminder : r))
+        );
+      }),
+
+      syncService.on('REMINDER_DELETED', ({ id }) => {
+        setReminders(prev => prev.filter(r => r.id !== id));
+      }),
+
+      syncService.on('REMINDERS_UPDATED', (allReminders) => {
+        if (Array.isArray(allReminders)) {
+          setReminders(allReminders);
+        }
+      }),
+
       syncService.on('TIMERS_UPDATED', (timers) => {
         setActiveTimers(timers || {});
       }),
@@ -285,6 +325,7 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
         if (serverState.activeChildId) setActiveChildId(serverState.activeChildId);
         if (serverState.caregivers) setCaregivers(serverState.caregivers);
         if (serverState.events) setEvents(serverState.events);
+        if (serverState.reminders) setReminders(serverState.reminders);
         if (serverState.activeTimers) setActiveTimers(serverState.activeTimers);
         if (serverState.preferences) setPreferences(prev => mergePreferencesPreservingDeviceTheme(prev, serverState.preferences));
       }),
@@ -344,6 +385,12 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
       localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(events));
     } catch {}
   }, [events]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.REMINDERS, JSON.stringify(reminders));
+    } catch {}
+  }, [reminders]);
 
   useEffect(() => {
     try {
@@ -594,6 +641,133 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     setCaregivers(prev => prev.map(cg => (cg.id === id ? { ...cg, ...updates } : cg)));
     syncService.updateCaregiver(id, updates).catch(() => {});
   };
+
+  // --- Reminders Management ---
+  const addReminder = (reminderData) => {
+    const now = Date.now();
+    const newReminder = {
+      id: reminderData.id || `rem_${now}_${Math.random().toString(36).substr(2, 6)}`,
+      childKey: reminderData.childKey || activeChildId || 'child_1',
+      title: reminderData.title || '',
+      activityType: reminderData.activityType || 'ROUTINE',
+      prefilledData: reminderData.prefilledData || {},
+      recurrence: reminderData.recurrence || RECURRENCE_TYPES.DAILY,
+      recurrenceDays: Array.isArray(reminderData.recurrenceDays) ? reminderData.recurrenceDays : [1, 2, 3, 4, 5],
+      intervalHours: Number(reminderData.intervalHours) || 3,
+      dayOfMonth: Number(reminderData.dayOfMonth) || 1,
+      time: reminderData.time || '08:00',
+      date: reminderData.date || null,
+      dueTime: reminderData.dueTime || computeNextDueTime(reminderData, now),
+      lastCompletedAt: null,
+      completed: false,
+      enabled: reminderData.enabled !== false,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    setReminders(prev => [newReminder, ...prev.filter(r => r.id !== newReminder.id)]);
+    syncService.addReminder(newReminder).catch(err => console.warn('[Sync] Offline: addReminder saved locally', err));
+    triggerHaptic('success', preferences?.haptics);
+    return newReminder;
+  };
+
+  const updateReminder = (id, updates) => {
+    setReminders(prev =>
+      prev.map(r => {
+        if (r.id === id) {
+          const updated = { ...r, ...updates, updatedAt: Date.now() };
+          return updated;
+        }
+        return r;
+      })
+    );
+    syncService.updateReminder(id, updates).catch(err => console.warn('[Sync] Offline: updateReminder saved locally', err));
+    triggerHaptic('light', preferences?.haptics);
+  };
+
+  const deleteReminder = (id) => {
+    setReminders(prev => prev.filter(r => r.id !== id));
+    syncService.deleteReminder(id).catch(err => console.warn('[Sync] Offline: deleteReminder saved locally', err));
+    triggerHaptic('warning', preferences?.haptics);
+  };
+
+  const toggleReminderEnabled = (id) => {
+    const target = reminders.find(r => r.id === id);
+    if (!target) return;
+    const newEnabled = !target.enabled;
+    let nextDue = target.dueTime;
+    if (newEnabled && target.dueTime < Date.now()) {
+      nextDue = computeNextDueTime(target, Date.now());
+    }
+    updateReminder(id, { enabled: newEnabled, dueTime: nextDue, completed: false });
+  };
+
+  const completeReminder = (reminderId, shouldLogEvent = true, customEventPayload = null) => {
+    const reminder = reminders.find(r => r.id === reminderId);
+    if (!reminder) return null;
+
+    let createdEvent = null;
+    if (shouldLogEvent) {
+      const eventPayload = customEventPayload || createTimelineEventPayload(reminder, activeCaregiver?.name || 'Parent');
+      eventPayload.childKey = reminder.childKey || activeChildId;
+      createdEvent = addEvent(eventPayload);
+    }
+
+    const now = Date.now();
+    let nextDueTime = reminder.dueTime;
+    let isCompleted = false;
+
+    if (reminder.recurrence === RECURRENCE_TYPES.ONCE) {
+      isCompleted = true;
+    } else {
+      nextDueTime = computeNextDueTime(reminder, now);
+      isCompleted = false;
+    }
+
+    const updates = {
+      dueTime: nextDueTime,
+      lastCompletedAt: now,
+      completed: isCompleted,
+    };
+
+    updateReminder(reminderId, updates);
+    triggerHaptic('success', preferences?.haptics);
+
+    const reminderTitle = reminder.title || reminder.activityType;
+    notificationService.showToast({
+      id: `toast_${now}`,
+      type: 'success',
+      title: language === 'nl' ? 'Herinnering voltooid' : 'Reminder completed',
+      message: language === 'nl'
+        ? `${reminderTitle} gemarkeerd als voltooid${shouldLogEvent ? ' en toegevoegd aan tijdlijn.' : '.'}`
+        : `${reminderTitle} marked complete${shouldLogEvent ? ' and logged to timeline.' : '.'}`,
+    });
+
+    return { reminder, event: createdEvent };
+  };
+
+  const snoozeReminder = (reminderId, minutes = 30) => {
+    const reminder = reminders.find(r => r.id === reminderId);
+    if (!reminder) return;
+    const now = Date.now();
+    const newDueTime = now + minutes * 60 * 1000;
+    updateReminder(reminderId, { dueTime: newDueTime, completed: false });
+    triggerHaptic('light', preferences?.haptics);
+
+    notificationService.showToast({
+      id: `toast_${now}`,
+      type: 'info',
+      title: language === 'nl' ? 'Herinnering uitgesteld' : 'Reminder snoozed',
+      message: language === 'nl'
+        ? `Uitgesteld met ${minutes >= 60 ? `${minutes / 60} uur` : `${minutes} minuten`}.`
+        : `Snoozed for ${minutes >= 60 ? `${minutes / 60} hour(s)` : `${minutes} minutes`}.`,
+    });
+  };
+
+  // Filtered lists for active child
+  const childReminders = reminders.filter(r => !r.childKey || r.childKey === activeChildId);
+  const dueReminders = childReminders.filter(r => isReminderDue(r));
+  const upcomingReminders = childReminders.filter(r => r.enabled && !r.completed && r.dueTime > Date.now());
 
   // --- Live Timer Operations (Synced across all devices in real-time) ---
 
@@ -1166,6 +1340,15 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     addEventComment,
     deleteEventComment,
     importEvents,
+    reminders,
+    dueReminders,
+    upcomingReminders,
+    addReminder,
+    updateReminder,
+    deleteReminder,
+    completeReminder,
+    snoozeReminder,
+    toggleReminderEnabled,
     resetToSample,
     clearAllData,
     preferences,

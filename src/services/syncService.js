@@ -546,6 +546,40 @@ class SyncService {
     return await res.json();
   }
 
+  // --- Reminders Management ---
+
+  async fetchReminders() {
+    const res = await this._fetch('/api/reminders');
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return await res.json();
+  }
+
+  async addReminder(reminderData) {
+    const res = await this._fetch('/api/reminders', {
+      method: 'POST',
+      body: JSON.stringify(reminderData),
+    });
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return await res.json();
+  }
+
+  async updateReminder(id, updates) {
+    const res = await this._fetch(`/api/reminders/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return await res.json();
+  }
+
+  async deleteReminder(id) {
+    const res = await this._fetch(`/api/reminders/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return await res.json();
+  }
+
   // --- Photo / Media Management ---
 
   resolveMediaUrl(url) {

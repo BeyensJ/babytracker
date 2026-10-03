@@ -12,6 +12,8 @@ export function Header({ onOpenSettings }) {
     setActiveChildId,
     events,
     activeTimers,
+    reminders,
+    dueReminders,
     openModal,
     activeCaregiver,
     syncStatus,
@@ -24,6 +26,7 @@ export function Header({ onOpenSettings }) {
     language,
     t,
   } = useApp();
+  const isDutch = language === 'nl';
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [now, setNow] = useState(Date.now());
 
@@ -182,8 +185,36 @@ export function Header({ onOpenSettings }) {
         )}
       </div>
 
-      {/* Right Controls: Streamlined Caregiver & Sync Status */}
+      {/* Right Controls: Streamlined Reminders, Theme, Caregiver & Sync Status */}
       <div className="header-right-controls">
+        <button
+          className={`header-reminders-btn ${dueReminders?.length > 0 ? 'has-due' : ''}`}
+          onClick={() => {
+            openModal('REMINDERS');
+            triggerHaptic('light', preferences?.haptics);
+          }}
+          title={
+            isDutch
+              ? (dueReminders?.length > 0
+                ? `${dueReminders.length} herinnering(en) te laat`
+                : 'Herinneringen & Schema\'s')
+              : (dueReminders?.length > 0
+                ? `${dueReminders.length} reminder(s) due`
+                : 'Reminders & Schedules')
+          }
+          aria-label={t('reminders.title')}
+          id="header-reminders-btn"
+        >
+          {dueReminders?.length > 0 ? (
+            <>
+              <BellRing size={16} color="var(--color-terracotta)" />
+              <span className="header-due-badge">{dueReminders.length}</span>
+            </>
+          ) : (
+            <Bell size={16} color="var(--text-secondary)" />
+          )}
+        </button>
+
         <button
           className="header-theme-toggle-btn"
           onClick={() => {

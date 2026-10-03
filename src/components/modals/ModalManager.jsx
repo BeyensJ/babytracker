@@ -17,6 +17,7 @@ import { ChangePasswordModal } from './ChangePasswordModal';
 import { ServerSetupModal } from './ServerSetupModal';
 import { EventDetailModal } from './EventDetailModal';
 import { CustomizeQuickModal } from './CustomizeQuickModal';
+import { RemindersModal } from './RemindersModal';
 
 export function ModalManager() {
   const { activeModal, closeModal } = useApp();
@@ -27,6 +28,7 @@ export function ModalManager() {
     <>
       {activeModal === 'EVENT_DETAIL' && <EventDetailModal />}
       {activeModal === 'CUSTOMIZE_QUICK' && <CustomizeQuickModal />}
+      {activeModal === 'REMINDERS' && <RemindersModal />}
       {activeModal === 'BREAST' && <BreastfeedModal />}
       {activeModal === 'BOTTLE' && <BottleModal />}
       {activeModal === 'SLEEP' && <SleepModal />}

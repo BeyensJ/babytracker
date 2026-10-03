@@ -1,11 +1,22 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { triggerHaptic } from '../../utils/haptics';
-import { Milk, X, Plus, Minus, Calculator, ChevronDown, ChevronUp } from 'lucide-react';
+import { Milk, X, Plus, Minus, Calculator, ChevronDown, ChevronUp, Bell } from 'lucide-react';
 import { PhotoUploadField } from '../PhotoUploadField';
 
 export function BottleModal() {
-  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, t, language } = useApp();
+  const {
+    activeModal,
+    modalInitialData,
+    closeModal,
+    openModal,
+    addEvent,
+    updateEvent,
+    completeReminder,
+    preferences,
+    t,
+    language
+  } = useApp();
   const isDutch = language === 'nl';
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
@@ -165,7 +176,28 @@ export function BottleModal() {
       addEvent(eventPayload);
     }
 
+    if (modalInitialData?.sourceReminderId) {
+      completeReminder(modalInitialData.sourceReminderId, false);
+    }
+
     closeModal();
+  };
+
+  const handleCreateReminderFromModal = () => {
+    const numAmount = amount === '' ? (isMl ? 60 : 2.0) : (parseFloat(amount) || 0);
+    openModal('REMINDERS', {
+      tab: 'create',
+      activityType: 'BOTTLE',
+      title: `${numAmount} ${unit} ${milkType === 'BREAST_MILK' ? (isDutch ? 'Moedermelk' : 'Breast Milk') : (formulaName || (isDutch ? 'Flesvoeding' : 'Formula'))}`,
+      prefilledData: {
+        amount: numAmount,
+        unit,
+        milkType,
+        formulaName,
+        note,
+      },
+      note,
+    });
   };
 
   return (
@@ -393,11 +425,21 @@ export function BottleModal() {
             </div>
           </div>
 
-          <div className="modal-footer">
+          <div className="modal-footer" style={{ display: 'flex', gap: '0.6rem' }}>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleCreateReminderFromModal}
+              title={t('reminders.setReminderButton')}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              <Bell size={16} />
+              <span>{t('reminders.setReminderButton')}</span>
+            </button>
             <button
               type="submit"
               className="btn-primary"
-              style={{ backgroundColor: 'var(--color-caramel)' }}
+              style={{ backgroundColor: 'var(--color-caramel)', flex: 1 }}
             >
               {isEditing ? t('bottleModal.submitEdit') : t('bottleModal.submitAdd')}
             </button>

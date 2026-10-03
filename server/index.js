@@ -209,6 +209,7 @@ app.post('/api/auth/logout', (req, res) => {
 // Guard all data endpoints with requireAuth
 app.use('/api/sync', requireAuth);
 app.use('/api/events', requireAuth);
+app.use('/api/reminders', requireAuth);
 app.use('/api/timers', requireAuth);
 app.use('/api/caregivers', requireAuth);
 app.use('/api/children', requireAuth);
@@ -548,6 +549,50 @@ app.post('/api/preferences', (req, res) => {
     const prefs = db.updatePreferences(sharedPrefs);
     broadcast('PREFERENCES_UPDATED', prefs);
     res.json(prefs);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 7. Reminders Management
+app.get('/api/reminders', (req, res) => {
+  try {
+    res.json(db.getState().reminders || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/reminders', (req, res) => {
+  try {
+    const newReminder = db.addReminder(req.body);
+    broadcast('REMINDER_ADDED', newReminder);
+    broadcast('REMINDERS_UPDATED', db.getState().reminders);
+    res.status(201).json(newReminder);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/reminders/:id', (req, res) => {
+  try {
+    const updated = db.updateReminder(req.params.id, req.body);
+    if (!updated) return res.status(404).json({ error: 'Reminder not found' });
+    broadcast('REMINDER_UPDATED', updated);
+    broadcast('REMINDERS_UPDATED', db.getState().reminders);
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/reminders/:id', (req, res) => {
+  try {
+    const success = db.deleteReminder(req.params.id);
+    if (!success) return res.status(404).json({ error: 'Reminder not found' });
+    broadcast('REMINDER_DELETED', { id: req.params.id });
+    broadcast('REMINDERS_UPDATED', db.getState().reminders);
+    res.json({ success: true, id: req.params.id });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

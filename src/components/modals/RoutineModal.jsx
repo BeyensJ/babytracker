@@ -1,15 +1,27 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Clock, X } from 'lucide-react';
+import { Clock, X, Bell } from 'lucide-react';
 import { PhotoUploadField } from '../PhotoUploadField';
 
 export function RoutineModal() {
-  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, t, language } = useApp();
+  const {
+    activeModal,
+    modalInitialData,
+    closeModal,
+    openModal,
+    addEvent,
+    updateEvent,
+    completeReminder,
+    preferences,
+    t,
+    language
+  } = useApp();
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
 
-  const [routineName, setRoutineName] = useState(() => modalInitialData?.details?.routineName || 'TUMMYTIME');
+  const [routineName, setRoutineName] = useState(() => modalInitialData?.routineName || modalInitialData?.details?.routineName || 'TUMMYTIME');
   const [durationMin, setDurationMin] = useState(() => {
+    if (modalInitialData?.durationMin) return modalInitialData.durationMin;
     if (modalInitialData?.durationMs) {
       return Math.round(modalInitialData.durationMs / 60000);
     }
@@ -64,7 +76,26 @@ export function RoutineModal() {
       addEvent(eventPayload);
     }
 
+    if (modalInitialData?.sourceReminderId) {
+      completeReminder(modalInitialData.sourceReminderId, false);
+    }
+
     closeModal();
+  };
+
+  const handleCreateReminderFromModal = () => {
+    const rObj = routines.find(r => r.id === routineName);
+    openModal('REMINDERS', {
+      tab: 'create',
+      activityType: 'ROUTINE',
+      title: rObj ? rObj.label : 'Routine',
+      prefilledData: {
+        routineName,
+        durationMin: durationMin || 15,
+        note,
+      },
+      note,
+    });
   };
 
   return (
@@ -150,8 +181,22 @@ export function RoutineModal() {
             </div>
           </div>
 
-          <div className="modal-footer">
-            <button type="submit" className="btn-primary" style={{ backgroundColor: 'var(--color-mustard)' }}>
+          <div className="modal-footer" style={{ display: 'flex', gap: '0.6rem' }}>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleCreateReminderFromModal}
+              title={t('reminders.setReminderButton')}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              <Bell size={16} />
+              <span>{t('reminders.setReminderButton')}</span>
+            </button>
+            <button
+              type="submit"
+              className="btn-primary"
+              style={{ backgroundColor: 'var(--color-mustard)', flex: 1 }}
+            >
               {isEditing ? t('routineModal.submitEdit') : t('routineModal.submitAdd')}
             </button>
           </div>

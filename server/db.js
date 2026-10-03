@@ -63,7 +63,10 @@ export function initDb() {
       if (state.needsOnboarding === undefined) {
         state.needsOnboarding = false;
       }
-      console.log(`[DB] Loaded ${state.events?.length || 0} events from ${dbFilePath}`);
+      if (!Array.isArray(state.reminders)) {
+        state.reminders = [];
+      }
+      console.log(`[DB] Loaded ${state.events?.length || 0} events and ${state.reminders?.length || 0} reminders from ${dbFilePath}`);
       return state;
     } catch (err) {
       console.error('[DB] Failed to read db file, backing up and re-seeding:', err);
@@ -79,6 +82,7 @@ export function initDb() {
     activeChildId: DEFAULT_CHILDREN[0].id,
     caregivers: DEFAULT_CAREGIVERS,
     events: [],
+    reminders: [],
     activeTimers: {},
     preferences: DEFAULT_PREFERENCES,
     auth: {
@@ -358,6 +362,69 @@ export function updateCaregiver(id, updates) {
 }
 
 /**
+ * Reminders Management
+ */
+export function addReminder(reminderData) {
+  if (!state) initDb();
+  const newReminder = {
+    id: reminderData.id || `rem_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+    childKey: reminderData.childKey || state.activeChildId || 'child_1',
+    title: reminderData.title || '',
+    activityType: reminderData.activityType || 'ROUTINE',
+    prefilledData: reminderData.prefilledData || {},
+    recurrence: reminderData.recurrence || 'DAILY',
+    recurrenceDays: Array.isArray(reminderData.recurrenceDays) ? reminderData.recurrenceDays : [1, 2, 3, 4, 5],
+    intervalHours: Number(reminderData.intervalHours) || 3,
+    dayOfMonth: Number(reminderData.dayOfMonth) || 1,
+    time: reminderData.time || '08:00',
+    date: reminderData.date || null,
+    dueTime: Number(reminderData.dueTime) || Date.now(),
+    lastCompletedAt: reminderData.lastCompletedAt || null,
+    completed: Boolean(reminderData.completed),
+    enabled: reminderData.enabled !== false,
+    createdAt: reminderData.createdAt || Date.now(),
+    updatedAt: Date.now(),
+  };
+
+  if (!Array.isArray(state.reminders)) {
+    state.reminders = [];
+  }
+  state.reminders = [newReminder, ...state.reminders];
+  saveStateSync(state);
+  return newReminder;
+}
+
+export function updateReminder(id, updates) {
+  if (!state) initDb();
+  if (!Array.isArray(state.reminders)) state.reminders = [];
+  let updatedReminder = null;
+  state.reminders = state.reminders.map(rem => {
+    if (rem.id === id) {
+      updatedReminder = { ...rem, ...updates, updatedAt: Date.now() };
+      return updatedReminder;
+    }
+    return rem;
+  });
+
+  if (updatedReminder) {
+    saveStateSync(state);
+  }
+  return updatedReminder;
+}
+
+export function deleteReminder(id) {
+  if (!state) initDb();
+  if (!Array.isArray(state.reminders)) state.reminders = [];
+  const initialCount = state.reminders.length;
+  state.reminders = state.reminders.filter(rem => rem.id !== id);
+  if (state.reminders.length !== initialCount) {
+    saveStateSync(state);
+    return true;
+  }
+  return false;
+}
+
+/**
  * User Preferences
  */
 export function updatePreferences(prefs) {
@@ -496,6 +563,7 @@ export function completeOnboarding({ baby, caregivers, password, activeCaregiver
   state.activeChildId = childId;
   state.caregivers = formattedCaregivers;
   state.events = [];
+  state.reminders = [];
   state.activeTimers = {};
   state.needsOnboarding = false;
   state.auth = {

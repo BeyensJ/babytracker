@@ -1,25 +1,37 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Stethoscope, X } from 'lucide-react';
+import { Stethoscope, X, Bell } from 'lucide-react';
 import { PhotoUploadField } from '../PhotoUploadField';
 
 export function HealthModal() {
-  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, t, language } = useApp();
+  const {
+    activeModal,
+    modalInitialData,
+    closeModal,
+    openModal,
+    addEvent,
+    updateEvent,
+    completeReminder,
+    preferences,
+    t,
+    language
+  } = useApp();
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
   const isCelsius = preferences.tempUnit === 'C';
   const isDutch = language === 'nl';
 
   const [subType, setSubType] = useState(() => {
+    if (modalInitialData?.subType) return modalInitialData.subType;
     if (modalInitialData?.details?.temperatureF || modalInitialData?.details?.temperatureC) return 'TEMP';
     if (modalInitialData?.details?.vaccineName) return 'VACCINE';
     if (modalInitialData?.details?.doctorName || (!modalInitialData?.details?.medicineName && modalInitialData?.note)) return 'VISIT';
     return 'MED';
   });
 
-  const [medicineName, setMedicineName] = useState(() => modalInitialData?.details?.medicineName || '');
-  const [dosage, setDosage] = useState(() => modalInitialData?.details?.dosage || '');
-  const [doctorName, setDoctorName] = useState(() => modalInitialData?.details?.doctorName || '');
+  const [medicineName, setMedicineName] = useState(() => modalInitialData?.medicineName || modalInitialData?.details?.medicineName || '');
+  const [dosage, setDosage] = useState(() => modalInitialData?.dosage || modalInitialData?.details?.dosage || '');
+  const [doctorName, setDoctorName] = useState(() => modalInitialData?.doctorName || modalInitialData?.details?.doctorName || '');
   const [tempInput, setTempInput] = useState(() => {
     const rawC = modalInitialData?.details?.temperatureC;
     const rawF = modalInitialData?.details?.temperatureF;
@@ -29,7 +41,7 @@ export function HealthModal() {
     if (rawF && isCelsius) return (((rawF - 32) * 5) / 9).toFixed(1);
     return '';
   });
-  const [vaccineName, setVaccineName] = useState(() => modalInitialData?.details?.vaccineName || '');
+  const [vaccineName, setVaccineName] = useState(() => modalInitialData?.vaccineName || modalInitialData?.details?.vaccineName || '');
   const [photoUrl, setPhotoUrl] = useState(() => modalInitialData?.photoUrl || modalInitialData?.details?.photoUrl || null);
   const [note, setNote] = useState(modalInitialData?.note || '');
   const [timeStr, setTimeStr] = useState(() => {
@@ -38,22 +50,6 @@ export function HealthModal() {
   });
 
   if (activeModal !== 'HEALTH') return null;
-
-  const commonMeds = language === 'nl' ? [
-    'Perdolan (Paracetamol)',
-    'Dafalgan siroop',
-    'Vitamine D (D-Cure)',
-    'Fysiologisch serum',
-    'Infacol krampjes',
-    'Probiotica baby'
-  ] : [
-    'Infant Tylenol (Acetaminophen)',
-    'Motrin (Ibuprofen)',
-    'Vitamin D Drops',
-    'Vitamin K',
-    'Gas Drops (Simethicone)',
-    'Probiotic Drops'
-  ];
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -96,7 +92,27 @@ export function HealthModal() {
       addEvent(eventPayload);
     }
 
+    if (modalInitialData?.sourceReminderId) {
+      completeReminder(modalInitialData.sourceReminderId, false);
+    }
+
     closeModal();
+  };
+
+  const handleCreateReminderFromModal = () => {
+    openModal('REMINDERS', {
+      tab: 'create',
+      activityType: 'HEALTH',
+      title: medicineName ? `${medicineName}${dosage ? ` (${dosage})` : ''}` : (isDutch ? 'Gezondheid' : 'Health'),
+      prefilledData: {
+        subType,
+        medicineName,
+        dosage,
+        vaccineName,
+        note,
+      },
+      note,
+    });
   };
 
   return (
@@ -280,8 +296,18 @@ export function HealthModal() {
             </div>
           </div>
 
-          <div className="modal-footer">
-            <button type="submit" className="btn-primary" style={{ backgroundColor: 'var(--color-sage)' }}>
+          <div className="modal-footer" style={{ display: 'flex', gap: '0.6rem' }}>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleCreateReminderFromModal}
+              title={t('reminders.setReminderButton')}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              <Bell size={16} />
+              <span>{t('reminders.setReminderButton')}</span>
+            </button>
+            <button type="submit" className="btn-primary" style={{ backgroundColor: 'var(--color-sage)', flex: 1 }}>
               {isEditing ? t('healthModal.submitEdit') : t('healthModal.submitAdd')}
             </button>
           </div>

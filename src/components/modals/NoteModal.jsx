@@ -5,7 +5,7 @@ import confetti from 'canvas-confetti';
 import { PhotoUploadField } from '../PhotoUploadField';
 
 export function NoteModal() {
-  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, t, language } = useApp();
+  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, completeReminder, preferences, t, language } = useApp();
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
 
@@ -72,6 +72,10 @@ export function NoteModal() {
       updateEvent(modalInitialData.id, eventPayload);
     } else {
       addEvent(eventPayload);
+    }
+
+    if (modalInitialData?.sourceReminderId) {
+      completeReminder(modalInitialData.sourceReminderId, false);
     }
 
     closeModal();

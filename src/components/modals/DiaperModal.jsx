@@ -1,11 +1,22 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Sparkles, X, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
+import { Sparkles, X, ChevronDown, ChevronUp, AlertCircle, Bell } from 'lucide-react';
 import { triggerHaptic } from '../../utils/haptics';
 import { PhotoUploadField } from '../PhotoUploadField';
 
 export function DiaperModal() {
-  const { activeModal, modalInitialData, closeModal, addEvent, updateEvent, preferences, t, language } = useApp();
+  const {
+    activeModal,
+    modalInitialData,
+    closeModal,
+    openModal,
+    addEvent,
+    updateEvent,
+    completeReminder,
+    preferences,
+    t,
+    language
+  } = useApp();
   const isDutch = language === 'nl';
 
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
@@ -127,7 +138,26 @@ export function DiaperModal() {
       addEvent(eventPayload);
     }
 
+    if (modalInitialData?.sourceReminderId) {
+      completeReminder(modalInitialData.sourceReminderId, false);
+    }
+
     closeModal();
+  };
+
+  const handleCreateReminderFromModal = () => {
+    openModal('REMINDERS', {
+      tab: 'create',
+      activityType: 'DIAPER',
+      title: isDutch ? 'Luier verversen' : 'Diaper Change',
+      prefilledData: {
+        pee: dry ? false : pee,
+        poop: dry ? false : poop,
+        rash,
+        note,
+      },
+      note,
+    });
   };
 
   return (
@@ -312,8 +342,22 @@ export function DiaperModal() {
             </div>
           </div>
 
-          <div className="modal-footer">
-            <button type="submit" className="btn-primary" style={{ backgroundColor: 'var(--color-sage)' }}>
+          <div className="modal-footer" style={{ display: 'flex', gap: '0.6rem' }}>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleCreateReminderFromModal}
+              title={t('reminders.setReminderButton')}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              <Bell size={16} />
+              <span>{t('reminders.setReminderButton')}</span>
+            </button>
+            <button
+              type="submit"
+              className="btn-primary"
+              style={{ backgroundColor: 'var(--color-sage)', flex: 1 }}
+            >
               {isEditing ? t('diaperModal.submitEdit') : t('diaperModal.submitAdd')}
             </button>
           </div>
