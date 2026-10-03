@@ -21,6 +21,10 @@ export function HealthModal() {
   const isCelsius = preferences.tempUnit === 'C';
   const isDutch = language === 'nl';
 
+  const commonMeds = isDutch
+    ? ['Vitamine D', 'Perdolan', 'Nurofen', 'Fysiologisch zout']
+    : ['Vitamin D', 'Tylenol', 'Motrin', 'Saline Drops'];
+
   const [subType, setSubType] = useState(() => {
     if (modalInitialData?.subType) return modalInitialData.subType;
     if (modalInitialData?.details?.temperatureF || modalInitialData?.details?.temperatureC) return 'TEMP';
