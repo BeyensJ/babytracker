@@ -100,7 +100,8 @@ export function QuickStatusBanner() {
       case 'FEEDS': {
         const ev = childEvents.find((e) => ['BREAST', 'BOTTLE', 'SOLIDS', 'COMBO'].includes(e.type));
         if (isNursing) {
-          const side = activeTimers.breast.side === 'RIGHT' ? (isDutch ? 'Rechts' : 'Right') : (isDutch ? 'Links' : 'Left');
+          const activeSide = activeTimers?.breast?.activeSide || activeTimers?.breast?.side;
+          const side = activeSide === 'RIGHT' ? (isDutch ? 'Rechts' : 'Right') : (isDutch ? 'Links' : 'Left');
           return {
             id: 'FEEDS',
             label: isDutch ? 'Laatste voeding' : 'Last Fed',
@@ -189,7 +190,8 @@ export function QuickStatusBanner() {
       case 'BREAST': {
         const ev = childEvents.find((e) => e.type === 'BREAST');
         if (isNursing) {
-          const side = activeTimers.breast.side === 'RIGHT' ? (isDutch ? 'Rechts' : 'Right') : (isDutch ? 'Links' : 'Left');
+          const activeSide = activeTimers?.breast?.activeSide || activeTimers?.breast?.side;
+          const side = activeSide === 'RIGHT' ? (isDutch ? 'Rechts' : 'Right') : (isDutch ? 'Links' : 'Left');
           return {
             id: 'BREAST',
             label: isDutch ? 'Borstvoeding' : 'Nursing',

@@ -45,7 +45,10 @@ export function GrowthModal() {
 
   const [dateStr, setDateStr] = useState(() => {
     const d = new Date(modalInitialData?.beginDt || Date.now());
-    return d.toISOString().split('T')[0];
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   });
 
   const [photoUrl, setPhotoUrl] = useState(() => modalInitialData?.photoUrl || modalInitialData?.details?.photoUrl || null);
@@ -56,8 +59,8 @@ export function GrowthModal() {
 
   const handleSave = (e) => {
     e.preventDefault();
-    const dateObj = new Date(dateStr);
-    dateObj.setHours(12, 0, 0, 0);
+    const [y, mon, d] = (dateStr || '').split('-').map(Number);
+    const dateObj = new Date(y || new Date().getFullYear(), mon !== undefined ? mon - 1 : new Date().getMonth(), d || new Date().getDate(), 12, 0, 0, 0);
     const beginDt = dateObj.getTime();
 
     const parsedWeight = parseFloat(weightInput);

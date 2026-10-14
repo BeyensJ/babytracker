@@ -27,7 +27,7 @@ export function BreastfeedModal() {
 
   // If opening fresh to log, default mode can be 'TIMER' unless from finished timer or editing
   const [activeTab, setActiveTab] = useState(() => {
-    if (isEditing || isFromFinishedTimer) return 'MANUAL';
+    if (isEditing || isFromFinishedTimer || modalInitialData?.beginDt) return 'MANUAL';
     return 'TIMER';
   });
 
@@ -98,6 +98,13 @@ export function BreastfeedModal() {
 
   const [photoUrl, setPhotoUrl] = useState(() => modalInitialData?.photoUrl || modalInitialData?.details?.photoUrl || null);
   const [note, setNote] = useState(modalInitialData?.note || '');
+  const [dateStr, setDateStr] = useState(() => {
+    const d = new Date(modalInitialData?.beginDt || Date.now());
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  });
   const [timeStr, setTimeStr] = useState(() => {
     const d = new Date(modalInitialData?.beginDt || Date.now());
     const h = String(d.getHours()).padStart(2, '0');
@@ -131,11 +138,11 @@ export function BreastfeedModal() {
 
   const handleSave = (e) => {
     e.preventDefault();
-    const parts = timeStr.split(':').map(Number);
+    const [y, mon, d] = (dateStr || '').split('-').map(Number);
+    const parts = (timeStr || '').split(':').map(Number);
     const h = parts[0] || 0;
     const m = parts[1] || 0;
-    const dateObj = new Date(modalInitialData?.beginDt || Date.now());
-    dateObj.setHours(h, m, 0, 0);
+    const dateObj = new Date(y || new Date().getFullYear(), mon !== undefined ? mon - 1 : new Date().getMonth(), d || new Date().getDate(), h, m, 0, 0);
     const beginDt = dateObj.getTime();
 
     let finalLastActiveSide = modalInitialData?.details?.lastActiveSide || modalInitialData?.lastActiveSide;
@@ -492,24 +499,36 @@ export function BreastfeedModal() {
                 )}
               </div>
 
-              {/* Total Duration Summary & Time of Feed */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.65rem', alignItems: 'center' }}>
-                <div style={{
-                  backgroundColor: 'var(--color-terracotta-light)',
-                  color: 'var(--color-terracotta)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '0.55rem 0.85rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}>
-                  <span style={{ fontSize: '0.78rem', fontWeight: 600 }}>{t('common.duration')}</span>
-                  <span style={{ fontSize: '1.05rem', fontWeight: 700 }}>
-                    {formatDurationMs(totalDurationMs, language)}
-                  </span>
-                </div>
+              {/* Total Duration Summary */}
+              <div style={{
+                backgroundColor: 'var(--color-terracotta-light)',
+                color: 'var(--color-terracotta)',
+                borderRadius: 'var(--radius-md)',
+                padding: '0.55rem 0.85rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '0.25rem'
+              }}>
+                <span style={{ fontSize: '0.78rem', fontWeight: 600 }}>{t('common.duration')}</span>
+                <span style={{ fontSize: '1.05rem', fontWeight: 700 }}>
+                  {formatDurationMs(totalDurationMs, language)}
+                </span>
+              </div>
 
+              {/* Date & Time of Feed */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.65rem' }}>
                 <div className="form-group">
+                  <label className="form-label">{t('common.date')}</label>
+                  <input
+                    type="date"
+                    className="form-input"
+                    value={dateStr}
+                    onChange={e => setDateStr(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">{t('common.time')}</label>
                   <input
                     type="time"
                     className="form-input"

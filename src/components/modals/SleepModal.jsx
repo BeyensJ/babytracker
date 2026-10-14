@@ -26,7 +26,7 @@ export function SleepModal() {
   const isFromFinishedTimer = Boolean(!isEditing && (modalInitialData?.durationMs !== undefined || isFromActiveTimer));
 
   const [activeTab, setActiveTab] = useState(() => {
-    if (isEditing || isFromFinishedTimer) return 'MANUAL';
+    if (isEditing || isFromFinishedTimer || modalInitialData?.beginDt) return 'MANUAL';
     return 'TIMER';
   });
 
@@ -84,7 +84,7 @@ export function SleepModal() {
     return `${h}:${m}`;
   };
 
-  const [startDateStr] = useState(() => {
+  const [startDateStr, setStartDateStr] = useState(() => {
     const d = new Date(modalInitialData?.beginDt || (Date.now() - 45 * 60 * 1000));
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -383,6 +383,17 @@ export function SleepModal() {
                     );
                   })}
                 </div>
+              </div>
+
+              {/* Date of Sleep */}
+              <div className="form-group">
+                <label className="form-label">{t('common.date')}</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={startDateStr}
+                  onChange={e => setStartDateStr(e.target.value)}
+                />
               </div>
 
               {/* Start & End Times + Live Duration Badge */}

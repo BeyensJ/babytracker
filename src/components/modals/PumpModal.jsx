@@ -28,7 +28,7 @@ export function PumpModal() {
   const defaultUnit = preferences.volumeUnit === 'ml' ? 'ml' : 'oz';
 
   const [activeTab, setActiveTab] = useState(() => {
-    if (isEditing || isFromFinishedTimer) return 'MANUAL';
+    if (isEditing || isFromFinishedTimer || modalInitialData?.beginDt) return 'MANUAL';
     return 'TIMER';
   });
 
@@ -116,6 +116,13 @@ export function PumpModal() {
   const [photoUrl, setPhotoUrl] = useState(() => modalInitialData?.photoUrl || modalInitialData?.details?.photoUrl || null);
   const [note, setNote] = useState(modalInitialData?.note || '');
 
+  const [dateStr, setDateStr] = useState(() => {
+    const d = new Date(modalInitialData?.beginDt || Date.now());
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  });
   const [timeStr, setTimeStr] = useState(() => {
     const d = new Date(modalInitialData?.beginDt || Date.now());
     const h = String(d.getHours()).padStart(2, '0');
@@ -187,11 +194,11 @@ export function PumpModal() {
 
   const handleSave = (e) => {
     e.preventDefault();
-    const parts = timeStr.split(':').map(Number);
+    const [y, mon, d] = (dateStr || '').split('-').map(Number);
+    const parts = (timeStr || '').split(':').map(Number);
     const h = parts[0] || 0;
     const m = parts[1] || 0;
-    const dateObj = new Date(modalInitialData?.beginDt || Date.now());
-    dateObj.setHours(h, m, 0, 0);
+    const dateObj = new Date(y || new Date().getFullYear(), mon !== undefined ? mon - 1 : new Date().getMonth(), d || new Date().getDate(), h, m, 0, 0);
     const beginDt = dateObj.getTime();
     const finalDurationMin = durationMin === '' ? 15 : (Math.max(0, Number(durationMin)) || 15);
     const durationMs = finalDurationMin * 60 * 1000;
@@ -606,9 +613,19 @@ export function PumpModal() {
                 />
               </div>
 
-              {/* Time & Notes */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '0.65rem' }}>
+              {/* Date & Time of Session */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.65rem' }}>
                 <div className="form-group">
+                  <label className="form-label">{t('common.date')}</label>
+                  <input
+                    type="date"
+                    className="form-input"
+                    value={dateStr}
+                    onChange={(e) => setDateStr(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">{t('common.time')}</label>
                   <input
                     type="time"
                     className="form-input"
@@ -616,15 +633,18 @@ export function PumpModal() {
                     onChange={(e) => setTimeStr(e.target.value)}
                   />
                 </div>
-                <div className="form-group">
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder={t('common.notes')}
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                  />
-                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="form-group">
+                <label className="form-label">{t('common.notes')}</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder={t('common.notes')}
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                />
               </div>
             </div>
 

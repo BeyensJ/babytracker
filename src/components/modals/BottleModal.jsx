@@ -66,6 +66,13 @@ export function BottleModal() {
   const [photoUrl, setPhotoUrl] = useState(() => modalInitialData?.photoUrl || modalInitialData?.details?.photoUrl || null);
   const [note, setNote] = useState(modalInitialData?.note || '');
 
+  const [dateStr, setDateStr] = useState(() => {
+    const d = new Date(modalInitialData?.beginDt || Date.now());
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  });
   const [timeStr, setTimeStr] = useState(() => {
     const d = new Date(modalInitialData?.beginDt || Date.now());
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -141,9 +148,9 @@ export function BottleModal() {
 
   const handleSave = (e) => {
     e.preventDefault();
-    const [h, m] = timeStr.split(':').map(Number);
-    const dateObj = new Date(modalInitialData?.beginDt || Date.now());
-    dateObj.setHours(h, m, 0, 0);
+    const [y, mon, d] = (dateStr || '').split('-').map(Number);
+    const [h, m] = (timeStr || '').split(':').map(Number);
+    const dateObj = new Date(y || new Date().getFullYear(), mon !== undefined ? mon - 1 : new Date().getMonth(), d || new Date().getDate(), h || 0, m || 0, 0, 0);
     const beginDt = dateObj.getTime();
 
     // Preserve exact fl oz conversion (default to placeholder value if left empty)
@@ -400,8 +407,18 @@ export function BottleModal() {
               />
             </div>
 
-            {/* Time of Feed & Quick Note */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '0.65rem' }}>
+            {/* Date & Time of Feed */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.65rem' }}>
+              <div className="form-group">
+                <label className="form-label">{t('common.date')}</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={dateStr}
+                  onChange={(e) => setDateStr(e.target.value)}
+                />
+              </div>
+
               <div className="form-group">
                 <label className="form-label">{t('common.time')}</label>
                 <input
@@ -411,17 +428,18 @@ export function BottleModal() {
                   onChange={(e) => setTimeStr(e.target.value)}
                 />
               </div>
+            </div>
 
-              <div className="form-group">
-                <label className="form-label">{t('common.notes')}</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder={t('common.notes')}
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                />
-              </div>
+            {/* Quick Note */}
+            <div className="form-group">
+              <label className="form-label">{t('common.notes')}</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder={t('common.notes')}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
             </div>
           </div>
 

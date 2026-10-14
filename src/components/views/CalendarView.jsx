@@ -18,7 +18,15 @@ import {
   ListFilter,
   FileText,
   X,
+  Heart,
+  Milk,
+  Apple,
+  Ruler,
+  Stethoscope,
+  BookOpen,
+  Award,
 } from 'lucide-react';
+import { PumpIcon } from '../icons/PumpIcon';
 
 export function CalendarView() {
   const { events, activeChild, activeChildId, preferences, openModal, t, language } = useApp();
@@ -31,6 +39,7 @@ export function CalendarView() {
   const [timelineCategoryFilter, setTimelineCategoryFilter] = useState('ALL');
   const [timelineDateFilter, setTimelineDateFilter] = useState('');
   const [dayCategoryFilter, setDayCategoryFilter] = useState('ALL');
+  const [showDateActivityPicker, setShowDateActivityPicker] = useState(false);
 
   // Filter events by active child
   const childEvents = useMemo(() => {
@@ -1154,11 +1163,7 @@ export function CalendarView() {
                 type="button"
                 className="btn-primary"
                 style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
-                onClick={() => {
-                  const [y, m, d] = selectedDateKey.split('-').map(Number);
-                  const customDate = new Date(y, m - 1, d, 12, 0).getTime();
-                  openModal('BREAST', { beginDt: customDate });
-                }}
+                onClick={() => setShowDateActivityPicker(true)}
               >
                 <Plus size={14} style={{ marginRight: 4 }} />
                 {language === 'nl' ? 'Op deze datum loggen' : 'Log on this Date'}
@@ -1192,6 +1197,15 @@ export function CalendarView() {
                     ? 'Kies een andere dag op het schema of tik op "Op deze datum loggen" om te beginnen.'
                     : 'Select another day on the schedule or tap "Log on this Date" to add an entry.'}
                 </p>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  style={{ marginTop: '0.75rem', padding: '0.45rem 1rem', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+                  onClick={() => setShowDateActivityPicker(true)}
+                >
+                  <Plus size={15} />
+                  <span>{language === 'nl' ? 'Activiteit toevoegen op deze datum' : 'Add activity on this date'}</span>
+                </button>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -1219,6 +1233,189 @@ export function CalendarView() {
             </div>
           </section>
         </>
+      )}
+
+      {/* Date Activity Chooser Modal for Logging on Selected Past Date */}
+      {showDateActivityPicker && (
+        <div className="modal-overlay" onClick={() => setShowDateActivityPicker(false)}>
+          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
+            <div className="modal-header">
+              <div className="modal-title-wrap">
+                <div className="modal-title-icon" style={{ backgroundColor: 'var(--color-terracotta-light)', color: 'var(--color-terracotta)' }}>
+                  <Plus size={18} />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '1.05rem', margin: 0 }}>
+                    {language === 'nl' ? 'Activiteit toevoegen' : 'Add Activity'}
+                  </h2>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
+                    {formatDateHeading(selectedDateKey, language)}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDateActivityPicker(false)}
+                style={{ color: 'var(--text-tertiary)' }}
+                aria-label={t('common.close')}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="modal-body" style={{ padding: '0.85rem 1rem' }}>
+              <p style={{ margin: '0 0 0.85rem', fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+                {language === 'nl'
+                  ? 'Kies wat je voor deze datum wilt registreren:'
+                  : 'Choose what you want to log for this date:'}
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.65rem' }}>
+                {[
+                  {
+                    id: 'BREAST',
+                    label: language === 'nl' ? 'Borstvoeding' : 'Breastfeeding',
+                    icon: Heart,
+                    color: 'var(--color-breast)',
+                    bg: 'var(--color-breast-light)',
+                    desc: language === 'nl' ? 'Borst voeden' : 'Nursing session',
+                  },
+                  {
+                    id: 'BOTTLE',
+                    label: language === 'nl' ? 'Flesje' : 'Bottle',
+                    icon: Milk,
+                    color: 'var(--color-bottle)',
+                    bg: 'var(--color-bottle-light)',
+                    desc: language === 'nl' ? 'Melk / poeder' : 'Milk / formula',
+                  },
+                  {
+                    id: 'DIAPER',
+                    label: language === 'nl' ? 'Pamper' : 'Diaper',
+                    icon: Sparkles,
+                    color: 'var(--color-diaper)',
+                    bg: 'var(--color-diaper-light)',
+                    desc: language === 'nl' ? 'Nat, kaka, beide' : 'Wet, dirty, both',
+                  },
+                  {
+                    id: 'SLEEP',
+                    label: language === 'nl' ? 'Slaap' : 'Sleep',
+                    icon: Moon,
+                    color: 'var(--color-sleep)',
+                    bg: 'var(--color-sleep-light)',
+                    desc: language === 'nl' ? 'Dutje of nacht' : 'Nap or night sleep',
+                  },
+                  {
+                    id: 'PUMP',
+                    label: language === 'nl' ? 'Afkolven' : 'Pump',
+                    icon: PumpIcon,
+                    color: 'var(--color-pump)',
+                    bg: 'var(--color-pump-light)',
+                    desc: language === 'nl' ? 'Kolfsessie' : 'Pumping session',
+                  },
+                  {
+                    id: 'SOLIDS',
+                    label: language === 'nl' ? 'Vaste voeding' : 'Solids',
+                    icon: Apple,
+                    color: 'var(--color-solids)',
+                    bg: 'var(--color-solids-light)',
+                    desc: language === 'nl' ? 'Hapjes & fruit' : 'Purees & foods',
+                  },
+                  {
+                    id: 'GROWTH',
+                    label: language === 'nl' ? 'Groei' : 'Growth',
+                    icon: Ruler,
+                    color: 'var(--color-growth)',
+                    bg: 'var(--color-growth-light)',
+                    desc: language === 'nl' ? 'Gewicht & lengte' : 'Weight & length',
+                  },
+                  {
+                    id: 'HEALTH',
+                    label: language === 'nl' ? 'Gezondheid' : 'Health',
+                    icon: Stethoscope,
+                    color: 'var(--color-health)',
+                    bg: 'var(--color-health-light)',
+                    desc: language === 'nl' ? 'Koorts, medicijn' : 'Temp, medicine',
+                  },
+                  {
+                    id: 'ROUTINE',
+                    label: language === 'nl' ? 'Routine' : 'Routine',
+                    icon: Clock,
+                    color: 'var(--color-routine)',
+                    bg: 'var(--color-routine-light)',
+                    desc: language === 'nl' ? 'Buiktijd, badje' : 'Tummy time, bath',
+                  },
+                  {
+                    id: 'NOTE',
+                    label: language === 'nl' ? 'Notitie' : 'Note',
+                    icon: BookOpen,
+                    color: 'var(--color-note)',
+                    bg: 'var(--color-note-light)',
+                    desc: language === 'nl' ? 'Herinnering' : 'Observation log',
+                  },
+                  {
+                    id: 'MILESTONE',
+                    label: language === 'nl' ? 'Mijlpaal' : 'Milestone',
+                    icon: Award,
+                    color: 'var(--color-caramel)',
+                    bg: 'var(--color-caramel-light)',
+                    desc: language === 'nl' ? 'Mijlpaal' : 'Milestone moment',
+                  },
+                ].map(item => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.65rem',
+                        padding: '0.65rem 0.75rem',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--border-subtle)',
+                        backgroundColor: 'var(--bg-card-subtle)',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        width: '100%',
+                        transition: 'background-color 0.15s ease',
+                      }}
+                      onClick={() => {
+                        setShowDateActivityPicker(false);
+                        const [y, m, d] = selectedDateKey.split('-').map(Number);
+                        const now = new Date();
+                        const customDate = new Date(y, m - 1, d, now.getHours(), now.getMinutes()).getTime();
+                        openModal(item.id, { beginDt: customDate });
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: '50%',
+                          backgroundColor: item.bg,
+                          color: item.color,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Icon size={18} />
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {item.label}
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {item.desc}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

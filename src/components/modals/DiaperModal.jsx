@@ -60,6 +60,13 @@ export function DiaperModal() {
   const [photoUrl, setPhotoUrl] = useState(() => modalInitialData?.photoUrl || modalInitialData?.details?.photoUrl || null);
   const [note, setNote] = useState(modalInitialData?.note || '');
 
+  const [dateStr, setDateStr] = useState(() => {
+    const d = new Date(modalInitialData?.beginDt || Date.now());
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  });
   const [timeStr, setTimeStr] = useState(() => {
     const d = new Date(modalInitialData?.beginDt || Date.now());
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -108,9 +115,9 @@ export function DiaperModal() {
 
   const handleSave = (e) => {
     e.preventDefault();
-    const [h, m] = timeStr.split(':').map(Number);
-    const dateObj = new Date(modalInitialData?.beginDt || Date.now());
-    dateObj.setHours(h, m, 0, 0);
+    const [y, mon, d] = (dateStr || '').split('-').map(Number);
+    const [h, m] = (timeStr || '').split(':').map(Number);
+    const dateObj = new Date(y || new Date().getFullYear(), mon !== undefined ? mon - 1 : new Date().getMonth(), d || new Date().getDate(), h || 0, m || 0, 0, 0);
     const beginDt = dateObj.getTime();
 
     const eventPayload = {
@@ -284,21 +291,45 @@ export function DiaperModal() {
               </div>
             )}
 
-            {/* Rash Toggle & Time of Change */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.65rem', alignItems: 'center' }}>
+            {/* Date & Time of Change */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.65rem' }}>
+              <div className="form-group">
+                <label className="form-label">{t('common.date')}</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={dateStr}
+                  onChange={e => setDateStr(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">{t('common.time')}</label>
+                <input
+                  type="time"
+                  className="form-input"
+                  value={timeStr}
+                  onChange={e => setTimeStr(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Rash Toggle */}
+            <div className="form-group">
               <label style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
                 cursor: 'pointer',
-                fontSize: '0.82rem',
+                fontSize: '0.85rem',
                 fontWeight: 600,
                 backgroundColor: rash ? 'var(--status-red-light)' : 'var(--bg-card-subtle)',
                 color: rash ? 'var(--status-red)' : 'var(--text-secondary)',
                 border: rash ? '1px solid var(--status-red-border)' : '1px solid var(--border-subtle)',
-                padding: '0.55rem 0.75rem',
+                padding: '0.6rem 0.85rem',
                 borderRadius: 'var(--radius-md)',
                 userSelect: 'none',
+                width: '100%',
               }}>
                 <input
                   type="checkbox"
@@ -308,15 +339,6 @@ export function DiaperModal() {
                 />
                 <span>{t('diaperModal.rash')}</span>
               </label>
-
-              <div className="form-group">
-                <input
-                  type="time"
-                  className="form-input"
-                  value={timeStr}
-                  onChange={e => setTimeStr(e.target.value)}
-                />
-              </div>
             </div>
 
             {/* Photo Upload */}
