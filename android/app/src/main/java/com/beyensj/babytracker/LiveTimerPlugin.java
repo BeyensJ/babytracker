@@ -29,6 +29,7 @@ import org.json.JSONObject;
 )
 public class LiveTimerPlugin extends Plugin {
     public static final String CHANNEL_ID = "babytracker_live_timer";
+    public static final String REMINDERS_CHANNEL_ID = "babytracker_reminders";
     public static final int NOTIFICATION_ID = 1001;
     public static final String ACTION_NOTIFICATION = "com.beyensj.babytracker.NOTIFICATION_ACTION";
 
@@ -47,18 +48,26 @@ public class LiveTimerPlugin extends Plugin {
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = "Live Active Timers";
-            String description = "Persistent live ticking stopwatch for active nursing, sleep, and pumping timers";
-            int importance = NotificationManager.IMPORTANCE_LOW;
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-            channel.setDescription(description);
-            channel.setShowBadge(true);
-            channel.setSound(null, null);
-            channel.enableVibration(false);
-
             NotificationManager notificationManager = getContext().getSystemService(NotificationManager.class);
             if (notificationManager != null) {
-                notificationManager.createNotificationChannel(channel);
+                // 1. Persistent Chronometer Channel (Low Importance)
+                CharSequence timerName = "Live Active Timers";
+                String timerDesc = "Persistent live ticking stopwatch for active nursing, sleep, and pumping timers";
+                NotificationChannel timerChannel = new NotificationChannel(CHANNEL_ID, timerName, NotificationManager.IMPORTANCE_LOW);
+                timerChannel.setDescription(timerDesc);
+                timerChannel.setShowBadge(true);
+                timerChannel.setSound(null, null);
+                timerChannel.enableVibration(false);
+                notificationManager.createNotificationChannel(timerChannel);
+
+                // 2. Scheduled Reminders & Alerts Channel (High Importance Heads-Up)
+                CharSequence reminderName = "Reminders & Alerts";
+                String reminderDesc = "Scheduled reminders for feedings, naps, medications, and diaper changes";
+                NotificationChannel reminderChannel = new NotificationChannel(REMINDERS_CHANNEL_ID, reminderName, NotificationManager.IMPORTANCE_HIGH);
+                reminderChannel.setDescription(reminderDesc);
+                reminderChannel.setShowBadge(true);
+                reminderChannel.enableVibration(true);
+                notificationManager.createNotificationChannel(reminderChannel);
             }
         }
     }
@@ -148,10 +157,88 @@ public class LiveTimerPlugin extends Plugin {
         }
     }
 
-    public void handleNotificationAction(String action, String timerType) {
+    @PluginMethod
+    public void showNotification(PluginCall call) {
+        String title = call.getString("title", "Baby Tracker");
+        String text = call.getString("text", "Reminder");
+        String reminderId = call.getString("reminderId", "");
+        Integer notifId = call.getInt("id");
+        if (notifId == null) {
+            notifId = (int) (System.currentTimeMillis() % 1000000);
+        }
+        JSArray actions = call.getArray("actions");
+
+        Context context = getContext();
+
+        Intent contentIntent = new Intent(context, MainActivity.class);
+        contentIntent.setAction(ACTION_NOTIFICATION);
+        contentIntent.putExtra("action", "open_reminder");
+        contentIntent.putExtra("reminderId", reminderId);
+        contentIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent contentPendingIntent = PendingIntent.getActivity(
+            context,
+            notifId,
+            contentIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0)
+        );
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, REMINDERS_CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setStyle(new NotificationCompat.BigTextStyle().bigText(text))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setOngoing(false)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setContentIntent(contentPendingIntent);
+
+        if (actions != null) {
+            for (int i = 0; i < actions.length(); i++) {
+                try {
+                    JSONObject actionObj = actions.getJSONObject(i);
+                    String actionId = actionObj.optString("id");
+                    String actionTitle = actionObj.optString("title");
+
+                    if (!actionId.isEmpty() && !actionTitle.isEmpty()) {
+                        Intent actionIntent = new Intent(context, MainActivity.class);
+                        actionIntent.setAction(ACTION_NOTIFICATION);
+                        actionIntent.putExtra("action", actionId);
+                        actionIntent.putExtra("reminderId", reminderId);
+                        actionIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+                        PendingIntent pendingAction = PendingIntent.getActivity(
+                            context,
+                            notifId + i + 1,
+                            actionIntent,
+                            PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0)
+                        );
+
+                        builder.addAction(0, actionTitle, pendingAction);
+                    }
+                } catch (JSONException ignored) {}
+            }
+        }
+
+        try {
+            NotificationManagerCompat.from(context).notify(notifId, builder.build());
+            call.resolve();
+        } catch (SecurityException se) {
+            call.reject("Notification permission denied", se);
+        } catch (Exception e) {
+            call.reject("Failed to show reminder notification: " + e.getMessage(), e);
+        }
+    }
+
+    public void handleNotificationAction(String action, String timerType, String reminderId) {
         JSObject ret = new JSObject();
         ret.put("action", action);
-        ret.put("timerType", timerType);
+        if (timerType != null) ret.put("timerType", timerType);
+        if (reminderId != null) ret.put("reminderId", reminderId);
         notifyListeners("timerAction", ret);
+    }
+
+    public void handleNotificationAction(String action, String timerType) {
+        handleNotificationAction(action, timerType, null);
     }
 }

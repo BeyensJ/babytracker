@@ -1132,12 +1132,122 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     );
   }, [activeTimers, activeCaregiver?.name, activeChild?.name, notificationPermission, language]);
 
+  // Storage key for keeping track of notified reminder moments to avoid duplicates
+  const NOTIFIED_REMINDERS_KEY = 'babytracker_notified_reminders_v1';
+
+  const getNotifiedReminderMoments = () => {
+    try {
+      const raw = localStorage.getItem(NOTIFIED_REMINDERS_KEY);
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch {
+      return new Set();
+    }
+  };
+
+  const markReminderMomentNotified = (key) => {
+    try {
+      const moments = getNotifiedReminderMoments();
+      moments.add(key);
+      const arr = Array.from(moments).slice(-150);
+      localStorage.setItem(NOTIFIED_REMINDERS_KEY, JSON.stringify(arr));
+    } catch {}
+  };
+
+  // 5b. Scheduled Moment Push Notification Scheduler for Reminders
+  useEffect(() => {
+    const checkAndNotifyDueReminders = () => {
+      const now = Date.now();
+      const notified = getNotifiedReminderMoments();
+
+      reminders.forEach((reminder) => {
+        if (!reminder.enabled) return;
+        if (reminder.completed && reminder.recurrence === RECURRENCE_TYPES.ONCE) return;
+
+        const dueTime = Number(reminder.dueTime);
+        if (!dueTime || isNaN(dueTime)) return;
+
+        // If due within the last 15 minutes and hasn't been notified yet for this scheduled moment
+        if (dueTime <= now && now - dueTime < 15 * 60 * 1000) {
+          const key = `${reminder.id}_${dueTime}`;
+          if (!notified.has(key)) {
+            markReminderMomentNotified(key);
+            const baby = childList.find((c) => c.id === reminder.childKey) || activeChild;
+            notificationService.dispatchReminderNotification(
+              reminder,
+              baby?.name || activeChild?.name || 'Baby',
+              language
+            );
+          }
+        }
+      });
+    };
+
+    // Run check immediately
+    checkAndNotifyDueReminders();
+
+    // Schedule exact timeouts for all upcoming reminders within the next 24 hours
+    const timeouts = [];
+    const now = Date.now();
+    const notified = getNotifiedReminderMoments();
+
+    reminders.forEach((reminder) => {
+      if (!reminder.enabled) return;
+      if (reminder.completed && reminder.recurrence === RECURRENCE_TYPES.ONCE) return;
+
+      const dueTime = Number(reminder.dueTime);
+      if (!dueTime || isNaN(dueTime)) return;
+
+      const delay = dueTime - now;
+      const key = `${reminder.id}_${dueTime}`;
+
+      if (delay > 0 && delay <= 24 * 60 * 60 * 1000 && !notified.has(key)) {
+        const timeoutId = setTimeout(() => {
+          const currentNotified = getNotifiedReminderMoments();
+          if (!currentNotified.has(key)) {
+            markReminderMomentNotified(key);
+            const baby = childList.find((c) => c.id === reminder.childKey) || activeChild;
+            notificationService.dispatchReminderNotification(
+              reminder,
+              baby?.name || activeChild?.name || 'Baby',
+              language
+            );
+          }
+        }, delay);
+        timeouts.push(timeoutId);
+      }
+    });
+
+    // Heartbeat check every 15s to handle device sleep / background wakeups
+    const heartbeatInterval = setInterval(checkAndNotifyDueReminders, 15000);
+
+    const onWakeOrFocus = () => {
+      if (document.visibilityState === 'visible') {
+        checkAndNotifyDueReminders();
+      }
+    };
+    window.addEventListener('visibilitychange', onWakeOrFocus);
+    window.addEventListener('focus', onWakeOrFocus);
+
+    return () => {
+      timeouts.forEach(clearTimeout);
+      clearInterval(heartbeatInterval);
+      window.removeEventListener('visibilitychange', onWakeOrFocus);
+      window.removeEventListener('focus', onWakeOrFocus);
+    };
+  }, [reminders, childList, activeChild, language]);
+
   // 6. Listen for Notification Actions (both Native Capacitor Android Shade and Service Worker)
   useEffect(() => {
     // A. Native Capacitor Action Listener
     const unsubNative = notificationService.onNativeAction((data) => {
-      const { action, timerType } = data || {};
-      if (action === 'switch_side') {
+      const { action, timerType, reminderId } = data || {};
+      if (action === 'complete_reminder' && reminderId) {
+        completeReminder(reminderId);
+      } else if (action === 'snooze_reminder' && reminderId) {
+        snoozeReminder(reminderId, 30);
+      } else if (action === 'open_reminder') {
+        openModal('REMINDERS', { tab: 'due', reminderId });
+      } else if (action === 'switch_side') {
         switchBreastSide();
       } else if (action === 'finish_timer') {
         if (timerType === 'breast') stopBreastTimer();
@@ -1151,8 +1261,14 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
       handleSwAction = (event) => {
         if (event.data?.type === 'NOTIFICATION_ACTION') {
-          const { action, timerType } = event.data;
-          if (action === 'switch_side') {
+          const { action, timerType, reminderId } = event.data;
+          if (action === 'complete_reminder' && reminderId) {
+            completeReminder(reminderId);
+          } else if (action === 'snooze_reminder' && reminderId) {
+            snoozeReminder(reminderId, 30);
+          } else if (action === 'open_reminder') {
+            openModal('REMINDERS', { tab: 'due', reminderId });
+          } else if (action === 'switch_side') {
             switchBreastSide();
           } else if (action === 'finish_timer') {
             if (timerType === 'breast') stopBreastTimer();
@@ -1170,7 +1286,7 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
         navigator.serviceWorker.removeEventListener('message', handleSwAction);
       }
     };
-  }, [activeTimers, activeCaregiver]);
+  }, [activeTimers, activeCaregiver, reminders]);
 
   const installPWA = async () => {
     return await pwaService.installApp();
@@ -1180,6 +1296,7 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     const perm = await notificationService.requestPermission();
     setNotificationPermission(perm);
     if (perm === 'granted') {
+      notificationService.subscribeWebPush().catch(() => {});
       await notificationService.syncTimerNotification(
         activeTimers,
         activeCaregiver?.name || (language === 'nl' ? 'Verzorger' : 'Parent'),

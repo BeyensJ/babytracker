@@ -6,7 +6,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
 import { WebSocketServer, WebSocket } from 'ws';
+import webpush from 'web-push';
 import * as db from './db.js';
+import { computeNextDueTime, createTimelineEventPayload, RECURRENCE_TYPES, getCategorySummary } from '../src/utils/reminderUtils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -205,6 +207,219 @@ app.post('/api/auth/logout', (req, res) => {
   }
   res.json({ success: true });
 });
+
+// Setup VAPID keys for Web Push
+const dataDir = db.dataDir || process.env.DATA_DIR || path.join(rootDir, 'data');
+const vapidFilePath = path.join(dataDir, 'vapid.json');
+let vapidKeys = null;
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  vapidKeys = {
+    publicKey: process.env.VAPID_PUBLIC_KEY,
+    privateKey: process.env.VAPID_PRIVATE_KEY,
+  };
+} else if (fs.existsSync(vapidFilePath)) {
+  try {
+    vapidKeys = JSON.parse(fs.readFileSync(vapidFilePath, 'utf8'));
+  } catch (e) {
+    console.warn('[Push] Error reading vapid.json:', e.message);
+  }
+}
+
+if (!vapidKeys || !vapidKeys.publicKey || !vapidKeys.privateKey) {
+  try {
+    vapidKeys = webpush.generateVAPIDKeys();
+    fs.writeFileSync(vapidFilePath, JSON.stringify(vapidKeys, null, 2), 'utf8');
+    console.log('[Push] Generated new VAPID keys saved to', vapidFilePath);
+  } catch (err) {
+    console.warn('[Push] Could not generate VAPID keys:', err.message);
+  }
+}
+
+if (vapidKeys?.publicKey && vapidKeys?.privateKey) {
+  try {
+    webpush.setVapidDetails(
+      process.env.VAPID_EMAIL || 'mailto:support@babytracker.local',
+      vapidKeys.publicKey,
+      vapidKeys.privateKey
+    );
+    console.log('[Push] Web Push initialized with VAPID');
+  } catch (err) {
+    console.warn('[Push] webpush.setVapidDetails error:', err.message);
+  }
+}
+
+// Public Push & Notification Action Routes (Headless Service Worker accessible)
+app.get('/api/push/vapid-public-key', (req, res) => {
+  if (vapidKeys?.publicKey) {
+    res.json({ publicKey: vapidKeys.publicKey });
+  } else {
+    res.status(503).json({ error: 'Push not configured' });
+  }
+});
+
+app.post('/api/push/subscribe', (req, res) => {
+  try {
+    const sub = req.body;
+    if (!sub || !sub.endpoint) {
+      return res.status(400).json({ error: 'Invalid subscription' });
+    }
+    db.addPushSubscription(sub);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/push/unsubscribe', (req, res) => {
+  try {
+    const { endpoint } = req.body;
+    if (endpoint) {
+      db.removePushSubscription(endpoint);
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Headless Notification Action for Reminders (allows tapping "Complete" / "Snooze" from lockscreen)
+app.post('/api/reminders/:id/action', (req, res) => {
+  try {
+    const { action, minutes = 30, caregiver = 'Parent' } = req.body;
+    const currentState = db.getState();
+    const reminder = (currentState.reminders || []).find(r => r.id === req.params.id);
+    if (!reminder) return res.status(404).json({ error: 'Reminder not found' });
+
+    const now = Date.now();
+
+    if (action === 'complete_reminder') {
+      const eventPayload = createTimelineEventPayload(reminder, caregiver);
+      eventPayload.childKey = reminder.childKey || currentState.activeChildId || 'child_1';
+      const createdEvent = db.addEvent(eventPayload);
+      broadcast('EVENT_ADDED', createdEvent);
+
+      let nextDueTime = reminder.dueTime;
+      let isCompleted = false;
+
+      if (reminder.recurrence === RECURRENCE_TYPES.ONCE) {
+        isCompleted = true;
+      } else {
+        nextDueTime = computeNextDueTime(reminder, now);
+        isCompleted = false;
+      }
+
+      const updated = db.updateReminder(reminder.id, {
+        dueTime: nextDueTime,
+        lastCompletedAt: now,
+        completed: isCompleted,
+      });
+
+      broadcast('REMINDER_UPDATED', updated);
+      broadcast('REMINDERS_UPDATED', db.getState().reminders);
+      return res.json({ success: true, reminder: updated, event: createdEvent });
+    }
+
+    if (action === 'snooze_reminder') {
+      const newDueTime = now + (Number(minutes) || 30) * 60000;
+      const updated = db.updateReminder(reminder.id, {
+        dueTime: newDueTime,
+        completed: false,
+      });
+
+      broadcast('REMINDER_UPDATED', updated);
+      broadcast('REMINDERS_UPDATED', db.getState().reminders);
+      return res.json({ success: true, reminder: updated });
+    }
+
+    res.status(400).json({ error: 'Invalid reminder action' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Background Reminder Push Notification Checker (checks every 30s)
+const sentReminderKeys = new Set();
+async function checkAndSendDueReminderPushes() {
+  if (!vapidKeys) return;
+  const subscriptions = db.getPushSubscriptions();
+  if (!subscriptions || subscriptions.length === 0) return;
+
+  const currentState = db.getState();
+  const reminders = currentState.reminders || [];
+  const children = currentState.children || [];
+  const now = Date.now();
+
+  for (const reminder of reminders) {
+    if (!reminder.enabled) continue;
+    if (reminder.completed && reminder.recurrence === RECURRENCE_TYPES.ONCE) continue;
+    const dueTime = Number(reminder.dueTime);
+    if (!dueTime || isNaN(dueTime)) continue;
+
+    if (dueTime <= now && now - dueTime < 15 * 60 * 1000) {
+      const key = `${reminder.id}_${dueTime}`;
+      if (sentReminderKeys.has(key)) continue;
+      sentReminderKeys.add(key);
+
+      const baby = children.find(c => c.id === reminder.childKey);
+      const babyName = baby?.name || '';
+
+      const emojiMap = {
+        BREAST: '🤱',
+        BOTTLE: '🍼',
+        SLEEP: '🌙',
+        DIAPER: '✨',
+        PUMP: '🥛',
+        SOLIDS: '🍎',
+        GROWTH: '📏',
+        HEALTH: '💊',
+        ROUTINE: '⏰',
+        NOTE: '📝',
+        MILESTONE: '🏆',
+      };
+      const emoji = emojiMap[reminder.activityType] || '⏰';
+      const summary = getCategorySummary(reminder.activityType, reminder.prefilledData, 'nl');
+      const hasTitle = Boolean(reminder.title && reminder.title.trim().length > 0);
+      const mainTitle = hasTitle ? reminder.title.trim() : summary;
+      const title = `${emoji} ${mainTitle}${babyName ? ` — ${babyName}` : ''}`;
+
+      const d = new Date(dueTime);
+      const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      const body = hasTitle && summary && summary !== reminder.activityType && summary !== mainTitle
+        ? `${summary} • Gepland om ${timeStr}`
+        : `Herinnering gepland om ${timeStr}`;
+
+      const payload = JSON.stringify({
+        title,
+        body,
+        icon: '/icons/icon-192.png',
+        badge: '/icons/badge-72.png',
+        tag: `babytracker-reminder-${reminder.id}-${dueTime}`,
+        vibrate: [200, 100, 200, 100, 250],
+        timestamp: dueTime,
+        actions: [
+          { action: 'complete_reminder', title: 'Voltooid ✓' },
+          { action: 'snooze_reminder', title: '+30 min ⏳' },
+        ],
+        data: {
+          reminderId: reminder.id,
+          dueTime,
+          url: '/',
+        },
+      });
+
+      for (const sub of subscriptions) {
+        try {
+          await webpush.sendNotification(sub, payload);
+        } catch (err) {
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            db.removePushSubscription(sub.endpoint);
+          }
+        }
+      }
+    }
+  }
+}
+setInterval(checkAndSendDueReminderPushes, 30000);
 
 // Guard all data endpoints with requireAuth
 app.use('/api/sync', requireAuth);

@@ -66,6 +66,9 @@ export function initDb() {
       if (!Array.isArray(state.reminders)) {
         state.reminders = [];
       }
+      if (!Array.isArray(state.pushSubscriptions)) {
+        state.pushSubscriptions = [];
+      }
       console.log(`[DB] Loaded ${state.events?.length || 0} events and ${state.reminders?.length || 0} reminders from ${dbFilePath}`);
       return state;
     } catch (err) {
@@ -83,6 +86,7 @@ export function initDb() {
     caregivers: DEFAULT_CAREGIVERS,
     events: [],
     reminders: [],
+    pushSubscriptions: [],
     activeTimers: {},
     preferences: DEFAULT_PREFERENCES,
     auth: {
@@ -422,6 +426,32 @@ export function deleteReminder(id) {
     return true;
   }
   return false;
+}
+
+/**
+ * Web Push Subscriptions
+ */
+export function addPushSubscription(subscription) {
+  if (!state) initDb();
+  if (!Array.isArray(state.pushSubscriptions)) state.pushSubscriptions = [];
+  const exists = state.pushSubscriptions.some(s => s.endpoint === subscription.endpoint);
+  if (!exists) {
+    state.pushSubscriptions.push(subscription);
+    saveStateSync(state);
+  }
+  return state.pushSubscriptions;
+}
+
+export function removePushSubscription(endpoint) {
+  if (!state) initDb();
+  if (!Array.isArray(state.pushSubscriptions)) return;
+  state.pushSubscriptions = state.pushSubscriptions.filter(s => s.endpoint !== endpoint);
+  saveStateSync(state);
+}
+
+export function getPushSubscriptions() {
+  if (!state) initDb();
+  return Array.isArray(state.pushSubscriptions) ? state.pushSubscriptions : [];
 }
 
 /**

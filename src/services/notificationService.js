@@ -4,9 +4,31 @@
  */
 
 import { formatTimerClock, formatTime } from '../utils/formatters';
+import { getCategorySummary } from '../utils/reminderUtils';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 
 const LiveTimer = registerPlugin('LiveTimer');
+
+function hashCode(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0;
+  }
+  return hash;
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
 
 function playNotificationChime() {
   if (typeof window === 'undefined') return;
@@ -251,20 +273,7 @@ class NotificationService {
         console.warn('[Notification] LiveTimer.startTimer failed:', err);
       }
 
-      if (!isTickUpdate) {
-        const startMsg = nativeTimerType === 'breast'
-          ? (lang === 'nl' ? 'Borstvoeding gestart' : 'Nursing timer started')
-          : nativeTimerType === 'sleep'
-          ? (lang === 'nl' ? 'Slaaptimer gestart' : 'Sleep timer started')
-          : (lang === 'nl' ? 'Afkolfsessie gestart' : 'Pumping session started');
-
-        this.showToast({
-          title: `⏱️ ${startMsg}`,
-          body: `${nativeTitle.split('—')[0].trim()} • ${lang === 'nl' ? 'Live stopwatch in notificatiebalk' : 'Live chronometer in notification shade'}`,
-          type: nativeTimerType,
-          timestamp: startTimeMs,
-        });
-      }
+      // Tracking notification active in Android shade; no in-app banner needed
       return;
     }
 
@@ -337,21 +346,7 @@ class NotificationService {
 
     await this.dispatchNotification(payload);
 
-    // On initial timer start (!isTickUpdate), show in-app toast to confirm active tracking
-    if (!isTickUpdate) {
-      const startMsg = timerType === 'breast'
-        ? (lang === 'nl' ? 'Borstvoeding gestart' : 'Nursing timer started')
-        : timerType === 'sleep'
-        ? (lang === 'nl' ? 'Slaaptimer gestart' : 'Sleep timer started')
-        : (lang === 'nl' ? 'Afkolfsessie gestart' : 'Pumping session started');
-
-      this.showToast({
-        title: `⏱️ ${startMsg}`,
-        body: `${title.split('—')[0].trim()} • ${lang === 'nl' ? 'Vastgezet in meldingenpaneel' : 'Pinned in notification shade'}`,
-        type: timerType,
-        timestamp,
-      });
-    }
+    // Tracking notification active in system shade; no in-app banner needed
 
     // Start recurring update ticker if not already running (refreshes elapsed time every 15s)
     this.startTicker();
@@ -521,7 +516,7 @@ class NotificationService {
   }
 
   async sendToServiceWorker(type, payload) {
-    if (typeof navigator !== 'undefined' || !('serviceWorker' in navigator)) return;
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
     try {
       const reg = await Promise.race([
         navigator.serviceWorker.ready,
@@ -616,6 +611,197 @@ class NotificationService {
         ? 'Testmelding verstuurd! Zowel een pop-up in de app als een toestelmelding zijn geactiveerd.'
         : 'Notification dispatched! Both an In-App popup and OS notification have been triggered.',
     };
+  }
+
+  /**
+   * Send a rich push notification on the scheduled moment for a reminder.
+   */
+  async dispatchReminderNotification(reminder, babyName = 'Baby', lang = 'nl') {
+    if (!reminder) return false;
+
+    const isDutch = lang === 'nl';
+    const activityType = reminder.activityType || 'ROUTINE';
+    const emojiMap = {
+      BREAST: '🤱',
+      BOTTLE: '🍼',
+      SLEEP: '🌙',
+      DIAPER: '✨',
+      PUMP: '🥛',
+      SOLIDS: '🍎',
+      GROWTH: '📏',
+      HEALTH: '💊',
+      ROUTINE: '⏰',
+      NOTE: '📝',
+      MILESTONE: '🏆',
+    };
+    const emoji = emojiMap[activityType] || '⏰';
+
+    const categorySummary = getCategorySummary(activityType, reminder.prefilledData, lang);
+    const hasCustomTitle = Boolean(reminder.title && reminder.title.trim().length > 0);
+    const mainTitle = hasCustomTitle ? reminder.title.trim() : categorySummary;
+    const title = `${emoji} ${mainTitle}${babyName ? ` — ${babyName}` : ''}`;
+
+    const scheduledTimeStr = formatTime(reminder.dueTime, lang, true);
+    let body = '';
+    if (hasCustomTitle && categorySummary && categorySummary !== activityType && categorySummary !== mainTitle) {
+      body = `${categorySummary} • ${isDutch ? 'Gepland om' : 'Scheduled for'} ${scheduledTimeStr}`;
+    } else {
+      body = isDutch
+        ? `Herinnering gepland om ${scheduledTimeStr}`
+        : `Reminder scheduled for ${scheduledTimeStr}`;
+    }
+
+    const tag = `babytracker-reminder-${reminder.id}-${reminder.dueTime}`;
+
+    // Play melodic chime & gentle vibration for user prompt
+    playNotificationChime();
+
+    // 1. Native Android Platform (Capacitor)
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const notifId = Math.abs(hashCode(`${reminder.id}_${reminder.dueTime}`)) % 1000000;
+        await LiveTimer.showNotification({
+          title,
+          text: body,
+          reminderId: reminder.id,
+          id: notifId,
+          actions: [
+            { id: 'complete_reminder', title: isDutch ? 'Voltooid ✓' : 'Complete ✓' },
+            { id: 'snooze_reminder', title: isDutch ? '+30 min ⏳' : '+30m Snooze ⏳' },
+          ],
+        });
+        return true;
+      } catch (err) {
+        console.warn('[Notification] LiveTimer.showNotification failed, falling back:', err);
+      }
+    }
+
+    // 2. Web Notifications & Service Worker (PWA)
+    const permission = this.getPermission();
+    if (permission !== 'granted') {
+      console.log(`[Notification] Reminder scheduled moment reached, but permission is '${permission}'.`);
+      return false;
+    }
+
+    const actions = [
+      { action: 'complete_reminder', title: isDutch ? 'Voltooid ✓' : 'Complete ✓' },
+      { action: 'snooze_reminder', title: isDutch ? '+30 min ⏳' : '+30m Snooze ⏳' },
+    ];
+
+    const notificationOptions = {
+      body,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/badge-72.png',
+      tag,
+      ongoing: false,
+      renotify: true,
+      requireInteraction: true,
+      silent: false,
+      vibrate: [200, 100, 200, 100, 250],
+      timestamp: reminder.dueTime || Date.now(),
+      actions,
+      data: {
+        reminderId: reminder.id,
+        dueTime: reminder.dueTime,
+        url: '/',
+      },
+    };
+
+    let delivered = false;
+
+    // Service Worker display
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      try {
+        let reg = await navigator.serviceWorker.getRegistration();
+        if (!reg || typeof reg.showNotification !== 'function') {
+          reg = await Promise.race([
+            navigator.serviceWorker.ready,
+            new Promise((_, reject) => setTimeout(() => reject(new Error('SW ready timeout')), 2500)),
+          ]);
+        }
+        if (reg && typeof reg.showNotification === 'function') {
+          await reg.showNotification(title, notificationOptions);
+          delivered = true;
+        }
+      } catch (err) {
+        console.warn('[Notification] SW showNotification error:', err);
+      }
+    }
+
+    // Direct Window Notification fallback
+    if (!delivered && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      try {
+        const notif = new Notification(title, {
+          body,
+          icon: '/icons/icon-192.png',
+          tag,
+          renotify: true,
+          requireInteraction: true,
+          timestamp: reminder.dueTime || Date.now(),
+        });
+        notif.onclick = () => {
+          if (typeof window !== 'undefined') window.focus();
+          notif.close();
+        };
+        delivered = true;
+      } catch (err) {
+        console.warn('[Notification] Direct Notification fallback error:', err);
+      }
+    }
+
+    // Inform Service Worker for click routing
+    this.sendToServiceWorker('SHOW_REMINDER_NOTIFICATION', {
+      title,
+      body,
+      tag,
+      actions,
+      data: { reminderId: reminder.id, dueTime: reminder.dueTime },
+    });
+
+    return delivered;
+  }
+
+  /**
+   * Subscribe to Web Push via browser PushManager and register with server
+   */
+  async subscribeWebPush() {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+      return null;
+    }
+
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      if (!reg || !reg.pushManager) return null;
+
+      // Check existing subscription
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        // Fetch VAPID public key from backend
+        const keyRes = await fetch('/api/push/vapid-public-key');
+        if (!keyRes.ok) return null;
+        const { publicKey } = await keyRes.json();
+        if (!publicKey) return null;
+
+        const convertedKey = urlBase64ToUint8Array(publicKey);
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: convertedKey,
+        });
+      }
+
+      if (sub) {
+        // Send subscription to server
+        await fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sub),
+        });
+        return sub;
+      }
+    } catch (err) {
+      console.warn('[Notification] Web Push subscription skipped:', err.message);
+    }
+    return null;
   }
 }
 

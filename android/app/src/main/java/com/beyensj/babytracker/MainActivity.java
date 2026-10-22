@@ -23,9 +23,10 @@ public class MainActivity extends BridgeActivity {
         if (intent != null && LiveTimerPlugin.ACTION_NOTIFICATION.equals(intent.getAction())) {
             String action = intent.getStringExtra("action");
             String timerType = intent.getStringExtra("timerType");
+            String reminderId = intent.getStringExtra("reminderId");
             LiveTimerPlugin plugin = LiveTimerPlugin.getInstance();
             if (plugin != null && action != null) {
-                plugin.handleNotificationAction(action, timerType);
+                plugin.handleNotificationAction(action, timerType, reminderId);
             }
         }
     }
