@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { parseCSVToRows, convertCsvRowsToEvents, convertJsonToEvents } from '../../utils/csvParser';
-import { Upload, Download, FileSpreadsheet, Sparkles, Trash2, Baby, Sliders, Moon, Sun, Plus, Edit2, Heart, Lock, Key, LogOut, ShieldCheck, Bell, Send, AlertTriangle, CheckCircle2, Info, Server, RefreshCw } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Sparkles, Trash2, Baby, Sliders, Moon, Sun, Plus, Edit2, Heart, Lock, Key, LogOut, ShieldCheck, Bell, Send, AlertTriangle, CheckCircle2, Info, Server, RefreshCw, Eye, EyeOff, Bot, ExternalLink, School, Users } from 'lucide-react';
 import { syncService } from '../../services/syncService';
 import { triggerHaptic } from '../../utils/haptics';
 import confetti from 'canvas-confetti';
@@ -13,6 +13,7 @@ export function SettingsView() {
     activeChildId,
     setActiveChildId,
     events,
+    caregivers,
     reminders,
     dueReminders,
     openModal,
@@ -38,6 +39,66 @@ export function SettingsView() {
   const [importError, setImportError] = useState('');
   const [testAlertStatus, setTestAlertStatus] = useState(null);
   const [serverTestStatus, setServerTestStatus] = useState(null);
+  const [geminiKeyInput, setGeminiKeyInput] = useState(() => preferences?.geminiApiKey || '');
+  const [showGeminiKey, setShowGeminiKey] = useState(false);
+  const [geminiTestStatus, setGeminiTestStatus] = useState(null);
+  const [geminiSavedToast, setGeminiSavedToast] = useState(false);
+  const [daycareInput, setDaycareInput] = useState(() => preferences?.daycareName || '');
+  const [daycareSavedToast, setDaycareSavedToast] = useState(false);
+
+  const handleSaveGeminiKey = () => {
+    triggerHaptic('success', preferences?.haptics);
+    setPreferences({ geminiApiKey: geminiKeyInput.trim() });
+    setGeminiSavedToast(true);
+    setTimeout(() => setGeminiSavedToast(false), 3000);
+  };
+
+  const handleSaveDaycareName = () => {
+    triggerHaptic('success', preferences?.haptics);
+    setPreferences(p => ({ ...p, daycareName: daycareInput.trim() }));
+    setDaycareSavedToast(true);
+    setTimeout(() => setDaycareSavedToast(false), 2500);
+  };
+
+  const handleTestGeminiKey = async () => {
+    const keyToTest = geminiKeyInput.trim() || preferences?.geminiApiKey;
+    if (!keyToTest) {
+      setGeminiTestStatus({
+        loading: false,
+        success: false,
+        message: isDutch ? 'Voer eerst een API-sleutel in.' : 'Please enter an API key first.',
+      });
+      return;
+    }
+
+    setGeminiTestStatus({ loading: true, message: t('settings.geminiTesting') });
+    triggerHaptic('light', preferences?.haptics);
+
+    try {
+      const res = await syncService.testGeminiApiKey(keyToTest);
+      if (res.success) {
+        setGeminiTestStatus({
+          loading: false,
+          success: true,
+          message: t('settings.geminiSuccess', { model: res.model || 'gemini-2.5-flash' }),
+        });
+        triggerHaptic('success', preferences?.haptics);
+      } else {
+        setGeminiTestStatus({
+          loading: false,
+          success: false,
+          message: t('settings.geminiError', { error: res.error || 'Invalid API Key' }),
+        });
+        triggerHaptic('warning', preferences?.haptics);
+      }
+    } catch (err) {
+      setGeminiTestStatus({
+        loading: false,
+        success: false,
+        message: t('settings.geminiError', { error: err.message }),
+      });
+    }
+  };
 
   const handleTestAlert = async () => {
     setTestAlertStatus({ loading: true, message: 'Triggering test notification...' });
@@ -345,6 +406,145 @@ export function SettingsView() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* 3a. Family & Daycare Settings */}
+      <div className="trend-card" style={{ gap: '1rem' }}>
+        <div className="trend-card-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                backgroundColor: 'var(--color-daycare-light)',
+                color: 'var(--color-daycare)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <School size={16} />
+            </div>
+            <div>
+              <h3>{t('settings.familyTitle')}</h3>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                {t('settings.familyDesc')}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Default Daycare Name Input */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+          <div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.daycareNameLabel')}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+              {t('settings.daycareNameDesc')}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <div style={{ position: 'relative', flex: 1 }}>
+              <School
+                size={16}
+                style={{
+                  position: 'absolute',
+                  left: '0.85rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'var(--color-daycare)',
+                  pointerEvents: 'none',
+                }}
+              />
+              <input
+                type="text"
+                className="form-input"
+                placeholder={t('settings.daycareNamePlaceholder')}
+                value={daycareInput}
+                onChange={(e) => setDaycareInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveDaycareName();
+                }}
+                style={{ paddingLeft: '2.5rem' }}
+              />
+            </div>
+
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleSaveDaycareName}
+              style={{
+                backgroundColor: 'var(--color-daycare)',
+                fontSize: '0.82rem',
+                padding: '0.5rem 1rem',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <span>{isDutch ? 'Opslaan' : 'Save'}</span>
+            </button>
+          </div>
+
+          {daycareSavedToast && (
+            <span
+              style={{
+                fontSize: '0.78rem',
+                color: '#16A34A',
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.3rem',
+                marginTop: '0.1rem',
+              }}
+            >
+              <CheckCircle2 size={14} />
+              <span>{t('settings.daycareSavedToast')}</span>
+            </span>
+          )}
+        </div>
+
+        {/* Caregivers Management Shortcut */}
+        <div
+          style={{
+            borderTop: '1px solid var(--border-subtle)',
+            paddingTop: '0.75rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '0.5rem',
+          }}
+        >
+          <div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.manageCaregiversBtn')}</div>
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
+              {Array.isArray(caregivers) && caregivers.length > 0
+                ? (isDutch
+                    ? `${caregivers.length} verzorgers actief (${caregivers.map((c) => c.name).join(', ')})`
+                    : `${caregivers.length} caregivers configured (${caregivers.map((c) => c.name).join(', ')})`)
+                : (isDutch ? 'Configureer wie er registreert' : 'Configure caregivers')}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => {
+              triggerHaptic('light', preferences?.haptics);
+              openModal('CAREGIVER');
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              fontSize: '0.8rem',
+              padding: '0.4rem 0.8rem',
+            }}
+          >
+            <Users size={14} />
+            <span>{t('settings.manageCaregiversBtn')}</span>
+          </button>
         </div>
       </div>
 
@@ -814,6 +1014,148 @@ export function SettingsView() {
               <AlertTriangle size={15} />
             )}
             <span>{serverTestStatus.message}</span>
+          </div>
+        )}
+      </div>
+
+      {/* 6b. Google Gemini AI (Daycare Report Extraction) */}
+      <div className="card settings-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.18), rgba(59, 130, 246, 0.18))',
+                color: '#9333EA',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Sparkles size={16} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('settings.geminiTitle')}</h3>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                {t('settings.geminiDesc')}
+              </p>
+            </div>
+          </div>
+
+          <span
+            style={{
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              padding: '0.2rem 0.6rem',
+              borderRadius: '999px',
+              backgroundColor: preferences?.geminiApiKey ? 'rgba(34, 197, 94, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+              color: preferences?.geminiApiKey ? '#16A34A' : 'var(--text-secondary)',
+            }}
+          >
+            {preferences?.geminiApiKey ? (isDutch ? '● Actief' : '● Active') : (isDutch ? '○ Niet ingesteld' : '○ Not Configured')}
+          </span>
+        </div>
+
+        {/* API Key Input Field */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+          <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+            {t('settings.geminiApiKeyLabel')}
+          </label>
+          <div style={{ display: 'flex', gap: '0.5rem', position: 'relative' }}>
+            <input
+              type={showGeminiKey ? 'text' : 'password'}
+              className="form-input"
+              placeholder={t('settings.geminiApiKeyPlaceholder')}
+              value={geminiKeyInput}
+              onChange={(e) => setGeminiKeyInput(e.target.value)}
+              style={{ flex: 1, paddingRight: '2.5rem', fontFamily: 'monospace', fontSize: '0.85rem' }}
+            />
+            <button
+              type="button"
+              className="btn-icon-subtle"
+              onClick={() => setShowGeminiKey(!showGeminiKey)}
+              title={showGeminiKey ? 'Verberg sleutel' : 'Toon sleutel'}
+              style={{ position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)' }}
+            >
+              {showGeminiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+          <span style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            <span>{t('settings.geminiKeyHelp')}</span>
+            <a
+              href="https://aistudio.google.com/app/apikey"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: 'var(--color-daycare)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}
+            >
+              <span>Google AI Studio</span>
+              <ExternalLink size={11} />
+            </a>
+          </span>
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleSaveGeminiKey}
+            style={{ fontSize: '0.82rem', padding: '0.45rem 1rem' }}
+          >
+            <span>{t('settings.geminiSaveBtn')}</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleTestGeminiKey}
+            disabled={geminiTestStatus?.loading}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
+          >
+            <RefreshCw size={14} className={geminiTestStatus?.loading ? 'spin' : ''} />
+            <span>{t('settings.geminiTestBtn')}</span>
+          </button>
+
+          {geminiSavedToast && (
+            <span style={{ fontSize: '0.78rem', color: '#16A34A', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+              <CheckCircle2 size={14} />
+              <span>{isDutch ? 'Opgeslagen!' : 'Saved!'}</span>
+            </span>
+          )}
+        </div>
+
+        {/* Test Result Status */}
+        {geminiTestStatus && (
+          <div
+            style={{
+              padding: '0.6rem 0.85rem',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.78rem',
+              backgroundColor: geminiTestStatus.loading
+                ? 'rgba(0, 0, 0, 0.04)'
+                : geminiTestStatus.success
+                ? 'rgba(46, 125, 50, 0.1)'
+                : 'rgba(211, 47, 47, 0.1)',
+              color: geminiTestStatus.loading
+                ? 'var(--text-secondary)'
+                : geminiTestStatus.success
+                ? '#2E7D32'
+                : '#D32F2F',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+            }}
+          >
+            {geminiTestStatus.loading ? (
+              <RefreshCw size={14} className="spin" />
+            ) : geminiTestStatus.success ? (
+              <CheckCircle2 size={15} />
+            ) : (
+              <AlertTriangle size={15} />
+            )}
+            <span>{geminiTestStatus.message}</span>
           </div>
         )}
       </div>

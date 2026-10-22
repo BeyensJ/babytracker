@@ -25,6 +25,7 @@ import {
   BookOpen,
   Award,
   SlidersHorizontal,
+  School,
 } from 'lucide-react';
 import { PumpIcon } from './icons/PumpIcon';
 
@@ -580,6 +581,53 @@ export function QuickStatusBanner() {
           color: 'var(--color-milestone)',
           bg: 'var(--color-milestone-light)',
           actionModal: 'MILESTONE',
+        };
+      }
+
+      case 'DAYCARE': {
+        const isAtDaycare = Boolean(activeTimers?.daycare?.running);
+        if (isAtDaycare) {
+          const dropOffMs = activeTimers.daycare.dropOffMs || activeTimers.daycare.startMs || now;
+          const elapsed = Math.max(0, now - dropOffMs);
+          const name = activeTimers.daycare.daycareName || (isDutch ? 'Opvang' : 'Daycare');
+          return {
+            id: 'DAYCARE',
+            label: isDutch ? 'Op de opvang' : 'At Daycare',
+            timeText: formatDurationMs(elapsed, language),
+            detail: name,
+            icon: School,
+            badge: isDutch ? 'Actief' : 'Active',
+            color: 'var(--color-daycare)',
+            bg: 'var(--color-daycare-light)',
+            actionModal: 'DAYCARE',
+          };
+        }
+        const ev = childEvents.find((e) => e.type === 'DAYCARE');
+        if (!ev) {
+          return {
+            id: 'DAYCARE',
+            label: isDutch ? 'Opvang' : 'Daycare',
+            timeText: '—',
+            detail: isDutch ? 'Nog geen verblijf' : 'No stay logged',
+            icon: School,
+            badge: null,
+            color: 'var(--color-daycare)',
+            bg: 'var(--color-daycare-light)',
+            actionModal: 'DAYCARE',
+          };
+        }
+        const dur = ev.durationMs ? ` (${formatDurationMs(ev.durationMs, language)})` : '';
+        const name = ev.details?.daycareName || (isDutch ? 'Opvang' : 'Daycare');
+        return {
+          id: 'DAYCARE',
+          label: isDutch ? 'Opvang' : 'Daycare',
+          timeText: formatRelative(ev.endDt || ev.beginDt, now, language),
+          detail: `${name}${dur}`,
+          icon: School,
+          badge: ev.details?.reportUrl ? (isDutch ? 'Verslag' : 'Report') : null,
+          color: 'var(--color-daycare)',
+          bg: 'var(--color-daycare-light)',
+          actionModal: 'DAYCARE',
         };
       }
 

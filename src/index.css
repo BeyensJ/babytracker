@@ -82,6 +82,10 @@
   --color-routine-light: #EEF2FF;
   --color-routine-hover: #4F46E5;
 
+  --color-daycare: #0284C7;
+  --color-daycare-light: #E0F2FE;
+  --color-daycare-hover: #0369A1;
+
   --color-note: #92400E;
   --color-note-light: #FEF3C7;
   --color-note-hover: #78350F;
@@ -183,6 +187,10 @@
   --color-routine: #818CF8;
   --color-routine-light: rgba(129, 140, 248, 0.18);
   --color-routine-hover: #A5B4FC;
+
+  --color-daycare: #38BDF8;
+  --color-daycare-light: rgba(56, 189, 248, 0.18);
+  --color-daycare-hover: #7DD3FC;
 
   --color-note: #F59E0B;
   --color-note-light: rgba(245, 158, 11, 0.18);
@@ -1756,6 +1764,7 @@ input, select, textarea {
 .grouped-activity-card.pump { border-left: 3.5px solid var(--color-berry); }
 .grouped-activity-card.sleep { border-left: 3.5px solid var(--color-slate); }
 .grouped-activity-card.diaper { border-left: 3.5px solid var(--color-sage); }
+.grouped-activity-card.daycare { border-left: 3.5px solid var(--color-daycare); }
 .grouped-activity-card.other { border-left: 3.5px solid var(--color-caramel); }
 
 .grouped-card-header {
@@ -1792,6 +1801,7 @@ input, select, textarea {
 .grouped-badge-wrap.pump { background-color: var(--color-berry-light); color: var(--color-berry); }
 .grouped-badge-wrap.sleep { background-color: var(--color-slate-light); color: var(--color-slate); }
 .grouped-badge-wrap.diaper { background-color: var(--color-sage-light); color: var(--color-sage); }
+.grouped-badge-wrap.daycare { background-color: var(--color-daycare-light); color: var(--color-daycare); }
 .grouped-badge-wrap.other { background-color: var(--color-caramel-light); color: var(--color-caramel); }
 
 .grouped-header-meta {
@@ -2092,6 +2102,7 @@ input, select, textarea {
 .item-badge-icon.grow { background-color: var(--color-growth-light); color: var(--color-growth); }
 .item-badge-icon.health { background-color: var(--color-health-light); color: var(--color-health); }
 .item-badge-icon.routine { background-color: var(--color-routine-light); color: var(--color-routine); }
+.item-badge-icon.daycare { background-color: var(--color-daycare-light); color: var(--color-daycare); }
 .item-badge-icon.note { background-color: var(--color-note-light); color: var(--color-note); }
 .item-badge-icon.milestone { background-color: var(--color-milestone-light); color: var(--color-milestone); }
 
@@ -2303,6 +2314,13 @@ input, select, textarea {
   background-color: rgba(162, 79, 114, 0.12);
   color: var(--color-berry);
   border-color: rgba(162, 79, 114, 0.22);
+}
+
+.timeline-item-active-badge.daycare,
+.grouped-item-active-badge.daycare {
+  background-color: var(--color-daycare-light);
+  color: var(--color-daycare);
+  border-color: rgba(2, 132, 199, 0.25);
 }
 
 .timeline-pulse-dot {
@@ -8722,6 +8740,574 @@ input, select, textarea {
   background-color: var(--color-terracotta-hover);
   transform: translateY(-1px);
 }
+
+/* ==========================================================================
+   Daycare & Crèche Tracker & Gemini AI Report Extraction Styles
+   ========================================================================== */
+
+.dock-icon-circle.daycare {
+  background-color: var(--color-daycare-light);
+  color: var(--color-daycare);
+}
+
+.dock-action-btn.daycare:hover .dock-icon-circle {
+  border-color: var(--color-daycare);
+}
+
+.timer-pulse-icon.daycare {
+  background-color: var(--color-daycare);
+}
+
+.timeline-item-active-badge.daycare {
+  background: var(--color-daycare-light);
+  color: var(--color-daycare);
+  border-color: rgba(2, 132, 199, 0.35);
+}
+
+.daycare-source-chip {
+  background-color: var(--color-daycare-light) !important;
+  color: var(--color-daycare) !important;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.daycare-modal-card {
+  max-width: 540px;
+  background-color: var(--bg-card);
+}
+
+/* Active Daycare Banner inside Modal */
+.daycare-active-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, var(--color-daycare-light), rgba(2, 132, 199, 0.08));
+  border: 1px solid rgba(2, 132, 199, 0.25);
+  border-radius: var(--radius-md);
+  margin-bottom: 1rem;
+}
+
+.active-banner-pulse {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-daycare);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.active-banner-pulse .pulse-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid var(--color-daycare);
+  animation: pulse-ring-anim 2s infinite ease-out;
+}
+
+@keyframes pulse-ring-anim {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+.active-banner-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.active-banner-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-daycare);
+}
+
+.active-banner-sub {
+  font-size: 0.73rem;
+  color: var(--text-secondary);
+}
+
+/* Daycare Duration Badge */
+.daycare-duration-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.daycare-duration-badge strong {
+  color: var(--color-daycare);
+  font-weight: 700;
+}
+
+/* Daycare Individual Scheduling Shortcuts */
+.daycare-scheduling-shortcuts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.85rem;
+  background: rgba(2, 132, 199, 0.04);
+  border: 1px dashed rgba(2, 132, 199, 0.35);
+  border-radius: var(--radius-md);
+  margin-top: 0.4rem;
+}
+
+.scheduling-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--color-daycare);
+}
+
+.scheduling-buttons-grid {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.scheduling-buttons-grid button {
+  flex: 1;
+  min-width: 140px;
+}
+
+/* Daycare Dropzone */
+.daycare-dropzone {
+  border: 2px dashed var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 2rem 1.25rem;
+  text-align: center;
+  background: var(--bg-card-subtle);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.daycare-dropzone:hover,
+.daycare-dropzone.drag-active {
+  border-color: var(--color-daycare);
+  background: var(--color-daycare-light);
+}
+
+.dropzone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 380px;
+}
+
+.dropzone-icon-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--color-daycare-light);
+  color: var(--color-daycare);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.dropzone-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.dropzone-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Attached Report Card */
+.daycare-attached-card {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 0.85rem;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.attached-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.attached-type-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-daycare);
+}
+
+.attached-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* PDF Preview Box */
+.pdf-preview-box {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1rem 1.25rem;
+  background: var(--color-daycare-light);
+  border: 1px solid rgba(2, 132, 199, 0.2);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pdf-preview-box:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.pdf-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.pdf-filename {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.pdf-hint {
+  font-size: 0.73rem;
+  color: var(--color-daycare);
+  font-weight: 600;
+}
+
+/* Photo Preview Box */
+.photo-preview-box {
+  position: relative;
+  width: 100%;
+  max-height: 240px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.photo-preview-img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  transition: transform 0.2s ease;
+}
+
+.photo-preview-box:hover .photo-preview-img {
+  transform: scale(1.02);
+}
+
+.photo-zoom-hint {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #FFFFFF;
+  font-size: 0.7rem;
+  font-weight: 500;
+  backdrop-filter: blur(4px);
+}
+
+/* Gemini Extraction Panel */
+.gemini-extract-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.btn-gemini-extract {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #7C3AED, #2563EB);
+  color: #FFFFFF;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btn-gemini-extract:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.45);
+}
+
+.btn-gemini-extract:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.gemini-missing-key-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem 0.95rem;
+  border-radius: var(--radius-md);
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.gemini-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #DC2626;
+  font-size: 0.78rem;
+}
+
+.gemini-success-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  color: #16A34A;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+/* Extracted Results Checklist */
+.extracted-results-container {
+  margin-top: 1rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 0.95rem;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.extracted-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.extracted-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.extracted-subtitle {
+  font-size: 0.73rem;
+  color: var(--text-secondary);
+  margin: 0.2rem 0 0 0;
+}
+
+.extracted-toggle-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.73rem;
+  white-space: nowrap;
+}
+
+.extracted-summary-callout {
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-md);
+  background: var(--bg-card-subtle);
+  border-left: 3px solid #9333EA;
+  font-size: 0.78rem;
+}
+
+.summary-label {
+  font-weight: 700;
+  color: #9333EA;
+  display: block;
+  margin-bottom: 0.15rem;
+}
+
+.summary-text {
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.extracted-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.extracted-item-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card-subtle);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.extracted-item-row:hover {
+  background: var(--bg-card);
+  border-color: rgba(147, 51, 234, 0.3);
+}
+
+.extracted-item-row.selected {
+  border-color: #9333EA;
+  background: rgba(147, 51, 234, 0.04);
+}
+
+.extracted-checkbox {
+  flex-shrink: 0;
+}
+
+.checkbox-box {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 1.5px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  background: var(--bg-card);
+}
+
+.checkbox-box.checked {
+  background: #9333EA;
+  border-color: #9333EA;
+}
+
+.extracted-icon-wrap {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.extracted-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+}
+
+.extracted-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.extracted-item-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.extracted-item-time {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.extracted-item-remark {
+  font-size: 0.73rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.extracted-tag-comment {
+  margin-top: 0.1rem;
+}
+
+.extracted-tag-comment .tag-pill {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(147, 51, 234, 0.12);
+  color: #9333EA;
+}
+
+.dot-indicator.dropoff {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10B981;
+  display: inline-block;
+}
+
+.dot-indicator.pickup {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #F59E0B;
+  display: inline-block;
+}
+
 
 
 

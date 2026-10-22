@@ -24,7 +24,8 @@ import {
   ToggleRight,
   ChevronRight,
   Check,
-  Play
+  Play,
+  School,
 } from 'lucide-react';
 import {
   formatReminderOverdue,
@@ -103,6 +104,7 @@ export function RemindersModal() {
       case 'BREAST': return <Heart size={16} />;
       case 'PUMP': return <Droplet size={16} />;
       case 'DIAPER': return <Sparkles size={16} />;
+      case 'DAYCARE': return <School size={16} />;
       default: return <FileText size={16} />;
     }
   };
@@ -117,6 +119,7 @@ export function RemindersModal() {
       case 'BREAST': return 'var(--color-breast)';
       case 'PUMP': return 'var(--color-pump)';
       case 'DIAPER': return 'var(--color-diaper)';
+      case 'DAYCARE': return 'var(--color-daycare)';
       default: return 'var(--color-terracotta)';
     }
   };
@@ -138,7 +141,16 @@ export function RemindersModal() {
 
   const startEdit = (rem) => {
     setEditingReminderId(rem.id);
-    setFormActivityType(rem.activityType || 'HEALTH');
+    const isDaycare = rem.activityType === 'DAYCARE' ||
+      rem.id?.startsWith('daycare_') ||
+      rem.subType === 'DROPOFF' || rem.subType === 'PICKUP' ||
+      /opvang|crèche|creche|onthaalouder|daycare/i.test(`${rem.title || ''} ${rem.note || ''}`);
+
+    const titleAndNote = `${rem.title || ''} ${rem.note || ''} ${rem.subType || ''}`.toLowerCase();
+    const isPickUp = isDaycare && (rem.subType === 'PICKUP' || /pick[- ]?up|ophalen|ophalen van|afhalen/i.test(titleAndNote));
+    const isDropOff = isDaycare && (rem.subType === 'DROPOFF' || /drop[- ]?off|afzetten|brengen|wegbrengen/i.test(titleAndNote) || !isPickUp);
+
+    setFormActivityType(isDaycare ? 'DAYCARE' : (rem.activityType || 'HEALTH'));
     setFormTitle(rem.title || '');
     setFormRecurrence(rem.recurrence || RECURRENCE_TYPES.DAILY);
     setFormTime(rem.time || '08:00');
@@ -147,7 +159,13 @@ export function RemindersModal() {
     setFormDayOfMonth(rem.dayOfMonth || 1);
     setFormRecurrenceDays(Array.isArray(rem.recurrenceDays) ? rem.recurrenceDays : [1, 2, 3, 4, 5]);
     setFormNote(rem.note || '');
-    setPrefilledData(rem.prefilledData || {});
+    setPrefilledData({
+      ...(rem.prefilledData || {}),
+      ...(isDaycare ? {
+        subType: isDropOff ? 'DROPOFF' : 'PICKUP',
+        daycareName: rem.prefilledData?.daycareName || preferences?.daycareName || '',
+      } : {})
+    });
     setActiveTab('create');
   };
 
@@ -168,12 +186,17 @@ export function RemindersModal() {
   const handleSaveForm = (e) => {
     e.preventDefault();
 
+    const isDaycare = formActivityType === 'DAYCARE';
+    const subType = isDaycare ? (prefilledData.subType || 'DROPOFF') : undefined;
+
     const reminderPayload = {
       childKey: activeChildId,
       title: formTitle.trim(),
       activityType: formActivityType,
+      subType,
       prefilledData: {
         ...prefilledData,
+        ...(isDaycare ? { subType, daycareName: prefilledData.daycareName || preferences?.daycareName || '' } : {}),
         note: formNote.trim(),
       },
       recurrence: formRecurrence,
@@ -211,7 +234,7 @@ export function RemindersModal() {
     ? [{ id: 1, label: 'Ma' }, { id: 2, label: 'Di' }, { id: 3, label: 'Wo' }, { id: 4, label: 'Do' }, { id: 5, label: 'Vr' }, { id: 6, label: 'Za' }, { id: 0, label: 'Zo' }]
     : [{ id: 1, label: 'Mo' }, { id: 2, label: 'Tu' }, { id: 3, label: 'We' }, { id: 4, label: 'Th' }, { id: 5, label: 'Fr' }, { id: 6, label: 'Sa' }, { id: 0, label: 'Su' }];
 
-  const presets = getPresetTemplates(language);
+  const presets = getPresetTemplates(language, preferences?.daycareName);
 
   return (
     <div className="modal-overlay" onClick={closeModal}>
@@ -312,7 +335,7 @@ export function RemindersModal() {
                 <div className="reminders-list-container">
                   {dueReminders.map(rem => {
                     const actColor = getActivityColor(rem.activityType);
-                    const summary = getCategorySummary(rem.activityType, rem.prefilledData, language);
+                    const summary = getCategorySummary(rem.activityType, rem.prefilledData, language, preferences?.daycareName);
                     const overdueStr = formatReminderOverdue(rem.dueTime, language);
 
                     return (
@@ -350,7 +373,21 @@ export function RemindersModal() {
                             onClick={() => completeReminder(rem.id, true)}
                           >
                             <CheckCircle2 size={16} />
-                            <span>{t('reminders.quickLogAndComplete')}</span>
+                            <span>
+                              {(() => {
+                                const isDaycare = rem.activityType === 'DAYCARE' ||
+                                  rem.id?.startsWith('daycare_') ||
+                                  rem.subType === 'DROPOFF' || rem.subType === 'PICKUP' ||
+                                  /opvang|crèche|creche|onthaalouder|daycare/i.test(`${rem.title || ''} ${rem.note || ''}`);
+                                if (!isDaycare) return t('reminders.quickLogAndComplete');
+
+                                const titleAndNote = `${rem.title || ''} ${rem.note || ''} ${rem.subType || ''}`.toLowerCase();
+                                const isPickUp = rem.subType === 'PICKUP' || /pick[- ]?up|ophalen|ophalen van|afhalen/i.test(titleAndNote);
+                                return isPickUp
+                                  ? (isDutch ? 'Ophalen & stop timer' : 'Pick-up & stop timer')
+                                  : (isDutch ? 'Afzetten & start timer' : 'Drop-off & start timer');
+                              })()}
+                            </span>
                           </button>
                           <button
                             className="btn-edit-log"
@@ -398,7 +435,7 @@ export function RemindersModal() {
                 <div className="reminders-list-container">
                   {upcomingReminders.map(rem => {
                     const actColor = getActivityColor(rem.activityType);
-                    const summary = getCategorySummary(rem.activityType, rem.prefilledData, language);
+                    const summary = getCategorySummary(rem.activityType, rem.prefilledData, language, preferences?.daycareName);
                     const upcomingStr = formatUpcomingTime(rem.dueTime, language);
 
                     return (
@@ -491,7 +528,7 @@ export function RemindersModal() {
                 <div className="reminders-list-container">
                   {childReminders.map(rem => {
                     const actColor = getActivityColor(rem.activityType);
-                    const summary = getCategorySummary(rem.activityType, rem.prefilledData, language);
+                    const summary = getCategorySummary(rem.activityType, rem.prefilledData, language, preferences?.daycareName);
                     const scheduleStr = formatReminderSchedule(rem, language);
 
                     return (
@@ -627,6 +664,7 @@ export function RemindersModal() {
                     { id: 'PUMP', label: isDutch ? '🥛 Afkolven' : '🥛 Pump' },
                     { id: 'SLEEP', label: isDutch ? '💤 Slaap & Dutje' : '💤 Sleep' },
                     { id: 'DIAPER', label: isDutch ? '🧷 Luier' : '🧷 Diaper' },
+                    { id: 'DAYCARE', label: isDutch ? '🏫 Opvang / Crèche' : '🏫 Daycare' },
                     { id: 'GROWTH', label: isDutch ? '📏 Groei meten' : '📏 Growth' },
                     { id: 'NOTE', label: isDutch ? '📝 Notitie' : '📝 Note' },
                   ].map(act => (
@@ -634,7 +672,12 @@ export function RemindersModal() {
                       key={act.id}
                       type="button"
                       className={`activity-choice-btn ${formActivityType === act.id ? 'selected' : ''}`}
-                      onClick={() => setFormActivityType(act.id)}
+                      onClick={() => {
+                        setFormActivityType(act.id);
+                        if (act.id === 'DAYCARE' && !prefilledData.daycareName && preferences?.daycareName) {
+                          setPrefilledData(p => ({ ...p, daycareName: preferences.daycareName, subType: p.subType || 'DROPOFF' }));
+                        }
+                      }}
                     >
                       {act.label}
                     </button>
@@ -884,6 +927,56 @@ export function RemindersModal() {
                       <option value="NAP">☀️ {isDutch ? 'Dutje overdag' : 'Daytime Nap'}</option>
                       <option value="NIGHT">🌙 {isDutch ? 'Nachtslaap' : 'Nighttime Sleep'}</option>
                     </select>
+                  </div>
+                )}
+
+                {/* Daycare Prefills */}
+                {formActivityType === 'DAYCARE' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div>
+                      <label className="sub-label">{isDutch ? 'Moment van opvang' : 'Daycare Event'}</label>
+                      <select
+                        className="form-select"
+                        value={prefilledData.subType || 'DROPOFF'}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setPrefilledData(p => ({
+                            ...p,
+                            subType: val,
+                            daycareName: p.daycareName || preferences?.daycareName || '',
+                            note: p.note || (val === 'DROPOFF'
+                              ? (isDutch ? 'Baby afzetten bij de kinderopvang' : 'Drop baby off at daycare')
+                              : (isDutch ? 'Baby ophalen van de kinderopvang' : 'Pick baby up from daycare')),
+                          }));
+                          if (!formTitle || formTitle === 'Afzetten bij crèche / opvang' || formTitle === 'Ophalen van crèche / opvang' || formTitle === 'Daycare Drop-off' || formTitle === 'Daycare Pick-up') {
+                            setFormTitle(val === 'DROPOFF'
+                              ? (isDutch ? 'Afzetten bij crèche / opvang' : 'Daycare Drop-off')
+                              : (isDutch ? 'Ophalen van crèche / opvang' : 'Daycare Pick-up'));
+                          }
+                        }}
+                      >
+                        <option value="DROPOFF">🎒 {isDutch ? 'Afzetten bij opvang (start timer)' : 'Drop-off (starts timer)'}</option>
+                        <option value="PICKUP">🚗 {isDutch ? 'Ophalen van opvang (stopt timer)' : 'Pick-up (stops timer)'}</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <label className="sub-label">{isDutch ? 'Naam van de kinderopvang' : 'Daycare Name'}</label>
+                        {preferences?.daycareName && (
+                          <span style={{ fontSize: '0.75rem', color: 'var(--color-daycare)', fontWeight: 600 }}>
+                            {isDutch ? 'Standaard uit instellingen' : 'Default from settings'}
+                          </span>
+                        )}
+                      </div>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder={preferences?.daycareName || (isDutch ? 'Bijv. De Wolkjes' : 'e.g. Sunny Nursery')}
+                        value={prefilledData.daycareName ?? (preferences?.daycareName || '')}
+                        onChange={(e) => setPrefilledData(p => ({ ...p, daycareName: e.target.value }))}
+                      />
+                    </div>
                   </div>
                 )}
               </div>

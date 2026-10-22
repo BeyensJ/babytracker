@@ -20,6 +20,7 @@ import {
   Play,
   Camera,
   MessageCircle,
+  School,
 } from 'lucide-react';
 import { PumpIcon } from './icons/PumpIcon';
 
@@ -32,6 +33,7 @@ export function TimelineItem({ event }) {
     resumeBreastTimerWithData,
     resumeSleepTimerWithData,
     resumePumpTimerWithData,
+    resumeDaycareWithData,
     toggleEventLike,
     activeCaregiver,
     language,
@@ -217,6 +219,21 @@ export function TimelineItem({ event }) {
           title: formatRoutineName(det.routineName, language, true),
           chips: [formatDurationMs(event.durationMs, language)],
         };
+      case 'DAYCARE': {
+        const chips = [];
+        if (event.durationMs > 0) {
+          chips.push(formatDurationMs(event.durationMs, language));
+        }
+        if (det.reportUrl) {
+          chips.push(isDutch ? '📄 Verslag' : '📄 Report');
+        }
+        return {
+          icon: School,
+          badgeClass: 'daycare',
+          title: det.daycareName || (isDutch ? 'Kinderopvang / Crèche' : 'Daycare Stay'),
+          chips,
+        };
+      }
       case 'MILESTONE': {
         const isFirst = det.isBabyFirst;
         return {
@@ -265,15 +282,18 @@ export function TimelineItem({ event }) {
       resumeBreastTimerWithData(event);
     } else if (event.type === 'PUMP') {
       resumePumpTimerWithData(event);
+    } else if (event.type === 'DAYCARE') {
+      resumeDaycareWithData(event);
     }
   };
 
   const isCurrentlyRunning =
     (event.type === 'BREAST' && activeTimers?.breast?.resumedEventId === event.id) ||
     (event.type === 'SLEEP' && activeTimers?.sleep?.resumedEventId === event.id) ||
-    (event.type === 'PUMP' && activeTimers?.pump?.resumedEventId === event.id);
+    (event.type === 'PUMP' && activeTimers?.pump?.resumedEventId === event.id) ||
+    (event.type === 'DAYCARE' && activeTimers?.daycare?.resumedEventId === event.id);
 
-  const isResumableType = ['SLEEP', 'BREAST', 'PUMP'].includes(event.type);
+  const isResumableType = ['SLEEP', 'BREAST', 'PUMP', 'DAYCARE'].includes(event.type);
 
   // Find the last (most recent) event in this category
   const lastEventOfCategory = isResumableType
@@ -294,7 +314,7 @@ export function TimelineItem({ event }) {
   const isRecent = timeSinceEndMs >= -5 * 60 * 1000 && timeSinceEndMs < 12 * 60 * 60 * 1000;
   const isResumable = isResumableType && isLastOfCategory && isRecent && !isCurrentlyRunning;
 
-  const resumeClass = event.type === 'BREAST' ? 'breast' : event.type === 'SLEEP' ? 'sleep' : 'pump';
+  const resumeClass = event.type === 'BREAST' ? 'breast' : event.type === 'SLEEP' ? 'sleep' : event.type === 'DAYCARE' ? 'daycare' : 'pump';
 
   const handleCardClick = (e) => {
     // Only trigger if not clicking an interactive button or lightbox
@@ -337,6 +357,11 @@ export function TimelineItem({ event }) {
                 {chip}
               </span>
             ))}
+            {(det.source === 'DAYCARE' || (event.note && (event.note.toLowerCase().includes('daycare') || event.note.toLowerCase().includes('crèche')))) && event.type !== 'DAYCARE' && (
+              <span className="item-details-chip daycare-source-chip" style={{ backgroundColor: 'var(--color-daycare-light)', color: 'var(--color-daycare)', fontWeight: 600 }}>
+                🏫 daycare
+              </span>
+            )}
           </div>
 
           {event.note && <div className="item-note">{event.note}</div>}

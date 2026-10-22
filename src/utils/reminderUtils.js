@@ -219,7 +219,7 @@ export function formatUpcomingTime(dueTime, language = 'nl', now = Date.now()) {
 /**
  * Activity category friendly labels and summaries
  */
-export function getCategorySummary(activityType, prefilledData = {}, language = 'nl') {
+export function getCategorySummary(activityType, prefilledData = {}, language = 'nl', defaultDaycareName = '') {
   const isDutch = language === 'nl';
   const data = prefilledData || {};
 
@@ -293,6 +293,15 @@ export function getCategorySummary(activityType, prefilledData = {}, language = 
     case 'GROWTH': {
       return isDutch ? 'Groei meten (gewicht/lengte)' : 'Growth Measurement';
     }
+    case 'DAYCARE': {
+      const parts = [];
+      const dcName = data.daycareName || defaultDaycareName || '';
+      if (data.subType === 'DROPOFF') parts.push(isDutch ? 'Afzetten bij opvang' : 'Daycare Drop-off');
+      else if (data.subType === 'PICKUP') parts.push(isDutch ? 'Ophalen van opvang' : 'Daycare Pick-up');
+      else parts.push(isDutch ? 'Kinderopvang / Crèche' : 'Daycare');
+      if (dcName) parts.push(dcName);
+      return parts.join(' · ');
+    }
     case 'NOTE': {
       return data.note || (isDutch ? 'Notitie / Mijlpaal' : 'Note / Milestone');
     }
@@ -304,7 +313,7 @@ export function getCategorySummary(activityType, prefilledData = {}, language = 
 /**
  * Generate full timeline event payload ready to be saved via `addEvent`
  */
-export function createTimelineEventPayload(reminder, caregiverName = 'Parent') {
+export function createTimelineEventPayload(reminder, caregiverName = 'Parent', defaultDaycareName = '') {
   const now = Date.now();
   const type = reminder.activityType || 'ROUTINE';
   const pre = reminder.prefilledData || {};
@@ -341,6 +350,9 @@ export function createTimelineEventPayload(reminder, caregiverName = 'Parent') {
     const durSec = (Number(pre.durationMinutes) || 15) * 60;
     baseEvent.durationMs = durSec * 1000;
     baseEvent.endDt = now;
+  } else if (type === 'DAYCARE') {
+    baseEvent.details.daycareName = pre.daycareName || defaultDaycareName || '';
+    baseEvent.details.subType = pre.subType || 'DROPOFF';
   }
 
   return baseEvent;
@@ -349,10 +361,45 @@ export function createTimelineEventPayload(reminder, caregiverName = 'Parent') {
 /**
  * Standard preset reminder templates for quick setup
  */
-export function getPresetTemplates(language = 'nl') {
+export function getPresetTemplates(language = 'nl', defaultDaycareName = '') {
   const isDutch = language === 'nl';
+  const dcSuffix = defaultDaycareName ? ` (${defaultDaycareName})` : '';
 
   return [
+    {
+      id: 'preset_daycare_dropoff',
+      title: isDutch ? `Afzetten bij crèche / opvang${dcSuffix}` : `Daycare Drop-off${dcSuffix}`,
+      activityType: 'DAYCARE',
+      prefilledData: {
+        subType: 'DROPOFF',
+        daycareName: defaultDaycareName || '',
+        note: isDutch
+          ? (defaultDaycareName ? `Baby afzetten bij ${defaultDaycareName}` : 'Baby afzetten bij de kinderopvang')
+          : (defaultDaycareName ? `Drop baby off at ${defaultDaycareName}` : 'Drop baby off at daycare'),
+      },
+      recurrence: RECURRENCE_TYPES.WEEKLY,
+      recurrenceDays: [1, 2, 3, 4, 5], // Mon-Fri
+      time: '08:00',
+      badgeColor: 'var(--color-daycare)',
+      icon: 'School',
+    },
+    {
+      id: 'preset_daycare_pickup',
+      title: isDutch ? `Ophalen van crèche / opvang${dcSuffix}` : `Daycare Pick-up${dcSuffix}`,
+      activityType: 'DAYCARE',
+      prefilledData: {
+        subType: 'PICKUP',
+        daycareName: defaultDaycareName || '',
+        note: isDutch
+          ? (defaultDaycareName ? `Baby ophalen van ${defaultDaycareName}` : 'Baby ophalen van de kinderopvang')
+          : (defaultDaycareName ? `Pick baby up from ${defaultDaycareName}` : 'Pick baby up from daycare'),
+      },
+      recurrence: RECURRENCE_TYPES.WEEKLY,
+      recurrenceDays: [1, 2, 3, 4, 5], // Mon-Fri
+      time: '16:30',
+      badgeColor: 'var(--color-daycare)',
+      icon: 'School',
+    },
     {
       id: 'preset_vitd',
       title: isDutch ? 'Vitamine D druppels' : 'Vitamin D drops',

@@ -364,6 +364,7 @@ export function CalendarView() {
       if (timelineCategoryFilter === 'GROWTH' && ev.type !== 'GROWTH') return false;
       if (timelineCategoryFilter === 'HEALTH' && ev.type !== 'HEALTH') return false;
       if (timelineCategoryFilter === 'MILESTONE' && ev.type !== 'MILESTONE') return false;
+      if (timelineCategoryFilter === 'DAYCARE' && ev.type !== 'DAYCARE') return false;
 
       // Date filter
       if (timelineDateFilter) {
@@ -409,6 +410,7 @@ export function CalendarView() {
     { id: 'PUMP', label: t('categories.PUMP') },
     { id: 'GROWTH', label: t('categories.GROWTH') },
     { id: 'HEALTH', label: t('categories.HEALTH') },
+    { id: 'DAYCARE', label: isDutch ? 'Opvang 🏫' : 'Daycare 🏫' },
     { id: 'MILESTONE', label: t('categories.firsts') },
   ];
 
@@ -426,6 +428,7 @@ export function CalendarView() {
     if (dayCategoryFilter === 'PUMP') return rawSelectedDayEvents.filter(ev => ev.type === 'PUMP');
     if (dayCategoryFilter === 'GROWTH') return rawSelectedDayEvents.filter(ev => ev.type === 'GROWTH');
     if (dayCategoryFilter === 'HEALTH') return rawSelectedDayEvents.filter(ev => ev.type === 'HEALTH');
+    if (dayCategoryFilter === 'DAYCARE') return rawSelectedDayEvents.filter(ev => ev.type === 'DAYCARE');
     if (dayCategoryFilter === 'MILESTONE') return rawSelectedDayEvents.filter(ev => ev.type === 'MILESTONE');
     return rawSelectedDayEvents;
   }, [rawSelectedDayEvents, dayCategoryFilter]);

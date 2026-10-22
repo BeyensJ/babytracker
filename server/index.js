@@ -293,10 +293,62 @@ app.post('/api/reminders/:id/action', (req, res) => {
     const now = Date.now();
 
     if (action === 'complete_reminder') {
-      const eventPayload = createTimelineEventPayload(reminder, caregiver);
-      eventPayload.childKey = reminder.childKey || currentState.activeChildId || 'child_1';
-      const createdEvent = db.addEvent(eventPayload);
-      broadcast('EVENT_ADDED', createdEvent);
+      const isDaycare = reminder.activityType === 'DAYCARE' ||
+        reminder.id?.startsWith('daycare_') ||
+        reminder.subType === 'DROPOFF' || reminder.subType === 'PICKUP' ||
+        /opvang|crèche|creche|onthaalouder|daycare/i.test(`${reminder.title || ''} ${reminder.note || ''}`);
+
+      const titleAndNote = `${reminder.title || ''} ${reminder.note || ''} ${reminder.subType || ''}`.toLowerCase();
+      const isPickUp = isDaycare && (reminder.subType === 'PICKUP' || /pick[- ]?up|ophalen|ophalen van|afhalen/i.test(titleAndNote));
+      const isDropOff = isDaycare && (reminder.subType === 'DROPOFF' || /drop[- ]?off|afzetten|brengen|wegbrengen/i.test(titleAndNote) || !isPickUp);
+
+      let createdEvent = null;
+      const timers = { ...(currentState.activeTimers || {}) };
+
+      if (isDaycare && isDropOff) {
+        // Start live daycare timer, do NOT create premature timeline log
+        const daycareName = reminder.prefilledData?.daycareName || currentState.preferences?.daycareName || '';
+        timers.daycare = {
+          running: true,
+          startMs: now,
+          dropOffMs: now,
+          daycareName,
+          caregiverId: caregiver || 'Parent',
+        };
+        db.updateTimers(timers);
+        broadcast('TIMERS_UPDATED', timers);
+      } else if (isDaycare && isPickUp) {
+        // Stop live daycare timer and log complete stay
+        const d = timers.daycare;
+        const dropOffMs = d?.dropOffMs || d?.startMs || (now - 8 * 60 * 60 * 1000);
+        const daycareName = reminder.prefilledData?.daycareName || d?.daycareName || currentState.preferences?.daycareName || '';
+        const durationMs = Math.max(0, now - dropOffMs);
+
+        createdEvent = db.addEvent({
+          type: 'DAYCARE',
+          childKey: reminder.childKey || currentState.activeChildId || 'child_1',
+          beginDt: new Date(dropOffMs).toISOString(),
+          endDt: new Date(now).toISOString(),
+          durationMs,
+          note: reminder.note ? `${reminder.note} (Daycare)` : 'Daycare stay',
+          details: {
+            daycareName,
+            dropOffCaregiver: d?.caregiverId || caregiver || 'Parent',
+            pickUpCaregiver: caregiver || 'Parent',
+            durationSeconds: Math.round(durationMs / 1000),
+          }
+        });
+        broadcast('EVENT_ADDED', createdEvent);
+
+        delete timers.daycare;
+        db.updateTimers(timers);
+        broadcast('TIMERS_UPDATED', timers);
+      } else {
+        const eventPayload = createTimelineEventPayload(reminder, caregiver);
+        eventPayload.childKey = reminder.childKey || currentState.activeChildId || 'child_1';
+        createdEvent = db.addEvent(eventPayload);
+        broadcast('EVENT_ADDED', createdEvent);
+      }
 
       let nextDueTime = reminder.dueTime;
       let isCompleted = false;
@@ -312,6 +364,8 @@ app.post('/api/reminders/:id/action', (req, res) => {
         dueTime: nextDueTime,
         lastCompletedAt: now,
         completed: isCompleted,
+        activityType: isDaycare ? 'DAYCARE' : reminder.activityType,
+        subType: isDaycare ? (isPickUp ? 'PICKUP' : 'DROPOFF') : reminder.subType,
       });
 
       broadcast('REMINDER_UPDATED', updated);
@@ -430,32 +484,35 @@ app.use('/api/caregivers', requireAuth);
 app.use('/api/children', requireAuth);
 app.use('/api/preferences', requireAuth);
 app.use('/api/upload', requireAuth);
+app.use('/api/daycare', requireAuth);
 
 // --- REST API Endpoints ---
 
-// 0. Image / Photo Upload
+// 0. File / Photo Upload (Supports Images and PDF Daycare Reports)
 app.post('/api/upload', (req, res) => {
   try {
-    const { image } = req.body;
-    if (!image || typeof image !== 'string') {
-      return res.status(400).json({ error: 'No image data provided' });
+    const dataUrl = req.body.file || req.body.image;
+    if (!dataUrl || typeof dataUrl !== 'string') {
+      return res.status(400).json({ error: 'No file or image data provided' });
     }
 
-    const matches = image.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
+    const matches = dataUrl.match(/^data:([A-Za-z0-9-+/.]+);base64,(.+)$/);
     if (!matches || matches.length !== 3) {
-      return res.status(400).json({ error: 'Invalid base64 image data' });
+      return res.status(400).json({ error: 'Invalid base64 data' });
     }
 
-    const mimeType = matches[1];
+    const mimeType = matches[1].toLowerCase();
     const base64Data = matches[2];
     const buffer = Buffer.from(base64Data, 'base64');
 
     let ext = 'jpg';
-    if (mimeType.includes('png')) ext = 'png';
+    if (mimeType.includes('pdf')) ext = 'pdf';
+    else if (mimeType.includes('png')) ext = 'png';
     else if (mimeType.includes('webp')) ext = 'webp';
     else if (mimeType.includes('gif')) ext = 'gif';
 
-    const safeName = `photo_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.${ext}`;
+    const prefix = ext === 'pdf' ? 'doc' : 'photo';
+    const safeName = `${prefix}_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.${ext}`;
     const filePath = path.join(uploadsDir, safeName);
 
     fs.writeFileSync(filePath, buffer);
@@ -464,11 +521,176 @@ app.post('/api/upload', (req, res) => {
       success: true,
       url: `/api/uploads/${safeName}`,
       filename: safeName,
+      mimeType,
       size: buffer.length,
     });
   } catch (err) {
-    console.error('[API] Error handling image upload:', err);
+    console.error('[API] Error handling file upload:', err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// 0b. Daycare Report AI Extraction (Google Gemini)
+app.post('/api/daycare/test-gemini', async (req, res) => {
+  try {
+    const currentState = db.getState();
+    const apiKey = req.body?.apiKey || currentState.preferences?.geminiApiKey || process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(400).json({ success: false, error: 'Geen API-sleutel ingevoerd.' });
+    }
+
+    const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const testRes = await fetch(testUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: 'Respond with the word OK.' }] }],
+      }),
+    });
+
+    if (!testRes.ok) {
+      // Fallback check to gemini-1.5-flash
+      const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const fallbackRes = await fetch(fallbackUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: 'Respond with the word OK.' }] }],
+        }),
+      });
+
+      if (!fallbackRes.ok) {
+        const errJson = await fallbackRes.json().catch(() => ({}));
+        const errMsg = errJson.error?.message || `HTTP ${fallbackRes.status}`;
+        return res.json({ success: false, error: errMsg });
+      }
+      return res.json({ success: true, model: 'gemini-1.5-flash' });
+    }
+
+    return res.json({ success: true, model: 'gemini-2.5-flash' });
+  } catch (err) {
+    return res.json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/daycare/extract-report', async (req, res) => {
+  try {
+    const currentState = db.getState();
+    const apiKey = req.body?.apiKey || currentState.preferences?.geminiApiKey || process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(400).json({
+        error: 'MISSING_API_KEY',
+        message: 'No Gemini API key found. Please configure your Gemini API key in Settings.',
+      });
+    }
+
+    const { file, mimeType: userMimeType, date, daycareName, childName } = req.body;
+    if (!file || typeof file !== 'string') {
+      return res.status(400).json({ error: 'No file data provided.' });
+    }
+
+    let mimeType = userMimeType || 'image/jpeg';
+    let base64Data = file;
+    if (file.startsWith('data:')) {
+      const parts = file.split(';base64,');
+      mimeType = parts[0].replace('data:', '');
+      base64Data = parts[1];
+    }
+
+    const systemPrompt = `You are an expert pediatric daycare report reader.
+Analyze the provided daycare report (which can be a photo of a handwritten/printed daily sheet, a screenshot of a daycare app like Bitcare/Konnect, or a PDF report).
+The child's name is "${childName || 'Baby'}" and the date of the report is "${date || 'today'}".
+
+Extract all relevant baby care events that occurred at daycare into structured JSON.
+Possible activity categories:
+1. SLEEP: naps at daycare. Include "time" (start HH:MM), "endTime" (HH:MM) or "durationMinutes".
+2. BOTTLE: bottle feeds / milk. Include "time" (HH:MM), volume in ml (e.g. 180), milkType ("FORMULA", "BREAST_MILK", "WATER").
+3. SOLIDS: solid food, fruit puree, vegetable puree, lunch, snacks. Include "time" (HH:MM), food description, mealType ("Lunch", "Snack", "Breakfast"), portion or reaction.
+4. DIAPER: diaper changes. Include "time" (HH:MM), boolean "pee", boolean "poop", and texture/notes if noted.
+5. HEALTH: temperature in °C, medication administered, illness or teething symptoms.
+6. ROUTINE: outdoor walk, playtime, tummy time, bath, crafts.
+7. NOTE: teacher remarks, child's mood, general observations, sleep quality.
+
+Format your response as a valid JSON object matching this exact structure:
+{
+  "daycareName": string or null,
+  "reportDate": "YYYY-MM-DD" or null,
+  "generalSummary": string,
+  "events": [
+    {
+      "type": "SLEEP" | "BOTTLE" | "SOLIDS" | "DIAPER" | "HEALTH" | "ROUTINE" | "NOTE",
+      "time": "HH:MM",
+      "endTime": "HH:MM",
+      "durationMinutes": number,
+      "title": string,
+      "details": object,
+      "daycareRemark": string
+    }
+  ]
+}`;
+
+    const requestBody = {
+      contents: [
+        {
+          parts: [
+            { text: systemPrompt },
+            {
+              inline_data: {
+                mime_type: mimeType,
+                data: base64Data,
+              },
+            },
+          ],
+        },
+      ],
+      generationConfig: {
+        response_mime_type: 'application/json',
+        temperature: 0.1,
+      },
+    };
+
+    let geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+    let geminiRes = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!geminiRes.ok && geminiRes.status === 404) {
+      // Fallback to gemini-1.5-flash if 2.5-flash not found
+      geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+      geminiRes = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+    }
+
+    if (!geminiRes.ok) {
+      const errData = await geminiRes.json().catch(() => ({}));
+      const msg = errData.error?.message || `Gemini API returned status ${geminiRes.status}`;
+      return res.status(502).json({ error: 'GEMINI_API_ERROR', message: msg });
+    }
+
+    const geminiData = await geminiRes.json();
+    const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!rawText) {
+      return res.status(502).json({ error: 'EMPTY_RESPONSE', message: 'No content generated by Gemini.' });
+    }
+
+    const cleanedText = rawText.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+    const parsed = JSON.parse(cleanedText);
+
+    res.json({
+      success: true,
+      daycareName: parsed.daycareName || daycareName || null,
+      reportDate: parsed.reportDate || date || null,
+      generalSummary: parsed.generalSummary || '',
+      events: Array.isArray(parsed.events) ? parsed.events : [],
+    });
+  } catch (err) {
+    console.error('[API] Daycare report extraction error:', err);
+    res.status(500).json({ error: 'EXTRACTION_FAILED', message: err.message });
   }
 });
 
@@ -684,6 +906,26 @@ app.post('/api/timers/action', (req, res) => {
           }
         });
         timers.pump = { running: false, startMs: null, side: 'BOTH' };
+      } else if ((!timerType || timerType === 'daycare') && timers.daycare?.running) {
+        const d = timers.daycare;
+        const startMs = d.dropOffMs || d.startMs || now;
+        const durationSec = Math.max(0, Math.round((now - startMs) / 1000));
+        const beginDt = new Date(startMs).toISOString();
+        const endDt = new Date(now).toISOString();
+
+        createdEvent = db.addEvent({
+          type: 'DAYCARE',
+          beginDt,
+          endDt,
+          durationMs: durationSec * 1000,
+          details: {
+            daycareName: d.daycareName || currentState.preferences?.daycareName || '',
+            dropOffCaregiver: d.caregiverId || caregiver || 'Parent',
+            pickUpCaregiver: caregiver || 'Parent',
+            durationSeconds: durationSec,
+          }
+        });
+        delete timers.daycare;
       }
 
       db.updateTimers(timers);

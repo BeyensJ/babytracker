@@ -31,6 +31,8 @@ const DEFAULT_PREFERENCES = {
   weightUnit: 'kg',
   lengthUnit: 'cm',
   tempUnit: 'C',
+  geminiApiKey: '',
+  daycareName: '',
 };
 
 function hashPassword(password, salt) {

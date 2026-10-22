@@ -22,7 +22,7 @@ export function TimelineFeed({ limitDays = null }) {
     if (activeFilter === 'DIAPER') return e.type === 'DIAPER';
     if (activeFilter === 'PUMP') return e.type === 'PUMP';
     if (activeFilter === 'PHOTOS') return Boolean(e.photoUrl || e.details?.photoUrl);
-    if (activeFilter === 'OTHER') return ['GROWTH', 'HEALTH', 'ROUTINE', 'MILESTONE', 'NOTE'].includes(e.type);
+    if (activeFilter === 'OTHER') return ['GROWTH', 'HEALTH', 'ROUTINE', 'MILESTONE', 'NOTE', 'DAYCARE'].includes(e.type);
     return true;
   });
 

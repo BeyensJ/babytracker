@@ -51,7 +51,16 @@ function AppContent() {
 
     handleShortcut();
     window.addEventListener('hashchange', handleShortcut);
-    return () => window.removeEventListener('hashchange', handleShortcut);
+
+    const handleNav = (e) => {
+      if (e.detail?.tab) setActiveTab(e.detail.tab);
+    };
+    window.addEventListener('babytracker:navigate', handleNav);
+
+    return () => {
+      window.removeEventListener('hashchange', handleShortcut);
+      window.removeEventListener('babytracker:navigate', handleNav);
+    };
   }, [isAuthenticated, openModal]);
 
   if (isLoadingAuth) {

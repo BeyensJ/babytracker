@@ -38,6 +38,7 @@ import {
   Tag,
   MessageCircle,
   Send,
+  School,
 } from 'lucide-react';
 import { PumpIcon } from '../icons/PumpIcon';
 
@@ -85,6 +86,7 @@ export function EventDetailModal() {
     resumeBreastTimerWithData,
     resumeSleepTimerWithData,
     resumePumpTimerWithData,
+    resumeDaycareWithData,
   } = useApp();
 
   const [showLightbox, setShowLightbox] = useState(false);
@@ -511,6 +513,37 @@ export function EventDetailModal() {
         };
       }
 
+      case 'DAYCARE': {
+        const dropOffCaregiver = caregivers?.find(c => c.id === det.dropOffCaregiver)?.name || det.dropOffCaregiver || '—';
+        const pickUpCaregiver = caregivers?.find(c => c.id === det.pickUpCaregiver)?.name || det.pickUpCaregiver || '—';
+        return {
+          icon: School,
+          categoryName: isDutch ? 'Kinderopvang / Crèche' : 'Daycare Stay',
+          title: det.daycareName || (isDutch ? 'Opvang' : 'Daycare'),
+          themeColor: 'var(--color-daycare)',
+          themeBg: 'var(--color-daycare-light)',
+          badgeClass: 'daycare',
+          heroValue: event.durationMs ? formatDurationMs(event.durationMs, language) : (isDutch ? 'Opvang' : 'Daycare'),
+          heroSub: det.daycareName || (isDutch ? 'Verblijf' : 'Stay'),
+          sections: [
+            det.daycareName && { label: isDutch ? 'Opvanglocatie' : 'Daycare Name', value: det.daycareName },
+            { label: isDutch ? 'Afgezet om' : 'Drop-off Time', value: startTimeStr },
+            endTimeStr && { label: isDutch ? 'Opgehaald om' : 'Pick-up Time', value: endTimeStr },
+            event.durationMs > 0 && { label: isDutch ? 'Totale duur' : 'Total Duration', value: formatDurationMs(event.durationMs, language) },
+            { label: isDutch ? 'Afgezet door' : 'Dropped off by', value: dropOffCaregiver },
+            { label: isDutch ? 'Opgehaald door' : 'Picked up by', value: pickUpCaregiver },
+            det.reportUrl && {
+              label: isDutch ? 'Dagverslag' : 'Daily Report',
+              value: det.reportType?.includes('pdf') ? 'PDF Verslag' : 'Foto / Screenshot',
+            },
+            det.extractedCount > 0 && {
+              label: isDutch ? 'Geëxtraheerde activiteiten' : 'Extracted Activities',
+              value: `${det.extractedCount} items (${isDutch ? 'met opmerking "daycare"' : 'tagged "daycare"'})`,
+            },
+          ].filter(Boolean),
+        };
+      }
+
       case 'NOTE':
       default: {
         return {
@@ -597,6 +630,8 @@ export function EventDetailModal() {
       resumeSleepTimerWithData(event);
     } else if (event.type === 'PUMP') {
       resumePumpTimerWithData(event);
+    } else if (event.type === 'DAYCARE') {
+      resumeDaycareWithData(event);
     }
     closeModal();
   };

@@ -21,6 +21,7 @@ import {
   ArrowUp,
   ArrowDown,
   LayoutGrid,
+  School,
 } from 'lucide-react';
 import { PumpIcon } from '../icons/PumpIcon';
 
@@ -124,6 +125,14 @@ export function CustomizeQuickModal() {
       icon: Clock,
       color: 'var(--color-routine)',
       bg: 'var(--color-routine-light)',
+    },
+    {
+      id: 'DAYCARE',
+      label: isDutch ? 'Opvang & Crèche' : 'Daycare & Crèche',
+      desc: isDutch ? 'Afzetten, ophalen en dagverslagen' : 'Drop-off, pick-up and daily reports',
+      icon: School,
+      color: 'var(--color-daycare)',
+      bg: 'var(--color-daycare-light)',
     },
     {
       id: 'NOTE',

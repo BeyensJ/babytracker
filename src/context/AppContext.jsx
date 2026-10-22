@@ -8,6 +8,7 @@ import { notificationService } from '../services/notificationService';
 import { triggerHaptic } from '../utils/haptics';
 import { downloadFile } from '../utils/fileDownloader';
 import { computeNextDueTime, isReminderDue, createTimelineEventPayload, RECURRENCE_TYPES } from '../utils/reminderUtils';
+import { formatDurationMs } from '../utils/formatters';
 
 const AppContext = createContext();
 
@@ -55,8 +56,10 @@ const DEFAULT_PREFERENCES = {
   theme: 'light',   // 'light' or 'dark' (pure pitch-black OLED)
   haptics: true,    // subtle vibration feedback
   language: 'nl',   // 'nl' (Nederlands / Vlaams) or 'en' (English)
-  quickStatusCards: ['FEEDS', 'SLEEP', 'PUMP'], // Displayed quick summary cards
-  quickActionButtons: ['BREAST', 'BOTTLE', 'SLEEP', 'PUMP'], // Displayed dock quick actions
+  geminiApiKey: '', // Google Gemini API Key for Daycare report AI extraction
+  daycareName: '',  // Default family daycare / nursery name
+  quickStatusCards: ['FEEDS', 'SLEEP', 'PUMP', 'DAYCARE'], // Displayed quick summary cards
+  quickActionButtons: ['BREAST', 'BOTTLE', 'SLEEP', 'PUMP', 'DAYCARE'], // Displayed dock quick actions
 };
 
 export function AppProvider({ children }) {
@@ -706,14 +709,93 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     const reminder = reminders.find(r => r.id === reminderId);
     if (!reminder) return null;
 
+    const now = Date.now();
+    const isDutch = language === 'nl';
     let createdEvent = null;
-    if (shouldLogEvent) {
-      const eventPayload = customEventPayload || createTimelineEventPayload(reminder, activeCaregiver?.name || 'Parent');
+    let toastMessage = '';
+
+    const isDaycare =
+      reminder.activityType === 'DAYCARE' ||
+      reminder.id?.includes('daycare') ||
+      (reminder.title && /crèche|creche|opvang|daycare|onthaalouder/i.test(reminder.title)) ||
+      (reminder.note && /crèche|creche|opvang|daycare|onthaalouder/i.test(reminder.note)) ||
+      Boolean(reminder.prefilledData?.daycareName) ||
+      reminder.prefilledData?.subType === 'DROPOFF' ||
+      reminder.prefilledData?.subType === 'PICKUP';
+
+    const isPickUp = isDaycare && (
+      reminder.prefilledData?.subType === 'PICKUP' ||
+      reminder.id?.includes('pickup') ||
+      (reminder.title && /ophaal|ophalen|pickup|pick-up|afhalen|eind|stop/i.test(reminder.title)) ||
+      (reminder.note && /ophaal|ophalen|pickup|pick-up|afhalen|eind|stop/i.test(reminder.note))
+    );
+
+    const isDropOff = isDaycare && !isPickUp;
+
+    if (isDaycare && shouldLogEvent) {
+      const finalDaycareName = reminder.prefilledData?.daycareName || preferences?.daycareName || (isDutch ? 'Opvang / Crèche' : 'Daycare');
+
+      if (isDropOff) {
+        // Drop-off 1-click: MUST START the live daycare timer!
+        // DO NOT log any timeline event!
+        startDaycare(now, finalDaycareName, activeCaregiverId);
+        toastMessage = isDutch
+          ? `${reminder.title || 'Afzetten bij opvang'} voltooid · Opvangtimer gestart ⏱️`
+          : `${reminder.title || 'Daycare Drop-off'} complete · Daycare timer started ⏱️`;
+      } else {
+        // Pick-up 1-click: MUST STOP the live daycare timer and save the completed stay!
+        let dropOffMs = activeTimers?.daycare?.dropOffMs || activeTimers?.daycare?.startMs;
+        const dropOffCaregiver = activeTimers?.daycare?.caregiverId;
+
+        // If timer was not running, check when drop-off reminder was completed today, or default to 8:00 AM today / 8 hours ago
+        if (!dropOffMs) {
+          const dropOffReminder = reminders.find(r =>
+            r.id !== reminder.id &&
+            (r.activityType === 'DAYCARE' || r.id?.includes('dropoff') || (r.title && /afzet|dropoff|crèche|opvang/i.test(r.title))) &&
+            !(r.id?.includes('pickup') || (r.title && /ophaal|pickup/i.test(r.title)))
+          );
+          if (dropOffReminder?.lastCompletedAt && (now - dropOffReminder.lastCompletedAt < 24 * 60 * 60 * 1000)) {
+            dropOffMs = dropOffReminder.lastCompletedAt;
+          } else {
+            const today8am = new Date();
+            today8am.setHours(8, 0, 0, 0);
+            dropOffMs = now > today8am.getTime() ? today8am.getTime() : (now - 8 * 60 * 60 * 1000);
+          }
+        }
+
+        const durationMs = Math.max(0, now - dropOffMs);
+        const daycareEventPayload = customEventPayload || {
+          id: `evt_${now}_${Math.random().toString(36).substr(2, 7)}`,
+          childKey: reminder.childKey || activeChildId,
+          type: 'DAYCARE',
+          beginDt: dropOffMs,
+          endDt: now,
+          durationMs,
+          note: reminder.note || reminder.prefilledData?.note || '',
+          details: {
+            daycareName: finalDaycareName,
+            dropOffCaregiver: dropOffCaregiver || activeCaregiverId,
+            pickUpCaregiver: activeCaregiverId,
+            sourceReminderId: reminder.id,
+            caregiver: activeCaregiver?.name || 'Parent',
+          },
+        };
+
+        createdEvent = addEvent(daycareEventPayload);
+        if (activeTimers?.daycare?.running) {
+          clearActiveTimer('daycare');
+        }
+
+        toastMessage = isDutch
+          ? `${reminder.title || 'Ophalen van opvang'} voltooid · Verblijf opgeslagen (${formatDurationMs(durationMs, language)})`
+          : `${reminder.title || 'Daycare Pick-up'} complete · Stay logged (${formatDurationMs(durationMs, language)})`;
+      }
+    } else if (shouldLogEvent) {
+      const eventPayload = customEventPayload || createTimelineEventPayload(reminder, activeCaregiver?.name || 'Parent', preferences?.daycareName);
       eventPayload.childKey = reminder.childKey || activeChildId;
       createdEvent = addEvent(eventPayload);
     }
 
-    const now = Date.now();
     let nextDueTime = reminder.dueTime;
     let isCompleted = false;
 
@@ -730,17 +812,31 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
       completed: isCompleted,
     };
 
+    // Auto-heal legacy reminders so they are properly tagged as DAYCARE and subType
+    if (isDaycare && (reminder.activityType !== 'DAYCARE' || !reminder.prefilledData?.subType)) {
+      updates.activityType = 'DAYCARE';
+      updates.prefilledData = {
+        ...(reminder.prefilledData || {}),
+        subType: isPickUp ? 'PICKUP' : 'DROPOFF',
+        daycareName: reminder.prefilledData?.daycareName || preferences?.daycareName || '',
+      };
+    }
+
     updateReminder(reminderId, updates);
     triggerHaptic('success', preferences?.haptics);
 
     const reminderTitle = reminder.title || reminder.activityType;
+    if (!toastMessage) {
+      toastMessage = isDutch
+        ? `${reminderTitle} gemarkeerd als voltooid${shouldLogEvent ? ' en toegevoegd aan tijdlijn.' : '.'}`
+        : `${reminderTitle} marked complete${shouldLogEvent ? ' and logged to timeline.' : '.'}`;
+    }
+
     notificationService.showToast({
       id: `toast_${now}`,
       type: 'success',
-      title: language === 'nl' ? 'Herinnering voltooid' : 'Reminder completed',
-      message: language === 'nl'
-        ? `${reminderTitle} gemarkeerd als voltooid${shouldLogEvent ? ' en toegevoegd aan tijdlijn.' : '.'}`
-        : `${reminderTitle} marked complete${shouldLogEvent ? ' and logged to timeline.' : '.'}`,
+      title: isDutch ? 'Herinnering voltooid' : 'Reminder completed',
+      message: toastMessage,
     });
 
     return { reminder, event: createdEvent };
@@ -978,6 +1074,52 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     });
   };
 
+  // 4. Daycare Stay Timer (Drop-off & Pick-up)
+  const startDaycare = (customDropOffMs = null, daycareName = '', caregiverId = null) => {
+    if (notificationService.getPermission() === 'default') {
+      notificationService.requestPermission().then(p => setNotificationPermission(p)).catch(() => {});
+    }
+    const now = Date.now();
+    const dropOffMs = customDropOffMs ? Number(customDropOffMs) : now;
+    const finalDaycareName = (daycareName && daycareName.trim()) || preferences?.daycareName || '';
+    triggerHaptic('medium', preferences?.haptics);
+    broadcastTimers(prev => ({
+      ...prev,
+      daycare: {
+        running: true,
+        startMs: dropOffMs,
+        dropOffMs,
+        daycareName: finalDaycareName,
+        caregiverId: caregiverId || activeCaregiverId,
+      },
+    }));
+  };
+
+  const stopDaycare = () => {
+    const d = activeTimers.daycare;
+    const now = Date.now();
+    const dropOffMs = d?.dropOffMs || d?.startMs || (now - 8 * 60 * 60 * 1000);
+    const existing = d?.resumedEventId ? events.find(e => e.id === d.resumedEventId) : null;
+
+    openModal('DAYCARE', {
+      id: d?.resumedEventId || undefined,
+      fromActiveTimer: 'daycare',
+      resumedEventId: d?.resumedEventId || null,
+      beginDt: dropOffMs,
+      endDt: now,
+      durationMs: Math.max(0, now - dropOffMs),
+      note: existing?.note || '',
+      details: {
+        daycareName: d?.daycareName || existing?.details?.daycareName || preferences?.daycareName || '',
+        dropOffCaregiver: d?.caregiverId || existing?.details?.dropOffCaregiver || activeCaregiverId,
+        pickUpCaregiver: activeCaregiverId,
+        reportUrl: existing?.details?.reportUrl || null,
+        reportType: existing?.details?.reportType || null,
+        ...(existing?.details || {}),
+      },
+    });
+  };
+
   // Clear an active timer explicitly when saved or deleted
   const clearActiveTimer = (timerType) => {
     broadcastTimers(prev => {
@@ -1074,6 +1216,25 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     }));
   };
 
+  const resumeDaycareWithData = (data = {}) => {
+    if (notificationService.getPermission() === 'default') {
+      notificationService.requestPermission().then(p => setNotificationPermission(p)).catch(() => {});
+    }
+    const dropOffMs = data.beginDt || Date.now();
+    triggerHaptic('medium', preferences?.haptics);
+    broadcastTimers(prev => ({
+      ...prev,
+      daycare: {
+        running: true,
+        startMs: dropOffMs,
+        dropOffMs,
+        daycareName: data.details?.daycareName || '',
+        caregiverId: data.details?.dropOffCaregiver || activeCaregiverId,
+        resumedEventId: data.id || null,
+      },
+    }));
+  };
+
   // 4. Update Start Time on Active Running Timer
   const updateTimerStartTime = (timerType, newStartTimeMs) => {
     const now = Date.now();
@@ -1090,6 +1251,12 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
         return {
           ...prev,
           pump: { ...prev.pump, startMs },
+        };
+      }
+      if (timerType === 'daycare' && prev.daycare) {
+        return {
+          ...prev,
+          daycare: { ...prev.daycare, startMs, dropOffMs: startMs },
         };
       }
       if (timerType === 'breast' && prev.breast) {
@@ -1175,7 +1342,8 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
             notificationService.dispatchReminderNotification(
               reminder,
               baby?.name || activeChild?.name || 'Baby',
-              language
+              language,
+              preferences?.daycareName || ''
             );
           }
         }
@@ -1209,7 +1377,8 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
             notificationService.dispatchReminderNotification(
               reminder,
               baby?.name || activeChild?.name || 'Baby',
-              language
+              language,
+              preferences?.daycareName || ''
             );
           }
         }, delay);
@@ -1253,6 +1422,7 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
         if (timerType === 'breast') stopBreastTimer();
         else if (timerType === 'sleep') stopSleepTimer();
         else if (timerType === 'pump') stopPumpTimer();
+        else if (timerType === 'daycare') stopDaycare();
       }
     });
 
@@ -1274,6 +1444,7 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
             if (timerType === 'breast') stopBreastTimer();
             else if (timerType === 'sleep') stopSleepTimer();
             else if (timerType === 'pump') stopPumpTimer();
+            else if (timerType === 'daycare') stopDaycare();
           }
         }
       };
@@ -1498,6 +1669,9 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     startPumpTimer,
     stopPumpTimer,
     resumePumpTimerWithData,
+    startDaycare,
+    stopDaycare,
+    resumeDaycareWithData,
     clearActiveTimer,
     updateTimerStartTime,
     exportCSV,

@@ -202,9 +202,10 @@ class NotificationService {
     const breast = activeTimers?.breast;
     const sleep = activeTimers?.sleep?.running ? activeTimers.sleep : null;
     const pump = activeTimers?.pump?.running ? activeTimers.pump : null;
+    const daycare = activeTimers?.daycare?.running ? activeTimers.daycare : null;
 
     // If no timers are running, clear notifications
-    if (!breast && !sleep && !pump) {
+    if (!breast && !sleep && !pump && !daycare) {
       this.clearNotification();
       this.stopTicker();
       return;
@@ -259,6 +260,13 @@ class NotificationService {
         nativeTitle = `🍼 ${lang === 'nl' ? 'Afkolfsessie' : 'Pumping Session'}`;
         nativeText = `${lang === 'nl' ? 'Gestart om' : 'Started at'} ${formatTime(startTimeMs, lang, true)}`;
         nativeActions = [{ id: 'finish_timer', title: lang === 'nl' ? 'Klaar & Opslaan ✓' : 'Finish & Save ✓' }];
+      } else if (daycare) {
+        nativeTimerType = 'daycare';
+        startTimeMs = daycare.dropOffMs || daycare.startMs || now;
+        const place = daycare.daycareName ? ` (${daycare.daycareName})` : '';
+        nativeTitle = `🏫 ${babyName} ${lang === 'nl' ? 'is op de crèche/opvang' : 'is at Daycare'}${place}`;
+        nativeText = `${lang === 'nl' ? 'Afgezet om' : 'Dropped off at'} ${formatTime(startTimeMs, lang, true)}`;
+        nativeActions = [{ id: 'finish_timer', title: lang === 'nl' ? 'Ophalen 🚗' : 'Pick Up 🚗' }];
       }
 
       try {
@@ -326,6 +334,17 @@ class NotificationService {
       body = `${formatTimerClock(elapsed)} ${lang === 'nl' ? 'verstreken' : 'elapsed'} • ${lang === 'nl' ? 'Gestart om' : 'Started at'} ${formatTime(startMs, lang, true)}`;
 
       actions = [{ action: 'finish_timer', title: lang === 'nl' ? 'Klaar & Opslaan ✓' : 'Finish & Save ✓' }];
+    } else if (daycare) {
+      timerType = 'daycare';
+      const startMs = daycare.dropOffMs || daycare.startMs || now;
+      const elapsed = Math.max(0, now - startMs);
+      timestamp = startMs;
+      const place = daycare.daycareName ? ` (${daycare.daycareName})` : '';
+
+      title = `🏫 ${babyName} ${lang === 'nl' ? 'is op de crèche/opvang' : 'is at Daycare'}${place}`;
+      body = `${formatTimerClock(elapsed)} ${lang === 'nl' ? 'verstreken' : 'elapsed'} • ${lang === 'nl' ? 'Afgezet om' : 'Dropped off at'} ${formatTime(startMs, lang, true)}\n${lang === 'nl' ? 'Tik op Ophalen zodra je de baby ophaalt.' : 'Tap Pick Up when picking up baby.'}`;
+
+      actions = [{ action: 'finish_timer', title: lang === 'nl' ? 'Ophalen 🚗' : 'Pick Up 🚗' }];
     }
 
     const payload = {
@@ -616,7 +635,7 @@ class NotificationService {
   /**
    * Send a rich push notification on the scheduled moment for a reminder.
    */
-  async dispatchReminderNotification(reminder, babyName = 'Baby', lang = 'nl') {
+  async dispatchReminderNotification(reminder, babyName = 'Baby', lang = 'nl', defaultDaycareName = '') {
     if (!reminder) return false;
 
     const isDutch = lang === 'nl';
@@ -631,12 +650,13 @@ class NotificationService {
       GROWTH: '📏',
       HEALTH: '💊',
       ROUTINE: '⏰',
+      DAYCARE: '🏫',
       NOTE: '📝',
       MILESTONE: '🏆',
     };
     const emoji = emojiMap[activityType] || '⏰';
 
-    const categorySummary = getCategorySummary(activityType, reminder.prefilledData, lang);
+    const categorySummary = getCategorySummary(activityType, reminder.prefilledData, lang, defaultDaycareName);
     const hasCustomTitle = Boolean(reminder.title && reminder.title.trim().length > 0);
     const mainTitle = hasCustomTitle ? reminder.title.trim() : categorySummary;
     const title = `${emoji} ${mainTitle}${babyName ? ` — ${babyName}` : ''}`;

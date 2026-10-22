@@ -37,6 +37,7 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
     resumeBreastTimerWithData,
     resumeSleepTimerWithData,
     resumePumpTimerWithData,
+    resumeDaycareWithData,
     language,
     t,
   } = useApp();
@@ -66,10 +67,12 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
       resumeSleepTimerWithData(event);
     } else if (event.type === 'PUMP') {
       resumePumpTimerWithData(event);
+    } else if (event.type === 'DAYCARE') {
+      resumeDaycareWithData(event);
     }
   };
 
-  // Group events into 5 buckets
+  // Group events into buckets
   const feeds = [];
   const pumps = [];
   const sleeps = [];
@@ -195,6 +198,8 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
     diaperSummaryText += isDutch ? ` (⚠️ ${blowoutCount} doorgelekt)` : ` (⚠️ ${blowoutCount} Blowout)`;
   }
 
+
+
   return (
     <div className="grouped-day-container">
       {/* 1. Feeds Section */}
@@ -311,6 +316,8 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
               language={language}
               onEdit={openModal}
               onDelete={deleteEvent}
+              onResume={handleResume}
+              activeTimers={activeTimers}
             />
           )}
         />
@@ -571,13 +578,15 @@ function PumpItemRow({ event, preferences, language, onEdit, onDelete, onResume,
 }
 
 /**
- * Other Activities Row (Growth, Health, Routine, Milestone, Note)
+ * Other Activities Row (Growth, Health, Routine, Milestone, Note, Daycare)
  */
-function OtherItemRow({ event, preferences, language, onEdit, onDelete }) {
+function OtherItemRow({ event, preferences, language, onEdit, onDelete, onResume, activeTimers }) {
   const isDutch = language === 'nl';
   const det = event.details || {};
   let label = isDutch ? 'Activiteit' : 'Activity';
   let detailChip = '';
+  let isRunning = false;
+  let isResumable = false;
 
   if (event.type === 'GROWTH') {
     label = isDutch ? 'Groei' : 'Growth';
@@ -601,6 +610,13 @@ function OtherItemRow({ event, preferences, language, onEdit, onDelete }) {
     detailChip = det.isBabyFirst ? (isDutch ? '🌟 Eerste keer' : '🌟 Baby First') : (isDutch ? '🏆 Mijlpaal' : '🏆 Milestone');
   } else if (event.type === 'NOTE') {
     label = isDutch ? 'Notitie' : 'Journal Note';
+  } else if (event.type === 'DAYCARE') {
+    label = det.daycareName || (isDutch ? 'Opvang / Crèche' : 'Daycare');
+    const dur = event.durationMs ? formatDurationMs(event.durationMs, language) : '';
+    const reportTag = det.reportUrl ? (isDutch ? '📄 Verslag' : '📄 Report') : '';
+    detailChip = [dur, reportTag].filter(Boolean).join(' • ');
+    isRunning = (activeTimers?.daycare?.resumedEventId === event.id) || Boolean(activeTimers?.daycare?.running);
+    isResumable = true;
   }
 
   return (
@@ -611,7 +627,10 @@ function OtherItemRow({ event, preferences, language, onEdit, onDelete }) {
       language={language}
       onEdit={onEdit}
       onDelete={onDelete}
-      categoryType={event.type.toLowerCase()}
+      onResume={onResume}
+      isCurrentlyRunning={isRunning}
+      isResumable={isResumable}
+      categoryType={event.type === 'DAYCARE' ? 'daycare' : event.type.toLowerCase()}
     />
   );
 }

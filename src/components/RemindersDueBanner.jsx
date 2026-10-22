@@ -19,7 +19,8 @@ import {
   Heart,
   Droplet,
   FileText,
-  Plus
+  Plus,
+  School,
 } from 'lucide-react';
 import {
   formatReminderOverdue,
@@ -62,6 +63,7 @@ export function RemindersDueBanner() {
       case 'BREAST': return <Heart size={18} />;
       case 'PUMP': return <Droplet size={18} />;
       case 'DIAPER': return <Sparkles size={18} />;
+      case 'DAYCARE': return <School size={18} />;
       default: return <FileText size={18} />;
     }
   };
@@ -76,6 +78,7 @@ export function RemindersDueBanner() {
       case 'BREAST': return 'var(--color-breast)';
       case 'PUMP': return 'var(--color-pump)';
       case 'DIAPER': return 'var(--color-diaper)';
+      case 'DAYCARE': return 'var(--color-daycare)';
       default: return 'var(--color-terracotta)';
     }
   };
@@ -92,10 +95,23 @@ export function RemindersDueBanner() {
 
   const handleEditAndLog = (reminder) => {
     // Open the specific modal with prefilled data and link to reminder
-    const modalType = reminder.activityType || 'ROUTINE';
+    const isDaycare = reminder.activityType === 'DAYCARE' ||
+      reminder.id?.startsWith('daycare_') ||
+      reminder.subType === 'DROPOFF' || reminder.subType === 'PICKUP' ||
+      /opvang|crèche|creche|onthaalouder|daycare/i.test(`${reminder.title || ''} ${reminder.note || ''}`);
+
+    const titleAndNote = `${reminder.title || ''} ${reminder.note || ''} ${reminder.subType || ''}`.toLowerCase();
+    const isPickUp = isDaycare && (reminder.subType === 'PICKUP' || /pick[- ]?up|ophalen|ophalen van|afhalen/i.test(titleAndNote));
+    const isDropOff = isDaycare && (reminder.subType === 'DROPOFF' || /drop[- ]?off|afzetten|brengen|wegbrengen/i.test(titleAndNote) || !isPickUp);
+
+    const modalType = isDaycare ? 'DAYCARE' : (reminder.activityType || 'ROUTINE');
     const initialData = {
       ...(reminder.prefilledData || {}),
       sourceReminderId: reminder.id,
+      isDaycare,
+      isDropOff,
+      isPickUp,
+      subType: isDropOff ? 'DROPOFF' : (isPickUp ? 'PICKUP' : reminder.subType),
       note: reminder.prefilledData?.note || reminder.note || '',
     };
     openModal(modalType, initialData);
@@ -150,7 +166,7 @@ export function RemindersDueBanner() {
         <div className="reminders-due-list">
           {dueReminders.map((reminder) => {
             const actColor = getActivityColor(reminder.activityType);
-            const summary = getCategorySummary(reminder.activityType, reminder.prefilledData, language);
+            const summary = getCategorySummary(reminder.activityType, reminder.prefilledData, language, preferences?.daycareName);
             const overdueStr = formatReminderOverdue(reminder.dueTime, language);
             const scheduleStr = formatReminderSchedule(reminder, language);
             const isProcessing = processingId === reminder.id;
@@ -193,7 +209,7 @@ export function RemindersDueBanner() {
                     </div>
                   </div>
 
-                  {/* Actions Bar */}
+                    {/* Actions Bar */}
                   <div className="reminder-actions-row">
                     <button
                       className="btn-quick-log"
@@ -202,7 +218,21 @@ export function RemindersDueBanner() {
                       title={t('reminders.quickLogDesc')}
                     >
                       <CheckCircle2 size={16} />
-                      <span>{t('reminders.quickLogAndComplete')}</span>
+                      <span>
+                        {(() => {
+                          const isDaycare = reminder.activityType === 'DAYCARE' ||
+                            reminder.id?.startsWith('daycare_') ||
+                            reminder.subType === 'DROPOFF' || reminder.subType === 'PICKUP' ||
+                            /opvang|crèche|creche|onthaalouder|daycare/i.test(`${reminder.title || ''} ${reminder.note || ''}`);
+                          if (!isDaycare) return t('reminders.quickLogAndComplete');
+
+                          const titleAndNote = `${reminder.title || ''} ${reminder.note || ''} ${reminder.subType || ''}`.toLowerCase();
+                          const isPickUp = reminder.subType === 'PICKUP' || /pick[- ]?up|ophalen|ophalen van|afhalen/i.test(titleAndNote);
+                          return isPickUp
+                            ? (isDutch ? 'Ophalen & stop timer' : 'Pick-up & stop timer')
+                            : (isDutch ? 'Afzetten & start timer' : 'Drop-off & start timer');
+                        })()}
+                      </span>
                     </button>
 
                     <button

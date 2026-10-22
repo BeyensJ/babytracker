@@ -15,6 +15,7 @@ import {
   Plus,
   X,
   SlidersHorizontal,
+  School,
 } from 'lucide-react';
 import { PumpIcon } from './icons/PumpIcon';
 
@@ -87,6 +88,13 @@ export function QuickActions() {
       icon: Clock,
       type: 'routine',
       desc: isDutch ? 'Buiktijd, badje en wandelen' : 'Tummy time, bath and walks',
+    },
+    {
+      id: 'DAYCARE',
+      label: t('quickActions.daycare') || (isDutch ? 'Opvang' : 'Daycare'),
+      icon: School,
+      type: 'daycare',
+      desc: isDutch ? 'Afzetten, ophalen & dagverslagen' : 'Drop off, pick up & daily reports',
     },
     {
       id: 'NOTE',

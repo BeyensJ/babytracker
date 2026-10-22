@@ -591,19 +591,49 @@ class SyncService {
   }
 
   async uploadImage(dataUrl) {
+    return this.uploadFile(dataUrl);
+  }
+
+  async uploadFile(dataUrl) {
     if (!dataUrl) return null;
     try {
       const res = await this._fetch('/api/upload', {
         method: 'POST',
-        body: JSON.stringify({ image: dataUrl }),
+        body: JSON.stringify({ file: dataUrl }),
       });
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       const data = await res.json();
       return data.url;
     } catch (err) {
-      console.warn('[Sync] Server image upload failed or offline. Using local dataUrl:', err);
+      console.warn('[Sync] Server file upload failed or offline. Using local dataUrl:', err);
       return dataUrl;
     }
+  }
+
+  // --- Daycare & Gemini AI Report Extraction ---
+
+  async testGeminiApiKey(apiKey) {
+    try {
+      const res = await this._fetch('/api/daycare/test-gemini', {
+        method: 'POST',
+        body: JSON.stringify({ apiKey }),
+      });
+      return await res.json();
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  async extractDaycareReport({ file, mimeType, date, daycareName, childName, apiKey }) {
+    const res = await this._fetch('/api/daycare/extract-report', {
+      method: 'POST',
+      body: JSON.stringify({ file, mimeType, date, daycareName, childName, apiKey }),
+    });
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.message || `HTTP error ${res.status}`);
+    }
+    return await res.json();
   }
 }
 
