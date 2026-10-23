@@ -1,6 +1,6 @@
 # 🍼 Baby Tracker — Self-Hosted Baby Tracking PWA
 
-A calm, privacy-first, self-hosted baby tracking web application with **instant multi-device sync between parents**, **customizable quick action docks & status banners**, **distinct color-coded activities**, **live stopwatches & Android chronometers**, **WHO growth percentiles**, **visual 7-day schedules**, and a **pitch-black OLED dark mode** designed specifically for late-night nursery feeds.
+A calm, privacy-first, self-hosted baby tracking web application with **instant multi-device sync between parents**, **AI daycare report scanning**, **scheduled reminders & due banners**, **partner likes & comments**, **photo attachments**, **customizable quick action docks & status banners**, **distinct color-coded activities across 12 categories**, **live stopwatches & Android chronometers**, **WHO growth percentiles**, **visual 7-day schedules**, a **minimalist Zen mode**, and a **pitch-black OLED dark mode** designed specifically for late-night nursery feeds.
 
 Zero subscriptions. Zero ads. Zero third-party telemetry. 100% of your baby's data stays on your own home server.
 
@@ -24,6 +24,12 @@ services:
       - DATA_DIR=/app/data
       - TZ=Europe/Brussels
       - FAMILY_PASSWORD=babytracker
+      # Optional: Google Gemini API key for Daycare report OCR scanning
+      # - GEMINI_API_KEY=your_gemini_api_key_here
+      # Optional: Web Push notifications (auto-generated in ./data/vapid.json if omitted)
+      # - VAPID_EMAIL=mailto:you@example.com
+      # - VAPID_PUBLIC_KEY=...
+      # - VAPID_PRIVATE_KEY=...
     volumes:
       - ./data:/app/data
     healthcheck:
@@ -43,7 +49,7 @@ Open **`http://<your-server-ip>:3001`** in your browser.
 
 > **🔒 Default Credentials:**
 > - **Default Family Password**: `babytracker` (can be configured via `FAMILY_PASSWORD`)
-> - *You can change this password immediately in **Settings (⚙️) ➔ Security & Password**.*
+> - *You can change this password immediately in **Settings (⚙️) ➔ Data & Security ➔ Security & Password**.*
 
 ---
 
@@ -64,16 +70,21 @@ docker run -d \
 
 ## 🌟 Key Features
 
-- **⏱️ Live Stateful Timers & 1-Tap Resuming**: Breastfeeding (Left / Right / Both with 1-tap switching and retroactive adjustments), Sleep & Naps, and Pumping.
+- **⏱️ Live Stateful Timers & 1-Tap Resuming**: Breastfeeding (Left / Right / Both with 1-tap switching and retroactive adjustments), Sleep & Naps, Pumping, and Daycare stay duration.
 - **🔄 Real-Time Family Synchronization**: Powered by WebSockets (`/ws`). When Mom logs a feeding or starts a timer, Dad’s device updates instantly (<50ms) without refreshing.
-- **🎨 Color-Coded 11 Activity Types**: Breastfeeding, Bottle, Sleep, Diapers, Solids, Pumping, Growth, Health & Meds, Routines, Notes, and Milestones each feature their own dedicated accent colors.
+- **🏫 Daycare & Crèche AI Reports**: Snap a photo or upload a PDF/screenshot of daycare daily sheets. Google Gemini AI automatically extracts bottles drank, solids, naps, diapers, health info, and daily remarks.
+- **⏰ Smart Reminders & Overdue Banners**: Schedule daily, weekly, monthly, or interval reminders (vitamins, meds, naps, feeds) with prominent due banners, 1-tap logging, and snooze.
+- **💬 Partner Likes & Comments**: React to events with hearts and leave notes/questions directly under timeline logs.
+- **🧘 Serene Zen Mode**: Distraction-free, minimal dashboard for late-night feeds with wake window tracking and large timer controls.
+- **📸 Photo Attachments & Lightbox**: Attach photos to any activity with automatic WebP compression and full-resolution lightbox viewer.
+- **🎨 Color-Coded 12 Activity Types**: Breastfeeding, Bottle, Sleep, Diapers, Solids, Pumping, Daycare, Growth, Health & Meds, Routines, Notes, and Milestones each feature their own dedicated accent colors.
 - **⚙️ Customizable Quick Status & Action Dock**: Each parent can personalize which quick status cards and bottom dock action buttons are visible and reorder them.
 - **🔍 Rich Interactive Item Detail Sheets**: Tap any logged activity to open a rich modal with complete metadata, hero metrics, photo lightbox preview, and 1-tap Edit/Delete/Resume/Share.
 - **🌙 True Pitch-Black OLED Mode**: Pure `#000000` canvas with WCAG AAA contrast ratio. Gentle on tired eyes and won't wake baby up during 3:00 AM feeds.
 - **📱 PWA & Android Notification Chronometer**: Installable on iOS Safari and Android Chrome, or use the native APK with live counting notification chronometer.
-- **👶 Multi-Child & Sibling Support**: Seamlessly switch between multiple children or track twins independently.
+- **👶 Multi-Child & Sibling Support**: Seamlessly switch between multiple children or track twins independently with individual profiles, avatars, and custom baby accent colors.
 - **📊 7-Day Visual Schedule**: Stacked Monday–Sunday multi-day rhythm with cross-midnight sleep slices and feeding/diaper pins.
-- **📈 WHO Growth Curves**: Official World Health Organization percentile curves (P3 to P97) for weight, length, and head circumference.
+- **📈 WHO Growth Curves**: Official World Health Organization percentile curves (P3 to P97) for weight, length, and head circumference with optional individual measurements.
 - **📥 Universal Data Importer**: Import your historical data from Nara Baby CSV or JSON backups with deduplication and caregiver attribution.
 - **🌐 English & Dutch**: Seamless one-tap language switching.
 
@@ -84,8 +95,12 @@ docker run -d \
 | Variable | Default | Description |
 | :--- | :--- | :--- |
 | `PORT` | `3001` | Exposed port for web interface and WebSocket synchronization |
-| `DATA_DIR` | `/app/data` | Path inside container where database and photos are stored |
+| `DATA_DIR` | `/app/data` | Path inside container where database, VAPID keys, and photos are stored |
 | `FAMILY_PASSWORD` | `babytracker` | Initial shared family password for access protection |
+| `GEMINI_API_KEY` | *(empty)* | Optional Google Gemini API key for Daycare report OCR scanning |
+| `VAPID_EMAIL` | `mailto:support@babytracker.local` | Optional contact email for Web Push notifications |
+| `VAPID_PUBLIC_KEY` | *(auto-generated)* | Optional public VAPID key (automatically created and saved to `data/vapid.json` if omitted) |
+| `VAPID_PRIVATE_KEY`| *(auto-generated)* | Optional private VAPID key (automatically created and saved to `data/vapid.json` if omitted) |
 | `NODE_ENV` | `production` | Set to `production` for optimized asset delivery |
 | `TZ` | `Europe/Brussels` | Timezone for timestamps and visual schedules |
 
@@ -95,15 +110,15 @@ docker run -d \
 
 | Host Path | Container Path | Purpose |
 | :--- | :--- | :--- |
-| `./data` | `/app/data` | Stores the persistent database (`babytracker_db.json`) and media folder |
+| `./data` | `/app/data` | Stores persistent database (`babytracker_db.json`), push keys (`vapid.json`), and photo uploads (`uploads/`) |
 
-All data is kept in an atomic, human-readable JSON file. Backups are as simple as copying the `./data` directory or downloading a backup file directly from the in-app settings menu.
+All data is kept in clean, atomic JSON files and standard WebP images. Backups are as simple as copying the `./data` directory or downloading a backup file directly from the in-app settings menu.
 
 ---
 
 ## 🔒 Reverse Proxy & HTTPS (PWA Requirements)
 
-To enable Progressive Web App installation and Notification Tray timers, run Baby Tracker behind an HTTPS reverse proxy (such as Nginx, Caddy, Traefik, or Cloudflare Tunnel) and ensure WebSocket upgrades are enabled:
+To enable Progressive Web App installation, Web Push notifications, and Notification Tray timers, run Baby Tracker behind an HTTPS reverse proxy (such as Nginx, Caddy, Traefik, or Cloudflare Tunnel) and ensure WebSocket upgrades are enabled:
 
 ```nginx
 location / {
