@@ -60,6 +60,37 @@ export function ChildSettingsModal() {
 
         <form onSubmit={handleSave}>
           <div className="modal-body">
+            {/* Live Baby Avatar Preview */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginBottom: '1rem', padding: '0.65rem 0.85rem', backgroundColor: 'var(--bg-card-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '50%',
+                  background: `var(--color-${avatarColor || 'terracotta'})`,
+                  color: '#FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  fontSize: '1.2rem',
+                  flexShrink: 0,
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
+                  transition: 'background 0.25s ease',
+                }}
+              >
+                {name ? name.charAt(0).toUpperCase() : 'B'}
+              </div>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '0.92rem' }}>
+                  {name || (language === 'nl' ? 'Baby' : 'Baby')}
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
+                  {language === 'nl' ? 'Kleuraccent voor avatar & thema' : 'Accent color for avatar & theme'}
+                </div>
+              </div>
+            </div>
+
             <div className="form-group">
               <label className="form-label">{t('childModal.name')}</label>
               <input

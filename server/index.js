@@ -601,11 +601,21 @@ app.post('/api/daycare/extract-report', async (req, res) => {
 Analyze the provided daycare report (which can be a photo of a handwritten/printed daily sheet, a screenshot of a daycare app like Bitcare/Konnect, or a PDF report).
 The child's name is "${childName || 'Baby'}" and the date of the report is "${date || 'today'}".
 
+CRITICAL INSTRUCTION - EXTRACT AMOUNT FED:
+Pay special attention to extracting the exact amount fed for every bottle and solid food / meal entry:
+- For BOTTLE: Look for volume in ml (e.g. 180 ml, 150ml, 210 cc) or oz.
+  If both offered and leftover are written (e.g. "180/30" or "180ml aangeboden, 30ml rest"), calculate the actual amount drank (180 - 30 = 150ml).
+  If a fraction is written like "1/2 fles" of a 180ml bottle, calculate the drank amount (90ml).
+  Always provide the consumed volume in ml ("volumeMl") and as a readable string ("amountFed", e.g. "150 ml").
+  Also note milkType ("FORMULA", "BREAST_MILK", "WATER", "COW_MILK") and formula brand name if specified.
+- For SOLIDS: Look for portions and food descriptions (e.g. "180g fruitpap", "200g groentehapje", "1 boterham", "half potje", "alles op").
+  Provide the amount / portion in "amountFed" (e.g. "180g", "1 boterham", "3/4 portie") and description in "food" (e.g. "Fruitpap appel/banaan").
+
 Extract all relevant baby care events that occurred at daycare into structured JSON.
 Possible activity categories:
 1. SLEEP: naps at daycare. Include "time" (start HH:MM), "endTime" (HH:MM) or "durationMinutes".
-2. BOTTLE: bottle feeds / milk. Include "time" (HH:MM), volume in ml (e.g. 180), milkType ("FORMULA", "BREAST_MILK", "WATER").
-3. SOLIDS: solid food, fruit puree, vegetable puree, lunch, snacks. Include "time" (HH:MM), food description, mealType ("Lunch", "Snack", "Breakfast"), portion or reaction.
+2. BOTTLE: bottle feeds / milk. Include "time" (HH:MM), volume in ml, milkType, and exact amount consumed.
+3. SOLIDS: solid food, fruit puree, vegetable puree, lunch, snacks. Include "time" (HH:MM), food description, portion / amount eaten, mealType ("Lunch", "Snack", "Breakfast", "Dinner").
 4. DIAPER: diaper changes. Include "time" (HH:MM), boolean "pee", boolean "poop", and texture/notes if noted.
 5. HEALTH: temperature in °C, medication administered, illness or teething symptoms.
 6. ROUTINE: outdoor walk, playtime, tummy time, bath, crafts.
@@ -623,7 +633,22 @@ Format your response as a valid JSON object matching this exact structure:
       "endTime": "HH:MM",
       "durationMinutes": number,
       "title": string,
-      "details": object,
+      "details": {
+        "volumeMl": number or null,        // For BOTTLE: exact number in ml drank
+        "offeredMl": number or null,       // For BOTTLE: ml offered if specified
+        "leftoverMl": number or null,      // For BOTTLE: ml leftover if specified
+        "volumeUnit": "ml" | "oz",         // For BOTTLE
+        "milkType": "FORMULA" | "BREAST_MILK" | "WATER" | "COW_MILK",
+        "formulaName": string or null,     // Brand if specified
+        "food": string or null,            // For SOLIDS: e.g. "Fruitpap"
+        "mealType": string or null,        // For SOLIDS: "Lunch", "Snack", "Breakfast", "Dinner"
+        "amountFed": string or null,       // Human-readable amount fed for BOTTLE or SOLIDS (e.g. "180 ml", "150g", "1 boterham")
+        "portionEaten": string or null,    // e.g. "Alles op", "Helft", "Goed gegeten"
+        "pee": boolean,                    // For DIAPER
+        "poop": boolean,                   // For DIAPER
+        "temperatureC": number or null,    // For HEALTH
+        "medication": string or null       // For HEALTH
+      },
       "daycareRemark": string
     }
   ]
@@ -681,12 +706,80 @@ Format your response as a valid JSON object matching this exact structure:
     const cleanedText = rawText.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
     const parsed = JSON.parse(cleanedText);
 
+    // Normalize events and guarantee volumeFloz / amountFed are accurately structured
+    const rawEvents = Array.isArray(parsed.events) ? parsed.events : [];
+    const normalizedEvents = rawEvents.map((event) => {
+      const ev = { ...event };
+      const det = { ...(ev.details || {}) };
+
+      if (ev.type === 'BOTTLE') {
+        let volMl = null;
+        if (typeof det.volumeMl === 'number' && !isNaN(det.volumeMl) && det.volumeMl > 0) {
+          volMl = det.volumeMl;
+        } else if (typeof det.volume === 'number' && !isNaN(det.volume) && det.volume > 0) {
+          volMl = det.volume;
+        } else if (typeof det.amount === 'number' && !isNaN(det.amount) && det.amount > 0) {
+          volMl = det.amount;
+        } else if (typeof det.offeredMl === 'number' && typeof det.leftoverMl === 'number') {
+          volMl = Math.max(0, det.offeredMl - det.leftoverMl);
+        } else {
+          const scanText = `${ev.title || ''} ${det.amountFed || ''} ${det.amount || ''} ${ev.daycareRemark || ''}`;
+          const mlMatch = scanText.match(/(\d+(?:[.,]\d+)?)\s*(?:ml|cc|milliliter)/i);
+          const ozMatch = scanText.match(/(\d+(?:[.,]\d+)?)\s*(?:oz|ounce)/i);
+          if (mlMatch) {
+            volMl = parseFloat(mlMatch[1].replace(',', '.'));
+          } else if (ozMatch) {
+            const ozVal = parseFloat(ozMatch[1].replace(',', '.'));
+            volMl = Math.round(ozVal * 29.5735);
+          }
+        }
+
+        if (volMl && volMl > 0) {
+          det.volumeMl = volMl;
+          det.inputAmount = volMl;
+          det.volumeUnit = det.volumeUnit || 'ml';
+          det.volumeFloz = Math.round((volMl / 29.5735) * 10000) / 10000;
+          if (!det.amountFed) {
+            det.amountFed = `${volMl} ml`;
+          }
+        }
+
+        if (!det.milkType) {
+          det.milkType = 'FORMULA';
+        }
+
+        if (det.amountFed && (!ev.title || ev.title.toLowerCase() === 'bottle' || ev.title.toLowerCase() === 'flesje' || ev.title === 'BOTTLE')) {
+          ev.title = `Flesje (${det.amountFed})`;
+        }
+      } else if (ev.type === 'SOLIDS') {
+        if (!det.amountFed) {
+          det.amountFed = det.amount || det.portion || det.portionEaten || null;
+        }
+        if (!det.amountFed) {
+          const scanText = `${ev.title || ''} ${ev.daycareRemark || ''}`;
+          const gramMatch = scanText.match(/(\d+(?:[.,]\d+)?)\s*(?:g|gram)/i);
+          if (gramMatch) {
+            det.amountFed = `${gramMatch[1]}g`;
+          }
+        }
+        if (det.amountFed && !det.amount) {
+          det.amount = det.amountFed;
+        }
+        if (det.amountFed && !det.portion) {
+          det.portion = det.amountFed;
+        }
+      }
+
+      ev.details = det;
+      return ev;
+    });
+
     res.json({
       success: true,
       daycareName: parsed.daycareName || daycareName || null,
       reportDate: parsed.reportDate || date || null,
       generalSummary: parsed.generalSummary || '',
-      events: Array.isArray(parsed.events) ? parsed.events : [],
+      events: normalizedEvents,
     });
   } catch (err) {
     console.error('[API] Daycare report extraction error:', err);
@@ -1002,7 +1095,15 @@ app.post('/api/children/active', (req, res) => {
 // 6. Preferences
 app.post('/api/preferences', (req, res) => {
   try {
-    const { theme: _ignoredTheme, ...sharedPrefs } = req.body;
+    const {
+      theme: _ignoredTheme,
+      zenMode: _ignoredZen,
+      language: _ignoredLang,
+      haptics: _ignoredHaptics,
+      quickStatusCards: _ignoredQuickStatus,
+      quickActionButtons: _ignoredQuickActions,
+      ...sharedPrefs
+    } = req.body;
     const prefs = db.updatePreferences(sharedPrefs);
     broadcast('PREFERENCES_UPDATED', prefs);
     res.json(prefs);

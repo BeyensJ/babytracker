@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { getTranslation } from '../i18n/translations';
 import { generateSampleEvents } from '../utils/sampleData';
 import { exportEventsToCSV } from '../utils/csvParser';
@@ -22,6 +22,9 @@ const STORAGE_KEYS = {
   CAREGIVERS: 'babytracker_caregivers_v1',
   ACTIVE_CAREGIVER: 'babytracker_device_caregiver_id_v1',
   DEVICE_THEME: 'babytracker_device_theme_v1',
+  DEVICE_ZEN_MODE: 'babytracker_device_zen_mode_v1',
+  DEVICE_LANGUAGE: 'babytracker_device_language_v1',
+  DEVICE_HAPTICS: 'babytracker_device_haptics_v1',
   ONBOARDED: 'babytracker_onboarded_v1',
 };
 
@@ -44,8 +47,22 @@ const DEFAULT_CHILDREN = [
 ];
 
 const DEFAULT_CAREGIVERS = [
-  { id: 'cg_mom', name: 'Mama', role: 'Mama', color: '#CE6B4C' },
-  { id: 'cg_dad', name: 'Papa', role: 'Papa', color: '#546C7E' },
+  {
+    id: 'cg_mom',
+    name: 'Mama',
+    role: 'Mama',
+    color: '#CE6B4C',
+    quickStatusCards: ['FEEDS', 'SLEEP', 'PUMP', 'DAYCARE'],
+    quickActionButtons: ['BREAST', 'BOTTLE', 'SLEEP', 'PUMP', 'DAYCARE'],
+  },
+  {
+    id: 'cg_dad',
+    name: 'Papa',
+    role: 'Papa',
+    color: '#546C7E',
+    quickStatusCards: ['FEEDS', 'SLEEP', 'PUMP', 'DAYCARE'],
+    quickActionButtons: ['BREAST', 'BOTTLE', 'SLEEP', 'PUMP', 'DAYCARE'],
+  },
 ];
 
 const DEFAULT_PREFERENCES = {
@@ -59,6 +76,7 @@ const DEFAULT_PREFERENCES = {
   language: 'nl',   // 'nl' (Nederlands / Vlaams) or 'en' (English)
   geminiApiKey: '', // Google Gemini API Key for Daycare report AI extraction
   daycareName: '',  // Default family daycare / nursery name
+  daycareDefaultRemark: 'daycare', // Default remark/tag for extracted daycare activities
   quickStatusCards: ['FEEDS', 'SLEEP', 'PUMP', 'DAYCARE'], // Displayed quick summary cards
   quickActionButtons: ['BREAST', 'BOTTLE', 'SLEEP', 'PUMP', 'DAYCARE'], // Displayed dock quick actions
 };
@@ -132,7 +150,7 @@ export function AppProvider({ children }) {
     return [];
   });
 
-function mergePreferencesPreservingDeviceTheme(prev, incoming) {
+function mergePreferencesPreservingDeviceSettings(prev, incoming) {
   if (!incoming) return prev;
   let currentTheme = prev?.theme;
   if (!currentTheme) {
@@ -141,30 +159,100 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     } catch {}
   }
   if (!currentTheme) currentTheme = 'light';
-  const { theme: _ignoredTheme, ...sharedIncoming } = incoming;
+
+  let currentZen = prev?.zenMode;
+  if (typeof currentZen !== 'boolean') {
+    try {
+      const savedZen = localStorage.getItem(STORAGE_KEYS.DEVICE_ZEN_MODE);
+      if (savedZen !== null) currentZen = savedZen === 'true';
+    } catch {}
+  }
+  if (typeof currentZen !== 'boolean') currentZen = false;
+
+  let currentLang = prev?.language;
+  if (!currentLang) {
+    try {
+      currentLang = localStorage.getItem(STORAGE_KEYS.DEVICE_LANGUAGE);
+    } catch {}
+  }
+  if (!currentLang) currentLang = 'nl';
+
+  let currentHaptics = prev?.haptics;
+  if (typeof currentHaptics !== 'boolean') {
+    try {
+      const savedHaptics = localStorage.getItem(STORAGE_KEYS.DEVICE_HAPTICS);
+      if (savedHaptics !== null) currentHaptics = savedHaptics === 'true';
+    } catch {}
+  }
+  if (typeof currentHaptics !== 'boolean') currentHaptics = true;
+
+  // Strip device-local settings and user-specific settings from incoming shared payload
+  const {
+    theme: _ignoredTheme,
+    zenMode: _ignoredZen,
+    language: _ignoredLang,
+    haptics: _ignoredHaptics,
+    quickStatusCards: _ignoredQuickStatus,
+    quickActionButtons: _ignoredQuickActions,
+    ...sharedIncoming
+  } = incoming;
+
   return {
     ...DEFAULT_PREFERENCES,
     ...prev,
     ...sharedIncoming,
     theme: currentTheme,
-    quickStatusCards: prev?.quickStatusCards || sharedIncoming?.quickStatusCards || DEFAULT_PREFERENCES.quickStatusCards,
-    quickActionButtons: prev?.quickActionButtons || sharedIncoming?.quickActionButtons || DEFAULT_PREFERENCES.quickActionButtons,
+    zenMode: currentZen,
+    language: currentLang,
+    haptics: currentHaptics,
   };
 }
 
-  // 4. User Preferences (Theme is strictly device-local and never synced between devices)
+  // 4. Preferences:
+  // Device-local settings: Theme, Zen Mode, Language, Haptics (never broadcast to other devices or db)
+  // Shared family settings: Volume, Weight, Length, Temp units, Daycare name, Gemini API key
+  // User/Caregiver settings: Quick action & status cards (stored per caregiver)
   const [preferences, setPreferences] = useState(() => {
     let localTheme = 'light';
+    let localZen = false;
+    let localLang = 'nl';
+    let localHaptics = true;
+
     try {
       localTheme = localStorage.getItem(STORAGE_KEYS.DEVICE_THEME) || 'light';
+    } catch {}
+    try {
+      const savedZen = localStorage.getItem(STORAGE_KEYS.DEVICE_ZEN_MODE);
+      if (savedZen !== null) localZen = savedZen === 'true';
+    } catch {}
+    try {
+      const savedLang = localStorage.getItem(STORAGE_KEYS.DEVICE_LANGUAGE);
+      if (savedLang) localLang = savedLang;
+    } catch {}
+    try {
+      const savedHaptics = localStorage.getItem(STORAGE_KEYS.DEVICE_HAPTICS);
+      if (savedHaptics !== null) localHaptics = savedHaptics === 'true';
     } catch {}
 
     try {
       const saved = getSavedStorage(STORAGE_KEYS.PREFERENCES);
       const parsed = saved ? JSON.parse(saved) : {};
-      return { ...DEFAULT_PREFERENCES, ...parsed, theme: localTheme };
+      return {
+        ...DEFAULT_PREFERENCES,
+        ...parsed,
+        theme: localTheme,
+        zenMode: localZen,
+        language: localLang,
+        haptics: localHaptics,
+      };
     } catch {
-      return { ...DEFAULT_PREFERENCES, theme: localTheme };
+      return {
+        ...DEFAULT_PREFERENCES,
+        theme: localTheme,
+        zenMode: localZen,
+        language: localLang,
+        haptics: localHaptics,
+      };
     }
   });
 
@@ -239,7 +327,7 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
               if (serverState.events && serverState.events.length > 0) setEvents(serverState.events);
               if (serverState.reminders) setReminders(serverState.reminders);
               if (serverState.activeTimers) setActiveTimers(serverState.activeTimers);
-              if (serverState.preferences) setPreferences(prev => mergePreferencesPreservingDeviceTheme(prev, serverState.preferences));
+              if (serverState.preferences) setPreferences(prev => mergePreferencesPreservingDeviceSettings(prev, serverState.preferences));
             }
           }).catch(() => {});
         } else {
@@ -321,7 +409,7 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
       }),
 
       syncService.on('PREFERENCES_UPDATED', (prefs) => {
-        setPreferences(prev => mergePreferencesPreservingDeviceTheme(prev, prefs));
+        setPreferences(prev => mergePreferencesPreservingDeviceSettings(prev, prefs));
       }),
 
       syncService.on('SYNC_STATE', (serverState) => {
@@ -331,7 +419,7 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
         if (serverState.events) setEvents(serverState.events);
         if (serverState.reminders) setReminders(serverState.reminders);
         if (serverState.activeTimers) setActiveTimers(serverState.activeTimers);
-        if (serverState.preferences) setPreferences(prev => mergePreferencesPreservingDeviceTheme(prev, serverState.preferences));
+        if (serverState.preferences) setPreferences(prev => mergePreferencesPreservingDeviceSettings(prev, serverState.preferences));
       }),
     ];
 
@@ -402,6 +490,15 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
       if (preferences.theme) {
         localStorage.setItem(STORAGE_KEYS.DEVICE_THEME, preferences.theme);
       }
+      if (typeof preferences.zenMode === 'boolean') {
+        localStorage.setItem(STORAGE_KEYS.DEVICE_ZEN_MODE, String(preferences.zenMode));
+      }
+      if (preferences.language) {
+        localStorage.setItem(STORAGE_KEYS.DEVICE_LANGUAGE, preferences.language);
+      }
+      if (typeof preferences.haptics === 'boolean') {
+        localStorage.setItem(STORAGE_KEYS.DEVICE_HAPTICS, String(preferences.haptics));
+      }
       const currentTheme = preferences.theme === 'dark' || preferences.theme === 'oled' ? 'dark' : 'light';
       if (currentTheme === 'dark') {
         document.documentElement.setAttribute('data-theme', 'dark');
@@ -441,6 +538,13 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
   // Current Active Child
   const activeChild = childList.find(c => c.id === activeChildId) || childList[0] || DEFAULT_CHILDREN[0];
 
+  // Dynamically synchronize baby accent color with CSS variables
+  useEffect(() => {
+    const colorKey = activeChild?.avatarColor || 'terracotta';
+    document.documentElement.style.setProperty('--baby-accent', `var(--color-${colorKey}, #B85333)`);
+    document.documentElement.style.setProperty('--baby-accent-light', `var(--color-${colorKey}-light, rgba(206, 107, 76, 0.12))`);
+  }, [activeChild?.avatarColor]);
+
   // Modal helpers
   const openModal = (modalType, initialData = null) => {
     triggerHaptic('light', preferences?.haptics);
@@ -452,6 +556,39 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     setActiveModal(null);
     setModalInitialData(null);
   };
+
+  // Custom Confirmation & Alert Dialogs (System Dialog Replacements)
+  const [confirmDialog, setConfirmDialog] = useState(null);
+
+  const showConfirm = useCallback((options) => {
+    return new Promise((resolve) => {
+      triggerHaptic('light', preferences?.haptics);
+      const opts = typeof options === 'string' ? { message: options } : (options || {});
+      setConfirmDialog({
+        ...opts,
+        isAlert: false,
+        resolve: (confirmed) => {
+          setConfirmDialog(null);
+          resolve(Boolean(confirmed));
+        },
+      });
+    });
+  }, [preferences?.haptics]);
+
+  const showAlert = useCallback((options) => {
+    return new Promise((resolve) => {
+      triggerHaptic('light', preferences?.haptics);
+      const opts = typeof options === 'string' ? { message: options } : (options || {});
+      setConfirmDialog({
+        ...opts,
+        isAlert: true,
+        resolve: () => {
+          setConfirmDialog(null);
+          resolve();
+        },
+      });
+    });
+  }, [preferences?.haptics]);
 
   // Helper to update timers both locally and broadcast to server
   const broadcastTimers = (updater) => {
@@ -640,6 +777,8 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     } catch {
       const localCg = {
         id: `cg_${Date.now()}`,
+        quickStatusCards: ['FEEDS', 'SLEEP', 'PUMP', 'DAYCARE'],
+        quickActionButtons: ['BREAST', 'BOTTLE', 'SLEEP', 'PUMP', 'DAYCARE'],
         ...caregiverData,
       };
       setCaregivers(prev => [...prev, localCg]);
@@ -1522,7 +1661,7 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
         if (serverState.caregivers && serverState.caregivers.length > 0) setCaregivers(serverState.caregivers);
         if (serverState.events && serverState.events.length > 0) setEvents(serverState.events);
         if (serverState.activeTimers) setActiveTimers(serverState.activeTimers);
-        if (serverState.preferences) setPreferences(prev => mergePreferencesPreservingDeviceTheme(prev, serverState.preferences));
+        if (serverState.preferences) setPreferences(prev => mergePreferencesPreservingDeviceSettings(prev, serverState.preferences));
       }
     } catch (err) {
       console.warn('[Sync] Could not fetch state after login:', err);
@@ -1604,6 +1743,16 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     }
   };
 
+  const effectivePreferences = useMemo(() => {
+    const cgStatus = activeCaregiver?.quickStatusCards;
+    const cgActions = activeCaregiver?.quickActionButtons;
+    return {
+      ...preferences,
+      quickStatusCards: Array.isArray(cgStatus) && cgStatus.length > 0 ? cgStatus : DEFAULT_PREFERENCES.quickStatusCards,
+      quickActionButtons: Array.isArray(cgActions) && cgActions.length > 0 ? cgActions : DEFAULT_PREFERENCES.quickActionButtons,
+    };
+  }, [preferences, activeCaregiver?.quickStatusCards, activeCaregiver?.quickActionButtons]);
+
   const value = {
     isAuthenticated,
     isLoadingAuth,
@@ -1647,11 +1796,14 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     toggleReminderEnabled,
     resetToSample,
     clearAllData,
-    preferences,
+    preferences: effectivePreferences,
     isZenMode: Boolean(preferences?.zenMode),
     toggleZenMode: () => {
       setPreferences(prev => {
         const nextZen = !prev?.zenMode;
+        try {
+          localStorage.setItem(STORAGE_KEYS.DEVICE_ZEN_MODE, String(nextZen));
+        } catch {}
         triggerHaptic('light', prev?.haptics);
         return {
           ...prev,
@@ -1669,8 +1821,44 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
             localStorage.setItem(STORAGE_KEYS.DEVICE_THEME, next.theme);
           } catch {}
         }
-        // Do NOT broadcast device-local theme to server
-        const { theme: _ignoredLocalTheme, ...sharedPrefs } = next || {};
+        if (next && typeof next.zenMode === 'boolean') {
+          try {
+            localStorage.setItem(STORAGE_KEYS.DEVICE_ZEN_MODE, String(next.zenMode));
+          } catch {}
+        }
+        if (next && next.language) {
+          try {
+            localStorage.setItem(STORAGE_KEYS.DEVICE_LANGUAGE, next.language);
+          } catch {}
+        }
+        if (next && typeof next.haptics === 'boolean') {
+          try {
+            localStorage.setItem(STORAGE_KEYS.DEVICE_HAPTICS, String(next.haptics));
+          } catch {}
+        }
+
+        // If next contains quickStatusCards or quickActionButtons, save them for the active caregiver!
+        const hasQuickStatus = Array.isArray(next?.quickStatusCards);
+        const hasQuickActions = Array.isArray(next?.quickActionButtons);
+        if ((hasQuickStatus || hasQuickActions) && activeCaregiverId) {
+          const caregiverUpdates = {};
+          if (hasQuickStatus) caregiverUpdates.quickStatusCards = next.quickStatusCards;
+          if (hasQuickActions) caregiverUpdates.quickActionButtons = next.quickActionButtons;
+          setCaregivers(prevCgs => prevCgs.map(cg => (cg.id === activeCaregiverId ? { ...cg, ...caregiverUpdates } : cg)));
+          syncService.updateCaregiver(activeCaregiverId, caregiverUpdates).catch(() => {});
+        }
+
+        // Do NOT broadcast device-local settings (theme, zenMode, language, haptics)
+        // or user-specific settings (quickStatusCards, quickActionButtons) to server family preferences
+        const {
+          theme: _ignoredLocalTheme,
+          zenMode: _ignoredLocalZen,
+          language: _ignoredLocalLang,
+          haptics: _ignoredLocalHaptics,
+          quickStatusCards: _ignoredQuickStatus,
+          quickActionButtons: _ignoredQuickActions,
+          ...sharedPrefs
+        } = next || {};
         syncService.updatePreferences(sharedPrefs).catch(() => {});
         return next;
       });
@@ -1699,6 +1887,11 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     modalInitialData,
     openModal,
     closeModal,
+    confirmDialog,
+    showConfirm,
+    confirm: showConfirm,
+    showAlert,
+    alert: showAlert,
     canInstallPWA,
     isPWAInstalled,
     installPWA,

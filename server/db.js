@@ -11,8 +11,22 @@ const dbFilePath = path.join(dataDir, 'babytracker_db.json');
 let state = null;
 
 const DEFAULT_CAREGIVERS = [
-  { id: 'cg_mom', name: 'Mama', role: 'Mom', color: '#CE6B4C' },
-  { id: 'cg_dad', name: 'Papa', role: 'Dad', color: '#546C7E' },
+  {
+    id: 'cg_mom',
+    name: 'Mama',
+    role: 'Mom',
+    color: '#CE6B4C',
+    quickStatusCards: ['FEEDS', 'SLEEP', 'PUMP', 'DAYCARE'],
+    quickActionButtons: ['BREAST', 'BOTTLE', 'SLEEP', 'PUMP', 'DAYCARE'],
+  },
+  {
+    id: 'cg_dad',
+    name: 'Papa',
+    role: 'Dad',
+    color: '#546C7E',
+    quickStatusCards: ['FEEDS', 'SLEEP', 'PUMP', 'DAYCARE'],
+    quickActionButtons: ['BREAST', 'BOTTLE', 'SLEEP', 'PUMP', 'DAYCARE'],
+  },
 ];
 
 const DEFAULT_CHILDREN = [
@@ -26,13 +40,13 @@ const DEFAULT_CHILDREN = [
 ];
 
 const DEFAULT_PREFERENCES = {
-  theme: 'light',
   volumeUnit: 'ml',
   weightUnit: 'kg',
   lengthUnit: 'cm',
   tempUnit: 'C',
   geminiApiKey: '',
   daycareName: '',
+  daycareDefaultRemark: 'daycare',
 };
 
 function hashPassword(password, salt) {
@@ -70,6 +84,40 @@ export function initDb() {
       }
       if (!Array.isArray(state.pushSubscriptions)) {
         state.pushSubscriptions = [];
+      }
+      if (state.preferences) {
+        let changed = false;
+        if ('theme' in state.preferences) {
+          delete state.preferences.theme;
+          changed = true;
+        }
+        if ('zenMode' in state.preferences) {
+          delete state.preferences.zenMode;
+          changed = true;
+        }
+        if ('language' in state.preferences) {
+          delete state.preferences.language;
+          changed = true;
+        }
+        if ('haptics' in state.preferences) {
+          delete state.preferences.haptics;
+          changed = true;
+        }
+        if ('quickStatusCards' in state.preferences || 'quickActionButtons' in state.preferences) {
+          if (Array.isArray(state.caregivers) && state.caregivers.length > 0) {
+            state.caregivers = state.caregivers.map(cg => ({
+              ...cg,
+              quickStatusCards: cg.quickStatusCards || state.preferences.quickStatusCards || ['FEEDS', 'SLEEP', 'PUMP', 'DAYCARE'],
+              quickActionButtons: cg.quickActionButtons || state.preferences.quickActionButtons || ['BREAST', 'BOTTLE', 'SLEEP', 'PUMP', 'DAYCARE'],
+            }));
+          }
+          delete state.preferences.quickStatusCards;
+          delete state.preferences.quickActionButtons;
+          changed = true;
+        }
+        if (changed) {
+          saveStateSync(state);
+        }
       }
       console.log(`[DB] Loaded ${state.events?.length || 0} events and ${state.reminders?.length || 0} reminders from ${dbFilePath}`);
       return state;
@@ -127,6 +175,11 @@ export function getState() {
   delete clone.auth;
   if (clone.preferences) {
     delete clone.preferences.theme;
+    delete clone.preferences.zenMode;
+    delete clone.preferences.language;
+    delete clone.preferences.haptics;
+    delete clone.preferences.quickStatusCards;
+    delete clone.preferences.quickActionButtons;
   }
   return clone;
 }
@@ -354,6 +407,8 @@ export function addCaregiver(caregiverData) {
     name: caregiverData.name || 'Caregiver',
     role: caregiverData.role || 'Parent',
     color: caregiverData.color || '#C48744',
+    quickStatusCards: caregiverData.quickStatusCards || ['FEEDS', 'SLEEP', 'PUMP', 'DAYCARE'],
+    quickActionButtons: caregiverData.quickActionButtons || ['BREAST', 'BOTTLE', 'SLEEP', 'PUMP', 'DAYCARE'],
   };
   state.caregivers = [...(state.caregivers || []), newCaregiver];
   saveStateSync(state);
@@ -461,9 +516,22 @@ export function getPushSubscriptions() {
  */
 export function updatePreferences(prefs) {
   if (!state) initDb();
-  const { theme: _ignored, ...sharedPrefs } = prefs || {};
+  const {
+    theme: _ignoredTheme,
+    zenMode: _ignoredZen,
+    language: _ignoredLang,
+    haptics: _ignoredHaptics,
+    quickStatusCards: _ignoredQuickStatus,
+    quickActionButtons: _ignoredQuickActions,
+    ...sharedPrefs
+  } = prefs || {};
   state.preferences = { ...state.preferences, ...sharedPrefs };
   delete state.preferences.theme;
+  delete state.preferences.zenMode;
+  delete state.preferences.language;
+  delete state.preferences.haptics;
+  delete state.preferences.quickStatusCards;
+  delete state.preferences.quickActionButtons;
   saveStateSync(state);
   return { ...state.preferences };
 }
@@ -581,6 +649,8 @@ export function completeOnboarding({ baby, caregivers, password, activeCaregiver
         name: (cg.name || '').trim() || (idx === 0 ? 'Mama' : 'Papa'),
         role: cg.role || (idx === 0 ? 'Mama' : 'Papa'),
         color: cg.color || (idx === 0 ? '#CE6B4C' : '#546C7E'),
+        quickStatusCards: cg.quickStatusCards || ['FEEDS', 'SLEEP', 'PUMP', 'DAYCARE'],
+        quickActionButtons: cg.quickActionButtons || ['BREAST', 'BOTTLE', 'SLEEP', 'PUMP', 'DAYCARE'],
       }))
     : DEFAULT_CAREGIVERS;
 

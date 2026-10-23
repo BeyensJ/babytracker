@@ -19,6 +19,7 @@ export function PumpModal() {
     startPumpTimer,
     t,
     language,
+    showConfirm,
   } = useApp();
   const isDutch = language === 'nl';
 
@@ -241,15 +242,27 @@ export function PumpModal() {
     closeModal();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     triggerHaptic('warning', preferences?.haptics);
     if (isFromActiveTimer) {
-      if (window.confirm(t('common.discardTimerConfirm'))) {
+      const ok = await showConfirm({
+        title: t('common.discardTimerTitle'),
+        message: t('common.discardTimerConfirm'),
+        confirmText: isDutch ? 'Timer wissen' : 'Discard timer',
+        type: 'warning',
+      });
+      if (ok) {
         clearActiveTimer('pump');
         closeModal();
       }
     } else if (isEditing) {
-      if (window.confirm(t('timeline.deleteConfirm'))) {
+      const ok = await showConfirm({
+        title: t('common.deleteConfirmTitle'),
+        message: t('timeline.deleteConfirm'),
+        confirmText: t('common.delete'),
+        type: 'danger',
+      });
+      if (ok) {
         deleteEvent(modalInitialData.id);
         closeModal();
       }

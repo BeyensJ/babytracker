@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { triggerHaptic } from '../../utils/haptics';
 import {
@@ -34,6 +34,9 @@ export function CustomizeQuickModal() {
     setPreferences,
     language,
     t,
+    activeCaregiver,
+    updateCaregiver,
+    showAlert,
   } = useApp();
 
   const isDutch = language === 'nl';
@@ -152,14 +155,21 @@ export function CustomizeQuickModal() {
     },
   ];
 
-  // Local state for editing
+  // Local state for editing - user specific to active caregiver
   const [selectedStatusCards, setSelectedStatusCards] = useState(() => {
-    return preferences?.quickStatusCards || ['FEEDS', 'SLEEP', 'PUMP'];
+    return activeCaregiver?.quickStatusCards || preferences?.quickStatusCards || ['FEEDS', 'SLEEP', 'PUMP', 'DAYCARE'];
   });
 
   const [selectedActionButtons, setSelectedActionButtons] = useState(() => {
-    return preferences?.quickActionButtons || ['BREAST', 'BOTTLE', 'SLEEP', 'PUMP'];
+    return activeCaregiver?.quickActionButtons || preferences?.quickActionButtons || ['BREAST', 'BOTTLE', 'SLEEP', 'PUMP', 'DAYCARE'];
   });
+
+  useEffect(() => {
+    if (activeCaregiver) {
+      setSelectedStatusCards(activeCaregiver.quickStatusCards || preferences?.quickStatusCards || ['FEEDS', 'SLEEP', 'PUMP', 'DAYCARE']);
+      setSelectedActionButtons(activeCaregiver.quickActionButtons || preferences?.quickActionButtons || ['BREAST', 'BOTTLE', 'SLEEP', 'PUMP', 'DAYCARE']);
+    }
+  }, [activeCaregiver?.id, activeModal]);
 
   if (activeModal !== 'CUSTOMIZE_QUICK') return null;
 
@@ -169,7 +179,11 @@ export function CustomizeQuickModal() {
     setSelectedStatusCards((prev) => {
       if (prev.includes(id)) {
         if (prev.length <= 1) {
-          alert(isDutch ? 'Kies minstens 1 statuskaart.' : 'Please select at least 1 status card.');
+          showAlert({
+            title: isDutch ? 'Selectie vereist' : 'Selection Required',
+            message: isDutch ? 'Kies minstens 1 statuskaart.' : 'Please select at least 1 status card.',
+            type: 'warning',
+          });
           return prev;
         }
         return prev.filter((item) => item !== id);
@@ -200,7 +214,11 @@ export function CustomizeQuickModal() {
     setSelectedActionButtons((prev) => {
       if (prev.includes(id)) {
         if (prev.length <= 1) {
-          alert(isDutch ? 'Kies minstens 1 actieknop.' : 'Please select at least 1 action button.');
+          showAlert({
+            title: isDutch ? 'Selectie vereist' : 'Selection Required',
+            message: isDutch ? 'Kies minstens 1 actieknop.' : 'Please select at least 1 action button.',
+            type: 'warning',
+          });
           return prev;
         }
         return prev.filter((item) => item !== id);
@@ -229,9 +247,9 @@ export function CustomizeQuickModal() {
   const handleResetDefaults = () => {
     triggerHaptic('medium', preferences?.haptics);
     if (activeTab === 'status') {
-      setSelectedStatusCards(['FEEDS', 'SLEEP', 'PUMP']);
+      setSelectedStatusCards(['FEEDS', 'SLEEP', 'PUMP', 'DAYCARE']);
     } else {
-      setSelectedActionButtons(['BREAST', 'BOTTLE', 'SLEEP', 'PUMP']);
+      setSelectedActionButtons(['BREAST', 'BOTTLE', 'SLEEP', 'PUMP', 'DAYCARE']);
     }
   };
 
@@ -245,9 +263,15 @@ export function CustomizeQuickModal() {
     }
   };
 
-  // Save changes to preferences
+  // Save changes to active caregiver and preferences
   const handleSave = () => {
     triggerHaptic('success', preferences?.haptics);
+    if (activeCaregiver?.id && updateCaregiver) {
+      updateCaregiver(activeCaregiver.id, {
+        quickStatusCards: selectedStatusCards,
+        quickActionButtons: selectedActionButtons,
+      });
+    }
     setPreferences((prev) => ({
       ...prev,
       quickStatusCards: selectedStatusCards,
@@ -268,11 +292,38 @@ export function CustomizeQuickModal() {
               <SlidersHorizontal size={20} />
             </div>
             <div>
-              <h2 className="customize-quick-title">{t('customizeQuick.title')}</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                <h2 className="customize-quick-title">{t('customizeQuick.title')}</h2>
+                {activeCaregiver && (
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.3rem',
+                      padding: '0.15rem 0.55rem',
+                      borderRadius: '999px',
+                      fontSize: '0.72rem',
+                      fontWeight: 600,
+                      backgroundColor: `${activeCaregiver.color || 'var(--color-terracotta)'}18`,
+                      color: activeCaregiver.color || 'var(--color-terracotta)',
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 7,
+                        height: 7,
+                        borderRadius: '50%',
+                        backgroundColor: activeCaregiver.color || 'var(--color-terracotta)',
+                      }}
+                    />
+                    {activeCaregiver.name}
+                  </span>
+                )}
+              </div>
               <span className="customize-quick-subtitle">
                 {activeTab === 'status'
-                  ? t('customizeQuick.statusCardsCount', { count: selectedStatusCards.length })
-                  : t('customizeQuick.actionsCount', { count: selectedActionButtons.length })}
+                  ? `${t('customizeQuick.statusCardsCount', { count: selectedStatusCards.length })}${activeCaregiver?.name ? ` · ${activeCaregiver.name}` : ''}`
+                  : `${t('customizeQuick.actionsCount', { count: selectedActionButtons.length })}${activeCaregiver?.name ? ` · ${activeCaregiver.name}` : ''}`}
               </span>
             </div>
           </div>

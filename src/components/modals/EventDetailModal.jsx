@@ -87,6 +87,7 @@ export function EventDetailModal() {
     resumeSleepTimerWithData,
     resumePumpTimerWithData,
     resumeDaycareWithData,
+    showConfirm,
   } = useApp();
 
   const [showLightbox, setShowLightbox] = useState(false);
@@ -119,8 +120,14 @@ export function EventDetailModal() {
     setCommentText('');
   };
 
-  const handleDeleteComment = (commentId) => {
-    if (window.confirm(t('eventDetail.deleteCommentConfirm'))) {
+  const handleDeleteComment = async (commentId) => {
+    const ok = await showConfirm({
+      title: isDutch ? 'Reactie verwijderen' : 'Delete Comment',
+      message: t('eventDetail.deleteCommentConfirm'),
+      confirmText: t('common.delete'),
+      type: 'danger',
+    });
+    if (ok) {
       deleteEventComment(currentEvent.id, commentId);
     }
   };
@@ -389,7 +396,7 @@ export function EventDetailModal() {
           sections: [
             { label: t('eventDetail.foodItem'), value: det.food || '—' },
             det.mealType && { label: isDutch ? 'Maaltijd' : 'Meal Type', value: det.mealType },
-            det.portion && { label: t('eventDetail.portion'), value: det.portion },
+            (det.portion || det.amount || det.amountFed) && { label: t('eventDetail.portion') || (isDutch ? 'Portie' : 'Portion'), value: det.portion || det.amount || det.amountFed },
             det.reaction && { label: t('eventDetail.reaction'), value: det.reaction },
             det.isFirstTime && { label: isDutch ? 'Eerste keer' : 'Baby First', value: t('eventDetail.firstTime') },
           ].filter(Boolean),
@@ -611,8 +618,14 @@ export function EventDetailModal() {
     }
   };
 
-  const handleDelete = () => {
-    if (window.confirm(t('common.confirmDelete') || 'Are you sure you want to delete this event?')) {
+  const handleDelete = async () => {
+    const ok = await showConfirm({
+      title: t('common.deleteConfirmTitle'),
+      message: t('common.confirmDelete') || t('timeline.deleteConfirm'),
+      confirmText: t('common.delete'),
+      type: 'danger',
+    });
+    if (ok) {
       deleteEvent(event.id);
       closeModal();
     }

@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
 import { syncService } from '../services/syncService';
 import { triggerHaptic } from '../utils/haptics';
+import { formatVolume } from '../utils/formatters';
 import { PhotoLightbox } from './PhotoLightbox';
 import {
   FileText,
@@ -22,6 +23,7 @@ import {
   Clock,
   BookOpen,
   Settings,
+  Edit2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -33,7 +35,7 @@ export function DaycareReportUploader({
   dateStr = '',
   onExtractedCountChange,
 }) {
-  const { preferences, addEvent, openModal, closeModal, language, t, activeChild } = useApp();
+  const { preferences, addEvent, openModal, closeModal, language, t, activeChild, showAlert } = useApp();
   const isDutch = language === 'nl';
   const fileInputRef = useRef(null);
 
@@ -48,6 +50,30 @@ export function DaycareReportUploader({
 
   // Raw file dataUrl for sending to Gemini API
   const [rawFileDataUrl, setRawFileDataUrl] = useState(null);
+  const [customRemarks, setCustomRemarks] = useState({});
+
+  const defaultRemark = (preferences?.daycareDefaultRemark || 'daycare').trim();
+
+  const getItemRemark = (item, idx) => {
+    if (customRemarks[idx] !== undefined) {
+      return customRemarks[idx];
+    }
+    const teacher = item?.daycareRemark && item.daycareRemark.trim();
+    if (teacher) {
+      if (teacher.toLowerCase().startsWith(defaultRemark.toLowerCase())) {
+        return teacher;
+      }
+      return `${defaultRemark}: ${teacher}`;
+    }
+    return defaultRemark;
+  };
+
+  const updateItemRemark = (idx, val) => {
+    setCustomRemarks(prev => ({
+      ...prev,
+      [idx]: val,
+    }));
+  };
 
   const hasApiKey = Boolean(preferences?.geminiApiKey && preferences.geminiApiKey.trim());
 
@@ -59,7 +85,11 @@ export function DaycareReportUploader({
     const isImage = file.type.startsWith('image/');
 
     if (!isPdf && !isImage) {
-      alert(isDutch ? 'Selecteer een afbeelding (JPG, PNG) of PDF-bestand.' : 'Please select an image or PDF file.');
+      showAlert({
+        title: isDutch ? 'Bestandsformaat niet ondersteund' : 'Unsupported File Format',
+        message: isDutch ? 'Selecteer een afbeelding (JPG, PNG) of PDF-bestand.' : 'Please select an image or PDF file.',
+        type: 'warning',
+      });
       return;
     }
 
@@ -167,6 +197,7 @@ export function DaycareReportUploader({
       }
 
       setExtractedData(res);
+      setCustomRemarks({});
       // Select all by default
       if (Array.isArray(res.events)) {
         setSelectedIndices(new Set(res.events.map((_, i) => i)));
@@ -235,25 +266,50 @@ export function DaycareReportUploader({
         endDt = beginDt + durationMs;
       }
 
-      // Mandatory requirement: comment/note MUST be "daycare" (with optional remark appended)
-      const noteComment = item.daycareRemark && item.daycareRemark.trim()
-        ? `daycare: ${item.daycareRemark.trim()}`
-        : 'daycare';
+      const effectiveRemark = getItemRemark(item, idx).trim();
+
+      const itemDetails = { ...(item.details || {}) };
+
+      if (item.type === 'BOTTLE') {
+        let volMl = itemDetails.volumeMl || itemDetails.inputAmount;
+        if (!volMl) {
+          const scanText = `${item.title || ''} ${item.daycareRemark || ''} ${itemDetails.amountFed || ''}`;
+          const mlMatch = scanText.match(/(\d+(?:[.,]\d+)?)\s*(?:ml|cc)/i);
+          if (mlMatch) volMl = parseFloat(mlMatch[1].replace(',', '.'));
+        }
+        if (volMl && volMl > 0) {
+          const finalFloz = Math.round((volMl / 29.5735) * 10000) / 10000;
+          itemDetails.volumeFloz = finalFloz;
+          itemDetails.volumeUnit = itemDetails.volumeUnit || preferences?.volumeUnit || 'ml';
+          itemDetails.inputAmount = volMl;
+          itemDetails.amountFed = itemDetails.amountFed || `${volMl} ml`;
+        }
+        itemDetails.milkType = itemDetails.milkType || 'FORMULA';
+      } else if (item.type === 'SOLIDS') {
+        itemDetails.food = itemDetails.food || item.title || (isDutch ? 'Hapje' : 'Meal');
+        itemDetails.mealType = itemDetails.mealType || 'Lunch';
+        const fedAmount = itemDetails.amountFed || itemDetails.amount || itemDetails.portionEaten || itemDetails.portion;
+        if (fedAmount) {
+          itemDetails.amount = fedAmount;
+          itemDetails.portion = fedAmount;
+          itemDetails.amountFed = fedAmount;
+        }
+      }
 
       const eventPayload = {
         type: item.type || 'NOTE',
         beginDt,
         endDt,
         durationMs,
-        note: noteComment,
+        note: effectiveRemark,
         photoUrl: reportUrl || null,
         details: {
-          ...(item.details || {}),
+          ...itemDetails,
           source: 'DAYCARE',
           daycareName: daycareName || extractedData.daycareName || '',
           reportUrl: reportUrl || null,
           title: item.title || '',
-          teacherRemark: item.daycareRemark || '',
+          teacherRemark: effectiveRemark,
         },
       };
 
@@ -270,7 +326,7 @@ export function DaycareReportUploader({
     } catch {}
 
     setImportedSuccess(
-      t('daycareModal.importedSuccess', { count }) || `${count} activiteiten toegevoegd met opmerking 'daycare'!`
+      t('daycareModal.importedSuccess', { count }) || `${count} opvangactiviteiten toegevoegd!`
     );
   };
 
@@ -559,14 +615,51 @@ export function DaycareReportUploader({
                         {ev.time && <span className="extracted-item-time">{ev.time}{ev.endTime ? ` - ${ev.endTime}` : ''}</span>}
                       </div>
 
-                      {ev.daycareRemark && (
-                        <div className="extracted-item-remark">
-                          "{ev.daycareRemark}"
+                      {/* Prominent Amount Fed Badge */}
+                      {(ev.details?.amountFed || ev.details?.volumeMl || (ev.type === 'BOTTLE' && ev.details?.volumeFloz)) && (
+                        <div style={{ marginTop: '0.2rem', marginBottom: '0.2rem' }}>
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              padding: '0.15rem 0.5rem',
+                              borderRadius: '999px',
+                              backgroundColor: ev.type === 'BOTTLE' ? 'var(--color-bottle-light)' : 'var(--color-solids-light)',
+                              color: ev.type === 'BOTTLE' ? 'var(--color-bottle)' : 'var(--color-solids)',
+                              border: `1px solid ${ev.type === 'BOTTLE' ? 'var(--color-bottle)' : 'var(--color-solids)'}30`,
+                            }}
+                          >
+                            <span>{ev.type === 'BOTTLE' ? '🍼' : '🥣'}</span>
+                            <span>{isDutch ? 'Gevoed:' : 'Fed:'}</span>
+                            <span>
+                              {ev.details?.amountFed || (ev.details?.volumeMl ? `${ev.details.volumeMl} ml` : formatVolume(ev.details?.volumeFloz, preferences?.volumeUnit))}
+                            </span>
+                            {ev.details?.milkType && ev.type === 'BOTTLE' && (
+                              <span style={{ opacity: 0.85, fontWeight: 500 }}>
+                                · {ev.details.milkType === 'FORMULA' ? (isDutch ? 'Kunstvoeding' : 'Formula') : ev.details.milkType === 'BREAST_MILK' ? (isDutch ? 'Moedermelk' : 'Breast Milk') : ev.details.milkType}
+                              </span>
+                            )}
+                          </span>
                         </div>
                       )}
 
-                      <div className="extracted-tag-comment">
-                        <span className="tag-pill">opmerking: "daycare"</span>
+                      {/* Editable Remark input */}
+                      <div className="extracted-remark-group" onClick={(e) => e.stopPropagation()}>
+                        <div className="extracted-remark-label">
+                          <Edit2 size={12} style={{ color: 'var(--color-daycare)' }} />
+                          <span>{t('daycareModal.editRemark')}</span>
+                        </div>
+                        <input
+                          type="text"
+                          className="extracted-remark-input"
+                          value={getItemRemark(ev, idx)}
+                          onChange={(e) => updateItemRemark(idx, e.target.value)}
+                          placeholder={t('daycareModal.remarkPlaceholder') || defaultRemark}
+                          title={isDutch ? 'Bewerk de opmerking voor deze activiteit' : 'Edit remark for this activity'}
+                        />
                       </div>
                     </div>
                   </div>

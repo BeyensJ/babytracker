@@ -266,7 +266,7 @@ class NotificationService {
         const place = daycare.daycareName ? ` (${daycare.daycareName})` : '';
         nativeTitle = `🏫 ${babyName} ${lang === 'nl' ? 'is op de crèche/opvang' : 'is at Daycare'}${place}`;
         nativeText = `${lang === 'nl' ? 'Afgezet om' : 'Dropped off at'} ${formatTime(startTimeMs, lang, true)}`;
-        nativeActions = [{ id: 'finish_timer', title: lang === 'nl' ? 'Ophalen 🚗' : 'Pick Up 🚗' }];
+        nativeActions = [{ id: 'finish_timer', title: lang === 'nl' ? 'Ophalen' : 'Pick Up' }];
       }
 
       try {
@@ -344,7 +344,7 @@ class NotificationService {
       title = `🏫 ${babyName} ${lang === 'nl' ? 'is op de crèche/opvang' : 'is at Daycare'}${place}`;
       body = `${formatTimerClock(elapsed)} ${lang === 'nl' ? 'verstreken' : 'elapsed'} • ${lang === 'nl' ? 'Afgezet om' : 'Dropped off at'} ${formatTime(startMs, lang, true)}\n${lang === 'nl' ? 'Tik op Ophalen zodra je de baby ophaalt.' : 'Tap Pick Up when picking up baby.'}`;
 
-      actions = [{ action: 'finish_timer', title: lang === 'nl' ? 'Ophalen 🚗' : 'Pick Up 🚗' }];
+      actions = [{ action: 'finish_timer', title: lang === 'nl' ? 'Ophalen' : 'Pick Up' }];
     }
 
     const payload = {

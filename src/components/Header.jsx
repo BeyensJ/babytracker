@@ -76,7 +76,12 @@ export function Header({ onOpenSettings }) {
           aria-label={t('header.switchBaby')}
           id="baby-selector-btn"
         >
-          <div className="baby-avatar">
+          <div
+            className="baby-avatar"
+            style={{
+              background: `linear-gradient(135deg, var(--color-${activeChild?.avatarColor || 'terracotta'}), var(--color-${activeChild?.avatarColor || 'terracotta'}-hover, var(--color-caramel)))`,
+            }}
+          >
             {activeChild?.name ? activeChild.name.charAt(0).toUpperCase() : 'B'}
           </div>
           <div className="baby-info">
@@ -142,7 +147,7 @@ export function Header({ onOpenSettings }) {
                       width: 26,
                       height: 26,
                       borderRadius: '50%',
-                      background: 'var(--color-terracotta)',
+                      background: `var(--color-${c.avatarColor || 'terracotta'})`,
                       color: '#FFF',
                       display: 'flex',
                       alignItems: 'center',
