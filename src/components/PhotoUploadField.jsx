@@ -7,6 +7,7 @@ import { compressImage } from '../utils/imageCompressor';
 import { syncService } from '../services/syncService';
 import { triggerHaptic } from '../utils/haptics';
 import { PhotoLightbox } from './PhotoLightbox';
+import { useApp } from '../context/AppContext';
 
 export function PhotoUploadField({
   photoUrl,
@@ -20,6 +21,7 @@ export function PhotoUploadField({
   const [showSourceSheet, setShowSourceSheet] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const { showAlert } = useApp();
   const isDutch = language === 'nl';
 
   const closeSourceSheet = useCallback((e) => {
@@ -81,7 +83,11 @@ export function PhotoUploadField({
       triggerHaptic('success', haptics);
     } catch (err) {
       console.error('[PhotoUpload] Failed to process image:', err);
-      alert(isDutch ? 'Kon de foto niet verwerken. Probeer het opnieuw.' : 'Could not process photo. Please try again.');
+      showAlert({
+        title: isDutch ? 'Fout bij foto' : 'Photo Error',
+        message: isDutch ? 'Kon de foto niet verwerken. Probeer het opnieuw.' : 'Could not process photo. Please try again.',
+        variant: 'warning',
+      });
       triggerHaptic('warning', haptics);
     } finally {
       setIsProcessing(false);

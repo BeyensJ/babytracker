@@ -40,25 +40,35 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
     resumeDaycareWithData,
     language,
     t,
+    showConfirm,
   } = useApp();
   const isDutch = language === 'nl';
   const isMetric = preferences.weightUnit === 'kg';
   const isMetricVol = preferences.volumeUnit === 'ml';
 
-  const handleResume = (event) => {
+  const handleResume = async (event) => {
     // If another timer is running of this type, ask for confirmation
     if (event.type === 'BREAST' && activeTimers?.breast?.running && activeTimers?.breast?.resumedEventId !== event.id) {
-      if (!window.confirm(t('timeline.resumeConfirmNursing'))) {
-        return;
-      }
+      const ok = await showConfirm({
+        title: isDutch ? 'Timer Hervatten' : 'Resume Timer',
+        message: t('timeline.resumeConfirmNursing'),
+        variant: 'warning',
+      });
+      if (!ok) return;
     } else if (event.type === 'SLEEP' && activeTimers?.sleep?.running && activeTimers?.sleep?.resumedEventId !== event.id) {
-      if (!window.confirm(t('timeline.resumeConfirmSleep'))) {
-        return;
-      }
+      const ok = await showConfirm({
+        title: isDutch ? 'Timer Hervatten' : 'Resume Timer',
+        message: t('timeline.resumeConfirmSleep'),
+        variant: 'warning',
+      });
+      if (!ok) return;
     } else if (event.type === 'PUMP' && activeTimers?.pump?.running && activeTimers?.pump?.resumedEventId !== event.id) {
-      if (!window.confirm(t('timeline.resumeConfirmPump'))) {
-        return;
-      }
+      const ok = await showConfirm({
+        title: isDutch ? 'Timer Hervatten' : 'Resume Timer',
+        message: t('timeline.resumeConfirmPump'),
+        variant: 'warning',
+      });
+      if (!ok) return;
     }
 
     if (event.type === 'BREAST') {

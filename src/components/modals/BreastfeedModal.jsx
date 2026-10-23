@@ -18,6 +18,7 @@ export function BreastfeedModal() {
     preferences,
     t,
     language,
+    showConfirm,
   } = useApp();
   const isDutch = language === 'nl';
 
@@ -186,15 +187,25 @@ export function BreastfeedModal() {
     closeModal();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     triggerHaptic('warning', preferences?.haptics);
     if (isFromActiveTimer) {
-      if (window.confirm(t('common.discardTimerConfirm'))) {
+      const ok = await showConfirm({
+        title: isDutch ? 'Timer Verwijderen' : 'Discard Timer',
+        message: t('common.discardTimerConfirm'),
+        variant: 'danger',
+      });
+      if (ok) {
         clearActiveTimer('breast');
         closeModal();
       }
     } else if (isEditing) {
-      if (window.confirm(t('timeline.deleteConfirm'))) {
+      const ok = await showConfirm({
+        title: isDutch ? 'Voeding Verwijderen' : 'Delete Feeding Log',
+        message: t('timeline.deleteConfirm'),
+        variant: 'danger',
+      });
+      if (ok) {
         deleteEvent(modalInitialData.id);
         closeModal();
       }

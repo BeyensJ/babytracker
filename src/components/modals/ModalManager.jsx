@@ -19,11 +19,10 @@ import { EventDetailModal } from './EventDetailModal';
 import { CustomizeQuickModal } from './CustomizeQuickModal';
 import { RemindersModal } from './RemindersModal';
 import { DaycareModal } from './DaycareModal';
+import { ConfirmModal } from './ConfirmModal';
 
 export function ModalManager() {
   const { activeModal, closeModal } = useApp();
-
-  if (!activeModal) return null;
 
   return (
     <>
@@ -46,6 +45,10 @@ export function ModalManager() {
       {activeModal === 'CAREGIVER' && <CaregiverModal />}
       {activeModal === 'CHANGE_PASSWORD' && <ChangePasswordModal isOpen={true} onClose={closeModal} />}
       {activeModal === 'SERVER_SETUP' && <ServerSetupModal isOpen={true} onClose={closeModal} />}
+
+      {/* Custom Confirmation and Alert Dialog rendered on top */}
+      <ConfirmModal />
     </>
   );
 }
+

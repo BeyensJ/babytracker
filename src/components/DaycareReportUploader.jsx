@@ -33,7 +33,7 @@ export function DaycareReportUploader({
   dateStr = '',
   onExtractedCountChange,
 }) {
-  const { preferences, addEvent, openModal, closeModal, language, t, activeChild } = useApp();
+  const { preferences, addEvent, openModal, closeModal, language, t, activeChild, showAlert } = useApp();
   const isDutch = language === 'nl';
   const fileInputRef = useRef(null);
 
@@ -59,7 +59,11 @@ export function DaycareReportUploader({
     const isImage = file.type.startsWith('image/');
 
     if (!isPdf && !isImage) {
-      alert(isDutch ? 'Selecteer een afbeelding (JPG, PNG) of PDF-bestand.' : 'Please select an image or PDF file.');
+      showAlert({
+        title: isDutch ? 'Bestand niet ondersteund' : 'Unsupported File',
+        message: isDutch ? 'Selecteer een afbeelding (JPG, PNG) of PDF-bestand.' : 'Please select an image or PDF file.',
+        variant: 'warning',
+      });
       return;
     }
 

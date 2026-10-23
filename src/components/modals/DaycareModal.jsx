@@ -38,6 +38,7 @@ export function DaycareModal() {
     preferences,
     language,
     t,
+    showConfirm,
   } = useApp();
 
   const isDutch = language === 'nl';
@@ -208,10 +209,15 @@ export function DaycareModal() {
     closeModal();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     triggerHaptic('warning', preferences?.haptics);
     if (isEditing) {
-      if (window.confirm(t('timeline.deleteConfirm') || (isDutch ? 'Weet je zeker dat je deze opvangregistratie wilt verwijderen?' : 'Are you sure you want to delete this daycare log?'))) {
+      const ok = await showConfirm({
+        title: isDutch ? 'Opvang Verwijderen' : 'Delete Daycare Log',
+        message: t('timeline.deleteConfirm') || (isDutch ? 'Weet je zeker dat je deze opvangregistratie wilt verwijderen?' : 'Are you sure you want to delete this daycare log?'),
+        variant: 'danger',
+      });
+      if (ok) {
         deleteEvent(modalInitialData.id);
         if (isCurrentlyAtDaycare || isFromActiveTimer) {
           clearActiveTimer('daycare');
@@ -219,7 +225,12 @@ export function DaycareModal() {
         closeModal();
       }
     } else if (isCurrentlyAtDaycare || isFromActiveTimer) {
-      if (window.confirm(isDutch ? 'Weet je zeker dat je deze actieve opvangtimer wilt annuleren?' : 'Discard this active daycare timer?')) {
+      const ok = await showConfirm({
+        title: isDutch ? 'Timer Annuleren' : 'Discard Timer',
+        message: isDutch ? 'Weet je zeker dat je deze actieve opvangtimer wilt annuleren?' : 'Discard this active daycare timer?',
+        variant: 'danger',
+      });
+      if (ok) {
         clearActiveTimer('daycare');
         closeModal();
       }

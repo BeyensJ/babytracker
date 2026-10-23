@@ -453,6 +453,65 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     setModalInitialData(null);
   };
 
+  // Custom Confirmation & Alert Dialog System (Replaces default system dialogs)
+  const [confirmState, setConfirmState] = useState(null);
+  const [alertState, setAlertState] = useState(null);
+
+  const showConfirm = (options) => {
+    const opts = typeof options === 'string' ? { message: options } : (options || {});
+    const {
+      title,
+      message,
+      confirmText,
+      cancelText,
+      variant = 'danger',
+    } = opts;
+    triggerHaptic(variant === 'danger' ? 'warning' : 'medium', preferences?.haptics);
+    return new Promise((resolve) => {
+      setConfirmState({
+        title,
+        message,
+        confirmText,
+        cancelText,
+        variant,
+        onConfirm: () => {
+          triggerHaptic('medium', preferences?.haptics);
+          setConfirmState(null);
+          resolve(true);
+        },
+        onCancel: () => {
+          triggerHaptic('light', preferences?.haptics);
+          setConfirmState(null);
+          resolve(false);
+        },
+      });
+    });
+  };
+
+  const showAlert = (options) => {
+    const opts = typeof options === 'string' ? { message: options } : (options || {});
+    const {
+      title,
+      message,
+      buttonText,
+      variant = 'primary',
+    } = opts;
+    triggerHaptic('medium', preferences?.haptics);
+    return new Promise((resolve) => {
+      setAlertState({
+        title,
+        message,
+        buttonText,
+        variant,
+        onClose: () => {
+          triggerHaptic('light', preferences?.haptics);
+          setAlertState(null);
+          resolve();
+        },
+      });
+    });
+  };
+
   // Helper to update timers both locally and broadcast to server
   const broadcastTimers = (updater) => {
     setActiveTimers(prev => {
@@ -1699,6 +1758,10 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     modalInitialData,
     openModal,
     closeModal,
+    confirmState,
+    alertState,
+    showConfirm,
+    showAlert,
     canInstallPWA,
     isPWAInstalled,
     installPWA,

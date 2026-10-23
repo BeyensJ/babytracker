@@ -654,7 +654,7 @@ export function ZenTodayView() {
       )}
 
       {/* 3. The Zen Hero: Clean, Spacious State & Rhythm */}
-      <section className="zen-hero-card">
+      <section className={`zen-hero-card ${isSleeping ? 'is-asleep' : `is-awake awake-${wakeStatus?.status || 'green'}`}`}>
         <div className="zen-hero-header">
           <div className="zen-hero-state-row">
             <div className={`zen-aura-orb ${isSleeping ? 'sleeping' : 'awake'}`}>
@@ -689,6 +689,7 @@ export function ZenTodayView() {
             <SlidersHorizontal size={14} />
           </button>
         </div>
+
 
         {/* Dynamic At-a-Glance Status Metrics */}
         {activeStatusCards && activeStatusCards.length > 0 && (

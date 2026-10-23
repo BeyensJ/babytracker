@@ -87,6 +87,7 @@ export function EventDetailModal() {
     resumeSleepTimerWithData,
     resumePumpTimerWithData,
     resumeDaycareWithData,
+    showConfirm,
   } = useApp();
 
   const [showLightbox, setShowLightbox] = useState(false);
@@ -119,8 +120,13 @@ export function EventDetailModal() {
     setCommentText('');
   };
 
-  const handleDeleteComment = (commentId) => {
-    if (window.confirm(t('eventDetail.deleteCommentConfirm'))) {
+  const handleDeleteComment = async (commentId) => {
+    const ok = await showConfirm({
+      title: isDutch ? 'Reactie Verwijderen' : 'Delete Comment',
+      message: t('eventDetail.deleteCommentConfirm'),
+      variant: 'danger',
+    });
+    if (ok) {
       deleteEventComment(currentEvent.id, commentId);
     }
   };
@@ -611,8 +617,13 @@ export function EventDetailModal() {
     }
   };
 
-  const handleDelete = () => {
-    if (window.confirm(t('common.confirmDelete') || 'Are you sure you want to delete this event?')) {
+  const handleDelete = async () => {
+    const ok = await showConfirm({
+      title: isDutch ? 'Item Verwijderen' : 'Delete Event',
+      message: t('timeline.deleteConfirm') || (isDutch ? 'Weet je zeker dat je deze activiteit wilt verwijderen?' : 'Are you sure you want to delete this event?'),
+      variant: 'danger',
+    });
+    if (ok) {
       deleteEvent(event.id);
       closeModal();
     }

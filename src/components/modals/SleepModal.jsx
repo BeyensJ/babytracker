@@ -18,6 +18,7 @@ export function SleepModal() {
     preferences,
     t,
     language,
+    showConfirm,
   } = useApp();
   const isDutch = language === 'nl';
 
@@ -183,15 +184,25 @@ export function SleepModal() {
     closeModal();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     triggerHaptic('warning', preferences?.haptics);
     if (isFromActiveTimer) {
-      if (window.confirm(t('common.discardTimerConfirm'))) {
+      const ok = await showConfirm({
+        title: isDutch ? 'Timer Verwijderen' : 'Discard Timer',
+        message: t('common.discardTimerConfirm'),
+        variant: 'danger',
+      });
+      if (ok) {
         clearActiveTimer('sleep');
         closeModal();
       }
     } else if (isEditing) {
-      if (window.confirm(t('timeline.deleteConfirm'))) {
+      const ok = await showConfirm({
+        title: isDutch ? 'Slaap Verwijderen' : 'Delete Sleep Log',
+        message: t('timeline.deleteConfirm'),
+        variant: 'danger',
+      });
+      if (ok) {
         deleteEvent(modalInitialData.id);
         closeModal();
       }

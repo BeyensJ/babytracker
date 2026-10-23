@@ -761,41 +761,33 @@ export function QuickStatusBanner() {
   }
 
   return (
-    <div className="hero-glance-card">
+    <div className={`hero-glance-card ${isSleeping ? 'is-asleep' : `is-awake awake-${wakeStatus?.status || 'green'}`}`}>
       {/* 1. Serene State Indicator (Awake / Sleeping) */}
       <div className="hero-glance-header">
-        <div className="hero-state-wrap">
-          <div className={`hero-state-badge ${isSleeping ? 'sleeping' : 'awake'}`}>
-            {isSleeping ? <Moon size={14} /> : <Sun size={14} />}
-            <span>
-              {isSleeping
-                ? (isDutch ? `${babyName} slaapt` : `${babyName} is Sleeping`)
-                : (isDutch ? `${babyName} is wakker` : `${babyName} is Awake`)}
-            </span>
+        <div className="zen-hero-state-row">
+          <div className={`zen-aura-orb ${isSleeping ? 'sleeping' : 'awake'}`}>
+            {isSleeping ? <Moon size={20} /> : <Sun size={20} />}
           </div>
-
-          <span className="hero-wake-duration">
-            {isSleeping ? (
-              activeTimers?.sleep?.startMs ? (
-                isDutch
-                  ? `Begonnen ${formatRelative(activeTimers.sleep.startMs, now, language)}`
-                  : `Started ${formatRelative(activeTimers.sleep.startMs, now, language)}`
-              ) : (isDutch ? 'Timer actief' : 'Timer active')
-            ) : (
-              getAwakeDurationText()
-            )}
-          </span>
+          <div>
+            <h1 className="zen-hero-title">
+              {isSleeping
+                ? (isDutch ? `${babyName} slaapt rustig` : `${babyName} is resting`)
+                : (isDutch ? `${babyName} is wakker` : `${babyName} is awake`)}
+            </h1>
+            <div className="zen-hero-subtitle">
+              {isSleeping
+                ? (activeTimers?.sleep?.startMs
+                    ? (isDutch ? `Begonnen ${formatRelative(activeTimers.sleep.startMs, now, language)}` : `Started ${formatRelative(activeTimers.sleep.startMs, now, language)}`)
+                    : (isDutch ? 'Lekker aan het rusten' : 'Sleeping peacefully'))
+                : (wakeStatus?.label && !wakeStatus.label.toLowerCase().includes('wakker')
+                    ? `${getAwakeDurationText()} · ${wakeStatus.label}`
+                    : getAwakeDurationText())}
+            </div>
+          </div>
         </div>
 
-        {/* Right side: Wake Cue + Customize Gear Button */}
+        {/* Right side: Customize Gear Button */}
         <div className="hero-header-right-actions">
-          {!isSleeping && (
-            <div className={`hero-cue-pill ${wakeStatus.status}`}>
-              <span className="hero-cue-dot" />
-              <span>{wakeStatus.label}</span>
-            </div>
-          )}
-
           <button
             type="button"
             className="hero-customize-btn"
@@ -807,6 +799,7 @@ export function QuickStatusBanner() {
           </button>
         </div>
       </div>
+
 
       {/* 2. Dynamically Configured Activity Glance Grid */}
       <div className={`hero-glance-grid count-${activeCards.length}`}>

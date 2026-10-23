@@ -38,6 +38,7 @@ export function TimelineItem({ event }) {
     activeCaregiver,
     language,
     t,
+    showConfirm,
   } = useApp();
   const [showLightbox, setShowLightbox] = useState(false);
   const isDutch = language === 'nl';
@@ -257,23 +258,32 @@ export function TimelineItem({ event }) {
   const config = getConfig();
   const Icon = config.icon;
 
-  const handleResumeTimer = (e) => {
+  const handleResumeTimer = async (e) => {
     if (e) e.stopPropagation();
     triggerHaptic('medium', preferences?.haptics);
 
     // If another timer is running of this type, ask for confirmation
     if (event.type === 'BREAST' && activeTimers?.breast?.running && activeTimers?.breast?.resumedEventId !== event.id) {
-      if (!window.confirm(t('timeline.resumeConfirmNursing'))) {
-        return;
-      }
+      const ok = await showConfirm({
+        title: isDutch ? 'Timer Hervatten' : 'Resume Timer',
+        message: t('timeline.resumeConfirmNursing'),
+        variant: 'warning',
+      });
+      if (!ok) return;
     } else if (event.type === 'SLEEP' && activeTimers?.sleep?.running && activeTimers?.sleep?.resumedEventId !== event.id) {
-      if (!window.confirm(t('timeline.resumeConfirmSleep'))) {
-        return;
-      }
+      const ok = await showConfirm({
+        title: isDutch ? 'Timer Hervatten' : 'Resume Timer',
+        message: t('timeline.resumeConfirmSleep'),
+        variant: 'warning',
+      });
+      if (!ok) return;
     } else if (event.type === 'PUMP' && activeTimers?.pump?.running && activeTimers?.pump?.resumedEventId !== event.id) {
-      if (!window.confirm(t('timeline.resumeConfirmPump'))) {
-        return;
-      }
+      const ok = await showConfirm({
+        title: isDutch ? 'Timer Hervatten' : 'Resume Timer',
+        message: t('timeline.resumeConfirmPump'),
+        variant: 'warning',
+      });
+      if (!ok) return;
     }
 
     if (event.type === 'SLEEP') {

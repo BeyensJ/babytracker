@@ -20,6 +20,7 @@ export function ActiveTimersDock() {
     requestNotificationPermission,
     t,
     language,
+    showConfirm,
   } = useApp();
 
   const [tick, setTick] = useState(Date.now());
@@ -86,11 +87,6 @@ export function ActiveTimersDock() {
           timer={activeTimers.daycare}
           now={tick}
           onFinish={stopDaycare}
-          onDiscard={() => {
-            if (window.confirm(language === 'nl' ? 'Weet je zeker dat je deze actieve opvangtimer wilt annuleren?' : 'Discard this active daycare timer?')) {
-              clearActiveTimer('daycare');
-            }
-          }}
           onUpdateStartTime={(newTs) => updateTimerStartTime('daycare', newTs)}
           t={t}
           language={language}
@@ -102,6 +98,7 @@ export function ActiveTimersDock() {
 
 function BreastTimerRow({ timer, now, onSwitch, onPause, onResume, onFinish, onUpdateStartTime, t, language }) {
   const [showAdjust, setShowAdjust] = useState(false);
+  const isDutch = language === 'nl';
 
   let leftElapsed = timer.leftElapsedMs || 0;
   let rightElapsed = timer.rightElapsedMs || 0;
@@ -124,18 +121,26 @@ function BreastTimerRow({ timer, now, onSwitch, onPause, onResume, onFinish, onU
         </div>
         <div>
           <div className="timer-title">{t('timers.nursingTimer')}</div>
-          <div className="timer-side-badges" style={{ marginTop: '0.2rem' }}>
-            <span className={`side-badge ${timer.activeSide === 'LEFT' ? 'active' : ''}`}>
-              L: {formatTimerClock(leftElapsed)}
-            </span>
-            <span className={`side-badge ${timer.activeSide === 'RIGHT' ? 'active' : ''}`}>
-              R: {formatTimerClock(rightElapsed)}
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.2rem' }}>
-            <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.7)' }}>
-              {t('timers.startedAt', { time: formatTime(sessionStart, language, true) })}
-            </span>
+          {/* Compact side pills showing L and R with active side prominently highlighted */}
+          <div className="nursing-compact-sides">
+            <button
+              type="button"
+              className={`nursing-side-pill ${timer.activeSide === 'LEFT' ? 'active' : ''}`}
+              onClick={timer.activeSide !== 'LEFT' && timer.running ? onSwitch : undefined}
+              title={isDutch ? 'Linkerborst' : 'Left side'}
+            >
+              <span className="nursing-pill-letter">L</span>
+              <span className="nursing-pill-digits">{formatTimerClock(leftElapsed)}</span>
+            </button>
+            <button
+              type="button"
+              className={`nursing-side-pill ${timer.activeSide === 'RIGHT' ? 'active' : ''}`}
+              onClick={timer.activeSide !== 'RIGHT' && timer.running ? onSwitch : undefined}
+              title={isDutch ? 'Rechterborst' : 'Right side'}
+            >
+              <span className="nursing-pill-letter">R</span>
+              <span className="nursing-pill-digits">{formatTimerClock(rightElapsed)}</span>
+            </button>
             <button
               type="button"
               className="timer-adjust-link"
@@ -156,27 +161,47 @@ function BreastTimerRow({ timer, now, onSwitch, onPause, onResume, onFinish, onU
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.4rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.35rem' }}>
         <div className="timer-digital-clock">{formatTimerClock(totalElapsed)}</div>
         <div className="timer-actions">
           {timer.running ? (
             <>
-              <button className="timer-btn switch-side" onClick={onSwitch} title={t('timers.switchToOther')}>
-                <RefreshCw size={13} />
-                {timer.activeSide === 'LEFT' ? t('timers.toRight') : t('timers.toLeft')}
+              <button
+                type="button"
+                className="timer-btn switch-side"
+                onClick={onSwitch}
+                title={timer.activeSide === 'LEFT' ? (isDutch ? 'Wissel naar Rechts' : 'Switch to Right') : (isDutch ? 'Wissel naar Links' : 'Switch to Left')}
+              >
+                <RefreshCw size={12} />
+                <span>{timer.activeSide === 'LEFT' ? '→ R' : '→ L'}</span>
               </button>
-              <button className="timer-btn pause" onClick={onPause} title={t('timers.pause')}>
+              <button
+                type="button"
+                className="timer-btn pause"
+                onClick={onPause}
+                title={t('timers.pause')}
+              >
                 <Pause size={13} />
               </button>
             </>
           ) : (
-            <button className="timer-btn pause" onClick={onResume} title={t('timers.resume')}>
+            <button
+              type="button"
+              className="timer-btn pause"
+              onClick={onResume}
+              title={t('timers.resume')}
+              style={{ background: 'var(--color-terracotta)', color: '#fff' }}
+            >
               <Play size={13} />
-              {t('timers.resume')}
             </button>
           )}
 
-          <button className="timer-btn finish" onClick={onFinish} title={t('timers.finishAndLog')}>
+          <button
+            type="button"
+            className="timer-btn finish"
+            onClick={onFinish}
+            title={t('timers.finishAndLog')}
+          >
             <Check size={14} />
             {t('common.done')}
           </button>
@@ -282,7 +307,7 @@ function PumpTimerRow({ timer, now, onFinish, onUpdateStartTime, t, language }) 
   );
 }
 
-function DaycareTimerRow({ timer, now, onFinish, onDiscard, onUpdateStartTime, t, language }) {
+function DaycareTimerRow({ timer, now, onFinish, onUpdateStartTime, t, language }) {
   const [showAdjust, setShowAdjust] = useState(false);
   const startMs = timer.dropOffMs || timer.startMs || now;
   const elapsed = Math.max(0, now - startMs);
@@ -323,33 +348,10 @@ function DaycareTimerRow({ timer, now, onFinish, onDiscard, onUpdateStartTime, t
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.4rem' }}>
         <div className="timer-digital-clock">{formatTimerClock(elapsed)}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-          {onDiscard && (
-            <button
-              type="button"
-              className="timer-btn"
-              onClick={onDiscard}
-              title={isDutch ? 'Timer annuleren' : 'Discard timer'}
-              style={{
-                padding: '0.35rem 0.6rem',
-                minHeight: '34px',
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                color: 'var(--status-red)',
-                border: '1px solid rgba(239, 68, 68, 0.25)',
-                borderRadius: 'var(--radius-full)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Trash2 size={13} />
-            </button>
-          )}
-          <button className="timer-btn finish" onClick={onFinish} style={{ background: 'var(--color-daycare)' }}>
-            <Check size={14} />
-            {isDutch ? 'Ophalen 🚗' : 'Pick Up 🚗'}
-          </button>
-        </div>
+        <button className="timer-btn finish" onClick={onFinish} style={{ background: 'var(--color-daycare)' }}>
+          <Check size={14} />
+          {isDutch ? 'Ophalen' : 'Pick Up'}
+        </button>
       </div>
     </div>
   );
