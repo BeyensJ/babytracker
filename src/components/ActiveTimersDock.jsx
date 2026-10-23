@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatTimerClock, formatTime } from '../utils/formatters';
-import { Heart, Moon, Milk, Play, Pause, RefreshCw, Check, Clock, Bell, School, Trash2 } from 'lucide-react';
+import { Heart, Moon, Milk, Play, Pause, RefreshCw, Check, Clock, Bell, School } from 'lucide-react';
 import { PumpIcon } from './icons/PumpIcon';
 
 export function ActiveTimersDock() {
@@ -14,7 +14,6 @@ export function ActiveTimersDock() {
     stopSleepTimer,
     stopPumpTimer,
     stopDaycare,
-    clearActiveTimer,
     updateTimerStartTime,
     notificationPermission,
     requestNotificationPermission,
@@ -86,11 +85,6 @@ export function ActiveTimersDock() {
           timer={activeTimers.daycare}
           now={tick}
           onFinish={stopDaycare}
-          onDiscard={() => {
-            if (window.confirm(language === 'nl' ? 'Weet je zeker dat je deze actieve opvangtimer wilt annuleren?' : 'Discard this active daycare timer?')) {
-              clearActiveTimer('daycare');
-            }
-          }}
           onUpdateStartTime={(newTs) => updateTimerStartTime('daycare', newTs)}
           t={t}
           language={language}
@@ -282,7 +276,7 @@ function PumpTimerRow({ timer, now, onFinish, onUpdateStartTime, t, language }) 
   );
 }
 
-function DaycareTimerRow({ timer, now, onFinish, onDiscard, onUpdateStartTime, t, language }) {
+function DaycareTimerRow({ timer, now, onFinish, onUpdateStartTime, t, language }) {
   const [showAdjust, setShowAdjust] = useState(false);
   const startMs = timer.dropOffMs || timer.startMs || now;
   const elapsed = Math.max(0, now - startMs);
@@ -323,33 +317,10 @@ function DaycareTimerRow({ timer, now, onFinish, onDiscard, onUpdateStartTime, t
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.4rem' }}>
         <div className="timer-digital-clock">{formatTimerClock(elapsed)}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-          {onDiscard && (
-            <button
-              type="button"
-              className="timer-btn"
-              onClick={onDiscard}
-              title={isDutch ? 'Timer annuleren' : 'Discard timer'}
-              style={{
-                padding: '0.35rem 0.6rem',
-                minHeight: '34px',
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                color: 'var(--status-red)',
-                border: '1px solid rgba(239, 68, 68, 0.25)',
-                borderRadius: 'var(--radius-full)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Trash2 size={13} />
-            </button>
-          )}
-          <button className="timer-btn finish" onClick={onFinish} style={{ background: 'var(--color-daycare)' }}>
-            <Check size={14} />
-            {isDutch ? 'Ophalen 🚗' : 'Pick Up 🚗'}
-          </button>
-        </div>
+        <button className="timer-btn finish" onClick={onFinish} style={{ background: 'var(--color-daycare)' }}>
+          <Check size={14} />
+          {isDutch ? 'Ophalen' : 'Pick Up'}
+        </button>
       </div>
     </div>
   );

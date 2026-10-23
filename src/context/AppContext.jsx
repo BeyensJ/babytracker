@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { getTranslation } from '../i18n/translations';
 import { generateSampleEvents } from '../utils/sampleData';
 import { exportEventsToCSV } from '../utils/csvParser';
@@ -76,6 +76,7 @@ const DEFAULT_PREFERENCES = {
   language: 'nl',   // 'nl' (Nederlands / Vlaams) or 'en' (English)
   geminiApiKey: '', // Google Gemini API Key for Daycare report AI extraction
   daycareName: '',  // Default family daycare / nursery name
+  daycareDefaultRemark: 'daycare', // Default remark/tag for extracted daycare activities
   quickStatusCards: ['FEEDS', 'SLEEP', 'PUMP', 'DAYCARE'], // Displayed quick summary cards
   quickActionButtons: ['BREAST', 'BOTTLE', 'SLEEP', 'PUMP', 'DAYCARE'], // Displayed dock quick actions
 };
@@ -555,6 +556,39 @@ function mergePreferencesPreservingDeviceSettings(prev, incoming) {
     setActiveModal(null);
     setModalInitialData(null);
   };
+
+  // Custom Confirmation & Alert Dialogs (System Dialog Replacements)
+  const [confirmDialog, setConfirmDialog] = useState(null);
+
+  const showConfirm = useCallback((options) => {
+    return new Promise((resolve) => {
+      triggerHaptic('light', preferences?.haptics);
+      const opts = typeof options === 'string' ? { message: options } : (options || {});
+      setConfirmDialog({
+        ...opts,
+        isAlert: false,
+        resolve: (confirmed) => {
+          setConfirmDialog(null);
+          resolve(Boolean(confirmed));
+        },
+      });
+    });
+  }, [preferences?.haptics]);
+
+  const showAlert = useCallback((options) => {
+    return new Promise((resolve) => {
+      triggerHaptic('light', preferences?.haptics);
+      const opts = typeof options === 'string' ? { message: options } : (options || {});
+      setConfirmDialog({
+        ...opts,
+        isAlert: true,
+        resolve: () => {
+          setConfirmDialog(null);
+          resolve();
+        },
+      });
+    });
+  }, [preferences?.haptics]);
 
   // Helper to update timers both locally and broadcast to server
   const broadcastTimers = (updater) => {
@@ -1853,6 +1887,11 @@ function mergePreferencesPreservingDeviceSettings(prev, incoming) {
     modalInitialData,
     openModal,
     closeModal,
+    confirmDialog,
+    showConfirm,
+    confirm: showConfirm,
+    showAlert,
+    alert: showAlert,
     canInstallPWA,
     isPWAInstalled,
     installPWA,

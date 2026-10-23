@@ -38,6 +38,7 @@ export function TimelineItem({ event }) {
     activeCaregiver,
     language,
     t,
+    showConfirm,
   } = useApp();
   const [showLightbox, setShowLightbox] = useState(false);
   const isDutch = language === 'nl';
@@ -104,7 +105,11 @@ export function TimelineItem({ event }) {
           icon: Apple,
           badgeClass: 'solids',
           title: isDutch ? 'Vaste voeding' : 'Solid Food',
-          chips: [det.food || (isDutch ? 'Hapje' : 'Meal'), det.reaction ? `${isDutch ? 'Reactie' : 'Reaction'}: ${det.reaction}` : ''].filter(Boolean),
+          chips: [
+            det.food || (isDutch ? 'Hapje' : 'Meal'),
+            det.amount || det.portion || det.amountFed,
+            det.reaction ? `${isDutch ? 'Reactie' : 'Reaction'}: ${det.reaction}` : '',
+          ].filter(Boolean),
         };
       case 'SLEEP': {
         const isOngoing = !event.durationMs && !event.endDt;
@@ -257,23 +262,35 @@ export function TimelineItem({ event }) {
   const config = getConfig();
   const Icon = config.icon;
 
-  const handleResumeTimer = (e) => {
+  const handleResumeTimer = async (e) => {
     if (e) e.stopPropagation();
     triggerHaptic('medium', preferences?.haptics);
 
     // If another timer is running of this type, ask for confirmation
     if (event.type === 'BREAST' && activeTimers?.breast?.running && activeTimers?.breast?.resumedEventId !== event.id) {
-      if (!window.confirm(t('timeline.resumeConfirmNursing'))) {
-        return;
-      }
+      const ok = await showConfirm({
+        title: t('common.resumeTimerTitle'),
+        message: t('timeline.resumeConfirmNursing'),
+        confirmText: t('common.resumeTimer'),
+        type: 'warning',
+      });
+      if (!ok) return;
     } else if (event.type === 'SLEEP' && activeTimers?.sleep?.running && activeTimers?.sleep?.resumedEventId !== event.id) {
-      if (!window.confirm(t('timeline.resumeConfirmSleep'))) {
-        return;
-      }
+      const ok = await showConfirm({
+        title: t('common.resumeTimerTitle'),
+        message: t('timeline.resumeConfirmSleep'),
+        confirmText: t('common.resumeTimer'),
+        type: 'warning',
+      });
+      if (!ok) return;
     } else if (event.type === 'PUMP' && activeTimers?.pump?.running && activeTimers?.pump?.resumedEventId !== event.id) {
-      if (!window.confirm(t('timeline.resumeConfirmPump'))) {
-        return;
-      }
+      const ok = await showConfirm({
+        title: t('common.resumeTimerTitle'),
+        message: t('timeline.resumeConfirmPump'),
+        confirmText: t('common.resumeTimer'),
+        type: 'warning',
+      });
+      if (!ok) return;
     }
 
     if (event.type === 'SLEEP') {

@@ -5,6 +5,7 @@ import {
   Upload,
   Download,
   FileSpreadsheet,
+  FileText,
   Sparkles,
   Trash2,
   Baby,
@@ -72,6 +73,8 @@ export function SettingsView() {
     notificationDiagnostics,
     t,
     language,
+    showConfirm,
+    showAlert,
   } = useApp();
 
   const isDutch = language === 'nl';
@@ -90,6 +93,8 @@ export function SettingsView() {
   const [geminiSavedToast, setGeminiSavedToast] = useState(false);
   const [daycareInput, setDaycareInput] = useState(() => preferences?.daycareName || '');
   const [daycareSavedToast, setDaycareSavedToast] = useState(false);
+  const [daycareRemarkInput, setDaycareRemarkInput] = useState(() => preferences?.daycareDefaultRemark || 'daycare');
+  const [daycareRemarkSavedToast, setDaycareRemarkSavedToast] = useState(false);
 
   const handleSaveGeminiKey = () => {
     triggerHaptic('success', preferences?.haptics);
@@ -103,6 +108,13 @@ export function SettingsView() {
     setPreferences(p => ({ ...p, daycareName: daycareInput.trim() }));
     setDaycareSavedToast(true);
     setTimeout(() => setDaycareSavedToast(false), 2500);
+  };
+
+  const handleSaveDaycareRemark = () => {
+    triggerHaptic('success', preferences?.haptics);
+    setPreferences(p => ({ ...p, daycareDefaultRemark: daycareRemarkInput.trim() || 'daycare' }));
+    setDaycareRemarkSavedToast(true);
+    setTimeout(() => setDaycareRemarkSavedToast(false), 2500);
   };
 
   const handleTestGeminiKey = async () => {
@@ -257,9 +269,15 @@ export function SettingsView() {
     setDragOver(false);
   };
 
-  const handleLoadDemoData = () => {
-    if (events.length > 0 && !window.confirm(t('settings.sampleConfirm'))) {
-      return;
+  const handleLoadDemoData = async () => {
+    if (events.length > 0) {
+      const ok = await showConfirm({
+        title: isDutch ? 'Voorbeelddata laden' : 'Load Demo Data',
+        message: t('settings.sampleConfirm'),
+        confirmText: isDutch ? 'Data overschrijven' : 'Overwrite Data',
+        type: 'warning',
+      });
+      if (!ok) return;
     }
     resetToSample();
     try {
@@ -269,13 +287,27 @@ export function SettingsView() {
         origin: { y: 0.6 },
       });
     } catch {}
-    alert(t('settings.sampleSuccess'));
+    showAlert({
+      title: isDutch ? 'Gelukt!' : 'Success',
+      message: t('settings.sampleSuccess'),
+      type: 'success',
+    });
   };
 
-  const handleClear = () => {
-    if (window.confirm(t('settings.clearAllConfirm'))) {
+  const handleClear = async () => {
+    const ok = await showConfirm({
+      title: isDutch ? 'Alle data wissen' : 'Clear All Data',
+      message: t('settings.clearAllConfirm'),
+      confirmText: isDutch ? 'Ja, alles wissen' : 'Yes, delete all',
+      type: 'danger',
+    });
+    if (ok) {
       clearAllData();
-      alert(t('settings.clearAllAlert'));
+      showAlert({
+        title: isDutch ? 'Data gewist' : 'Data Cleared',
+        message: t('settings.clearAllAlert'),
+        type: 'info',
+      });
     }
   };
 
@@ -1106,6 +1138,54 @@ export function SettingsView() {
               >
                 <CheckCircle2 size={14} />
                 <span>{t('settings.daycareSavedToast')}</span>
+              </span>
+            )}
+
+            {/* Default Activity Remark Setting */}
+            <div style={{ marginTop: '0.65rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <FileText size={15} color="var(--color-daycare)" />
+                <div style={{ fontSize: '0.86rem', fontWeight: 600 }}>{t('settings.daycareDefaultRemarkLabel')}</div>
+              </div>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+                {t('settings.daycareDefaultRemarkDesc')}
+              </div>
+            </div>
+
+            <div className="settings-input-group">
+              <input
+                type="text"
+                className="form-input"
+                placeholder={t('settings.daycareDefaultRemarkPlaceholder') || 'daycare'}
+                value={daycareRemarkInput}
+                onChange={(e) => setDaycareRemarkInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveDaycareRemark();
+                }}
+              />
+              <button
+                type="button"
+                className="btn btn-primary save-btn"
+                onClick={handleSaveDaycareRemark}
+                style={{ backgroundColor: 'var(--color-daycare)' }}
+              >
+                <span>{isDutch ? 'Opslaan' : 'Save'}</span>
+              </button>
+            </div>
+
+            {daycareRemarkSavedToast && (
+              <span
+                style={{
+                  fontSize: '0.75rem',
+                  color: '#16A34A',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                }}
+              >
+                <CheckCircle2 size={14} />
+                <span>{t('settings.daycareDefaultRemarkSavedToast')}</span>
               </span>
             )}
           </div>

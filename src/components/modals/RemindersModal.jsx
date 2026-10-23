@@ -56,6 +56,7 @@ export function RemindersModal() {
     preferences,
     language,
     t,
+    showConfirm,
   } = useApp();
 
   const isDutch = language === 'nl';
@@ -583,8 +584,14 @@ export function RemindersModal() {
 
                           <button
                             className="btn-icon-action btn-danger-action"
-                            onClick={() => {
-                              if (window.confirm(t('reminders.deleteConfirm'))) {
+                            onClick={async () => {
+                              const ok = await showConfirm({
+                                title: t('common.deleteConfirmTitle'),
+                                message: t('reminders.deleteConfirm'),
+                                confirmText: t('common.delete'),
+                                type: 'danger',
+                              });
+                              if (ok) {
                                 deleteReminder(rem.id);
                               }
                             }}

@@ -36,6 +36,7 @@ export function CustomizeQuickModal() {
     t,
     activeCaregiver,
     updateCaregiver,
+    showAlert,
   } = useApp();
 
   const isDutch = language === 'nl';
@@ -178,7 +179,11 @@ export function CustomizeQuickModal() {
     setSelectedStatusCards((prev) => {
       if (prev.includes(id)) {
         if (prev.length <= 1) {
-          alert(isDutch ? 'Kies minstens 1 statuskaart.' : 'Please select at least 1 status card.');
+          showAlert({
+            title: isDutch ? 'Selectie vereist' : 'Selection Required',
+            message: isDutch ? 'Kies minstens 1 statuskaart.' : 'Please select at least 1 status card.',
+            type: 'warning',
+          });
           return prev;
         }
         return prev.filter((item) => item !== id);
@@ -209,7 +214,11 @@ export function CustomizeQuickModal() {
     setSelectedActionButtons((prev) => {
       if (prev.includes(id)) {
         if (prev.length <= 1) {
-          alert(isDutch ? 'Kies minstens 1 actieknop.' : 'Please select at least 1 action button.');
+          showAlert({
+            title: isDutch ? 'Selectie vereist' : 'Selection Required',
+            message: isDutch ? 'Kies minstens 1 actieknop.' : 'Please select at least 1 action button.',
+            type: 'warning',
+          });
           return prev;
         }
         return prev.filter((item) => item !== id);

@@ -46,6 +46,7 @@ const DEFAULT_PREFERENCES = {
   tempUnit: 'C',
   geminiApiKey: '',
   daycareName: '',
+  daycareDefaultRemark: 'daycare',
 };
 
 function hashPassword(password, salt) {

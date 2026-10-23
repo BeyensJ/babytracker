@@ -40,25 +40,38 @@ export function GroupedDayActivity({ dateKey, events, defaultExpanded = true }) 
     resumeDaycareWithData,
     language,
     t,
+    showConfirm,
   } = useApp();
   const isDutch = language === 'nl';
   const isMetric = preferences.weightUnit === 'kg';
   const isMetricVol = preferences.volumeUnit === 'ml';
 
-  const handleResume = (event) => {
+  const handleResume = async (event) => {
     // If another timer is running of this type, ask for confirmation
     if (event.type === 'BREAST' && activeTimers?.breast?.running && activeTimers?.breast?.resumedEventId !== event.id) {
-      if (!window.confirm(t('timeline.resumeConfirmNursing'))) {
-        return;
-      }
+      const ok = await showConfirm({
+        title: t('common.resumeTimerTitle'),
+        message: t('timeline.resumeConfirmNursing'),
+        confirmText: t('common.resumeTimer'),
+        type: 'warning',
+      });
+      if (!ok) return;
     } else if (event.type === 'SLEEP' && activeTimers?.sleep?.running && activeTimers?.sleep?.resumedEventId !== event.id) {
-      if (!window.confirm(t('timeline.resumeConfirmSleep'))) {
-        return;
-      }
+      const ok = await showConfirm({
+        title: t('common.resumeTimerTitle'),
+        message: t('timeline.resumeConfirmSleep'),
+        confirmText: t('common.resumeTimer'),
+        type: 'warning',
+      });
+      if (!ok) return;
     } else if (event.type === 'PUMP' && activeTimers?.pump?.running && activeTimers?.pump?.resumedEventId !== event.id) {
-      if (!window.confirm(t('timeline.resumeConfirmPump'))) {
-        return;
-      }
+      const ok = await showConfirm({
+        title: t('common.resumeTimerTitle'),
+        message: t('timeline.resumeConfirmPump'),
+        confirmText: t('common.resumeTimer'),
+        type: 'warning',
+      });
+      if (!ok) return;
     }
 
     if (event.type === 'BREAST') {
@@ -427,7 +440,11 @@ function FeedItemRow({ event, preferences, language, onEdit, onDelete, onResume,
     detailChip = [volStr, milkStr].filter(Boolean).join(' · ');
   } else if (event.type === 'SOLIDS') {
     label = isDutch ? 'Vaste voeding' : 'Solids';
-    detailChip = [det.food || (isDutch ? 'Hapje' : 'Meal'), det.reaction ? `${isDutch ? 'Reactie' : 'Reaction'}: ${det.reaction}` : ''].filter(Boolean).join(' · ');
+    detailChip = [
+      det.food || (isDutch ? 'Hapje' : 'Meal'),
+      det.amount || det.portion || det.amountFed,
+      det.reaction ? `${isDutch ? 'Reactie' : 'Reaction'}: ${det.reaction}` : '',
+    ].filter(Boolean).join(' · ');
   } else if (event.type === 'COMBO') {
     label = isDutch ? 'Combo voeding' : 'Combo Feed';
     detailChip = [
