@@ -37,6 +37,7 @@ export function RemindersDueBanner() {
     snoozeReminder,
     openModal,
     activeChild,
+    isZenMode,
     language,
     t,
     preferences,
@@ -52,6 +53,31 @@ export function RemindersDueBanner() {
 
   const isDutch = language === 'nl';
   const count = dueReminders.length;
+
+  if (isZenMode) {
+    const titles = dueReminders.map(r => r.title || r.activityType).slice(0, 2).join(', ');
+    const more = dueReminders.length > 2 ? ` +${dueReminders.length - 2}` : '';
+    return (
+      <div
+        className="zen-reminders-pill"
+        id="zen-reminders-pill"
+        onClick={() => {
+          triggerHaptic('light', preferences?.haptics);
+          openModal('REMINDERS');
+        }}
+        role="button"
+        tabIndex={0}
+      >
+        <div className="zen-reminders-left">
+          <BellRing size={14} className="zen-bell-icon" />
+          <span className="zen-reminders-text">
+            <strong>{isDutch ? `${count} herinnering te laat:` : `${count} reminder due:`}</strong> {titles}{more}
+          </span>
+        </div>
+        <span className="zen-reminders-action">{isDutch ? 'Bekijken' : 'Review'}</span>
+      </div>
+    );
+  }
 
   const getActivityIcon = (type) => {
     switch (type) {

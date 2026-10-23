@@ -53,7 +53,8 @@ const DEFAULT_PREFERENCES = {
   weightUnit: 'kg', // 'lb' or 'kg'
   lengthUnit: 'cm', // 'in' or 'cm'
   tempUnit: 'C',    // 'F' or 'C'
-  theme: 'light',   // 'light' or 'dark' (pure pitch-black OLED)
+  theme: 'light',   // 'light' (warm linen) or 'dark' (pitch-black OLED)
+  zenMode: false,   // minimalist clean layout mode
   haptics: true,    // subtle vibration feedback
   language: 'nl',   // 'nl' (Nederlands / Vlaams) or 'en' (English)
   geminiApiKey: '', // Google Gemini API Key for Daycare report AI extraction
@@ -401,11 +402,18 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
       if (preferences.theme) {
         localStorage.setItem(STORAGE_KEYS.DEVICE_THEME, preferences.theme);
       }
-      const currentTheme = preferences.theme || 'light';
-      if (currentTheme === 'dark' || currentTheme === 'oled') {
+      const currentTheme = preferences.theme === 'dark' || preferences.theme === 'oled' ? 'dark' : 'light';
+      if (currentTheme === 'dark') {
         document.documentElement.setAttribute('data-theme', 'dark');
       } else {
         document.documentElement.removeAttribute('data-theme');
+      }
+
+      const isZenActive = Boolean(preferences.zenMode);
+      if (isZenActive) {
+        document.documentElement.setAttribute('data-zen-mode', 'true');
+      } else {
+        document.documentElement.removeAttribute('data-zen-mode');
       }
 
       // Dynamically update mobile browser address bar / notch theme color
@@ -416,7 +424,7 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
         document.head.appendChild(metaThemeColor);
       }
 
-      if (currentTheme === 'dark' || currentTheme === 'oled') {
+      if (currentTheme === 'dark') {
         metaThemeColor.setAttribute('content', '#000000');
       } else {
         metaThemeColor.setAttribute('content', '#FAF7F2');
@@ -1640,6 +1648,17 @@ function mergePreferencesPreservingDeviceTheme(prev, incoming) {
     resetToSample,
     clearAllData,
     preferences,
+    isZenMode: Boolean(preferences?.zenMode),
+    toggleZenMode: () => {
+      setPreferences(prev => {
+        const nextZen = !prev?.zenMode;
+        triggerHaptic('light', prev?.haptics);
+        return {
+          ...prev,
+          zenMode: nextZen,
+        };
+      });
+    },
     language,
     t,
     setPreferences: (prefsOrUpdater) => {

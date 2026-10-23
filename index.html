@@ -31,10 +31,25 @@
               if (parsed && parsed.theme) t = parsed.theme;
             }
           }
+          var isZen = false;
+          if (p) {
+            try {
+              var parsedP = JSON.parse(p);
+              if (parsedP && parsedP.zenMode) isZen = true;
+            } catch (err) {}
+          }
+          if (t === 'zen') isZen = true;
+
           if (t === 'dark' || t === 'oled') {
             document.documentElement.setAttribute('data-theme', 'dark');
             var meta = document.querySelector('meta[name="theme-color"]');
             if (meta) meta.setAttribute('content', '#000000');
+          } else {
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', '#FAF7F2');
+          }
+          if (isZen) {
+            document.documentElement.setAttribute('data-zen-mode', 'true');
           }
         } catch (e) {}
       })();

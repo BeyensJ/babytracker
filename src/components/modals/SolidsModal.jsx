@@ -17,6 +17,8 @@ export function SolidsModal() {
     language
   } = useApp();
 
+  const isDutch = language === 'nl';
+
   const isEditing = Boolean(modalInitialData && modalInitialData.id);
 
   const [food, setFood] = useState(() => modalInitialData?.food || modalInitialData?.details?.food || '');

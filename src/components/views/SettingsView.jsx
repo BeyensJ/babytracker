@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { parseCSVToRows, convertCsvRowsToEvents, convertJsonToEvents } from '../../utils/csvParser';
-import { Upload, Download, FileSpreadsheet, Sparkles, Trash2, Baby, Sliders, Moon, Sun, Plus, Edit2, Heart, Lock, Key, LogOut, ShieldCheck, Bell, Send, AlertTriangle, CheckCircle2, Info, Server, RefreshCw, Eye, EyeOff, Bot, ExternalLink, School, Users } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Sparkles, Trash2, Baby, Sliders, Moon, Sun, Plus, Edit2, Heart, Lock, Key, LogOut, ShieldCheck, Bell, Send, AlertTriangle, CheckCircle2, Info, Server, RefreshCw, Eye, EyeOff, Bot, ExternalLink, School, Users, Flower2 } from 'lucide-react';
 import { syncService } from '../../services/syncService';
 import { triggerHaptic } from '../../utils/haptics';
 import confetti from 'canvas-confetti';
@@ -19,6 +19,8 @@ export function SettingsView() {
     openModal,
     preferences,
     setPreferences,
+    isZenMode,
+    toggleZenMode,
     resetToSample,
     clearAllData,
     exportCSV,
@@ -686,9 +688,13 @@ export function SettingsView() {
         <div className="setting-row">
           <div>
             <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.appearance')}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('settings.appearanceDesc')}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+              {isZenMode
+                ? (language === 'nl' ? 'Kies tussen Zen Licht en Zen Donker' : 'Choose between Zen Light and Zen Dark')
+                : t('settings.appearanceDesc')}
+            </div>
           </div>
-          <div className="segmented-control" style={{ width: 170 }}>
+          <div className="segmented-control" style={{ width: 230 }}>
             <button
               type="button"
               className={`segmented-btn ${preferences.theme === 'light' || (!preferences.theme) ? 'active' : ''}`}
@@ -696,9 +702,10 @@ export function SettingsView() {
                 setPreferences(p => ({ ...p, theme: 'light' }));
                 triggerHaptic('light', preferences?.haptics);
               }}
-              title={t('header.themeWarmLinen')}
+              title={isZenMode ? (language === 'nl' ? 'Zen Licht' : 'Zen Light') : t('header.themeWarmLinen')}
             >
-              <Sun size={13} style={{ marginRight: 4 }} /> {t('settings.themeLight')}
+              <Sun size={13} style={{ marginRight: 4 }} />
+              {isZenMode ? (language === 'nl' ? 'Zen Licht' : 'Zen Light') : t('settings.themeLight')}
             </button>
             <button
               type="button"
@@ -707,9 +714,43 @@ export function SettingsView() {
                 setPreferences(p => ({ ...p, theme: 'dark' }));
                 triggerHaptic('light', preferences?.haptics);
               }}
-              title={t('header.themeDark')}
+              title={isZenMode ? (language === 'nl' ? 'Zen Donker' : 'Zen Dark') : t('header.themeDark')}
             >
-              <Moon size={13} style={{ marginRight: 4 }} /> {t('settings.themeDark')}
+              <Moon size={13} style={{ marginRight: 4 }} />
+              {isZenMode ? (language === 'nl' ? 'Zen Donker' : 'Zen Dark') : t('settings.themeDark')}
+            </button>
+          </div>
+        </div>
+
+        {/* Zen Mode Declutter Switch */}
+        <div className="setting-row">
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <Flower2 size={15} color="var(--color-terracotta)" />
+              <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.zenModeLabel')}</div>
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('settings.zenModeDesc')}</div>
+          </div>
+          <div className="segmented-control" style={{ width: 170 }}>
+            <button
+              type="button"
+              className={`segmented-btn ${!isZenMode ? 'active' : ''}`}
+              onClick={() => {
+                setPreferences(p => ({ ...p, zenMode: false }));
+                triggerHaptic('light', preferences?.haptics);
+              }}
+            >
+              {t('settings.zenModeOff')}
+            </button>
+            <button
+              type="button"
+              className={`segmented-btn ${isZenMode ? 'active' : ''}`}
+              onClick={() => {
+                setPreferences(p => ({ ...p, zenMode: true }));
+                triggerHaptic('success', preferences?.haptics);
+              }}
+            >
+              <Flower2 size={12} style={{ marginRight: 3 }} /> {t('settings.zenModeOn')}
             </button>
           </div>
         </div>

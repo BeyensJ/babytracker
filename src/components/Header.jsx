@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { calculateBabyAge, getWakeWindowStatus } from '../utils/formatters';
-import { ChevronDown, Plus, Moon, Sun, Baby, Download, Bell, BellRing, Sparkles } from 'lucide-react';
+import { ChevronDown, Plus, Moon, Sun, Baby, Download, Bell, BellRing, Sparkles, Leaf } from 'lucide-react';
 import { triggerHaptic } from '../utils/haptics';
 
 export function Header({ onOpenSettings }) {
@@ -23,6 +23,7 @@ export function Header({ onOpenSettings }) {
     requestNotificationPermission,
     preferences,
     setPreferences,
+    isZenMode,
     language,
     t,
   } = useApp();
@@ -185,53 +186,27 @@ export function Header({ onOpenSettings }) {
         )}
       </div>
 
-      {/* Right Controls: Streamlined Reminders, Theme, Caregiver & Sync Status */}
+      {/* Right Controls: Theme Toggle, Reminders (in standard mode), Caregiver & Sync Status */}
       <div className="header-right-controls">
-        <button
-          className={`header-reminders-btn ${dueReminders?.length > 0 ? 'has-due' : ''}`}
-          onClick={() => {
-            openModal('REMINDERS');
-            triggerHaptic('light', preferences?.haptics);
-          }}
-          title={
-            isDutch
-              ? (dueReminders?.length > 0
-                ? `${dueReminders.length} herinnering(en) te laat`
-                : 'Herinneringen & Schema\'s')
-              : (dueReminders?.length > 0
-                ? `${dueReminders.length} reminder(s) due`
-                : 'Reminders & Schedules')
-          }
-          aria-label={t('reminders.title')}
-          id="header-reminders-btn"
-        >
-          {dueReminders?.length > 0 ? (
-            <>
-              <BellRing size={16} color="var(--color-terracotta)" />
-              <span className="header-due-badge">{dueReminders.length}</span>
-            </>
-          ) : (
-            <Bell size={16} color="var(--text-secondary)" />
-          )}
-        </button>
-
+        {/* Theme Toggle Button - ALWAYS visible, toggling Zen Light <-> Zen Dark when in Zen mode */}
         <button
           className="header-theme-toggle-btn"
           onClick={() => {
             const isDark = preferences?.theme === 'dark' || preferences?.theme === 'oled';
-            setPreferences(p => ({ ...p, theme: isDark ? 'light' : 'dark' }));
+            const nextTheme = isDark ? 'light' : 'dark';
+            setPreferences(p => ({ ...p, theme: nextTheme }));
             triggerHaptic('light', preferences?.haptics);
           }}
           title={
-            language === 'nl'
+            isZenMode
               ? (preferences?.theme === 'dark' || preferences?.theme === 'oled'
-                ? 'Huidig: Nachtelijk OLED (Tik voor Licht)'
-                : 'Huidig: Licht (Tik voor Donker OLED)')
+                ? (isDutch ? 'Zen Donker actief · Tik voor Zen Licht' : 'Zen Dark active · Tap for Zen Light')
+                : (isDutch ? 'Zen Licht actief · Tik voor Zen Donker' : 'Zen Light active · Tap for Zen Dark'))
               : (preferences?.theme === 'dark' || preferences?.theme === 'oled'
-                ? 'Current: Dark OLED (Tap for Light)'
-                : 'Current: Light (Tap for Dark OLED)')
+                ? (isDutch ? 'Donker thema actief · Tik voor Licht' : 'Dark theme active · Tap for Light')
+                : (isDutch ? 'Licht thema actief · Tik voor Donker' : 'Light theme active · Tap for Dark'))
           }
-          aria-label={language === 'nl' ? 'Thema wisselen' : 'Toggle theme appearance'}
+          aria-label={isDutch ? 'Thema wisselen' : 'Toggle theme appearance'}
           id="quick-theme-btn"
         >
           {preferences?.theme === 'dark' || preferences?.theme === 'oled' ? (
@@ -240,6 +215,37 @@ export function Header({ onOpenSettings }) {
             <Sun size={16} color="var(--color-terracotta)" />
           )}
         </button>
+
+        {/* In Zen Mode, hide reminders button to keep top bar calm */}
+        {!isZenMode && (
+          <button
+            className={`header-reminders-btn ${dueReminders?.length > 0 ? 'has-due' : ''}`}
+            onClick={() => {
+              openModal('REMINDERS');
+              triggerHaptic('light', preferences?.haptics);
+            }}
+            title={
+              isDutch
+                ? (dueReminders?.length > 0
+                  ? `${dueReminders.length} herinnering(en) te laat`
+                  : 'Herinneringen & Schema\'s')
+                : (dueReminders?.length > 0
+                  ? `${dueReminders.length} reminder(s) due`
+                  : 'Reminders & Schedules')
+            }
+            aria-label={t('reminders.title')}
+            id="header-reminders-btn"
+          >
+            {dueReminders?.length > 0 ? (
+              <>
+                <BellRing size={16} color="var(--color-terracotta)" />
+                <span className="header-due-badge">{dueReminders.length}</span>
+              </>
+            ) : (
+              <Bell size={16} color="var(--text-secondary)" />
+            )}
+          </button>
+        )}
 
         <button
           className="header-caregiver-btn"

@@ -37,6 +37,7 @@ export function QuickStatusBanner() {
     activeTimers,
     preferences,
     openModal,
+    isZenMode,
     language,
     t,
   } = useApp();
@@ -641,6 +642,123 @@ export function QuickStatusBanner() {
     triggerHaptic('light', preferences?.haptics);
     openModal('CUSTOMIZE_QUICK', { tab: 'status' });
   };
+
+  // --- Zen Mode Sanctuary View ---
+  if (isZenMode) {
+    const lastFeed = childEvents.find((e) => ['BREAST', 'BOTTLE', 'SOLIDS', 'COMBO'].includes(e.type));
+    const lastDiaper = childEvents.find((e) => e.type === 'DIAPER');
+
+    let zenFeedTime = '—';
+    let zenFeedDetail = isDutch ? 'Geen voeding' : 'No feeds';
+    if (lastFeed) {
+      zenFeedTime = formatRelative(lastFeed.beginDt, now, language);
+      if (lastFeed.type === 'BOTTLE') {
+        const vol = lastFeed.details?.volumeFloz ? formatVolume(lastFeed.details.volumeFloz, preferences.volumeUnit) : '';
+        zenFeedDetail = vol ? `${isDutch ? 'Fles' : 'Bottle'} · ${vol}` : (isDutch ? 'Flesje' : 'Bottle');
+      } else if (lastFeed.type === 'BREAST') {
+        const side = (lastFeed.details?.side || '').toUpperCase();
+        const sLabel = side.includes('LEFT') ? (isDutch ? 'Links' : 'Left') : side.includes('RIGHT') ? (isDutch ? 'Rechts' : 'Right') : (isDutch ? 'Borst' : 'Breast');
+        const dur = lastFeed.durationMs ? ` · ${formatDurationMs(lastFeed.durationMs, language)}` : '';
+        zenFeedDetail = `${sLabel}${dur}`;
+      } else if (lastFeed.type === 'SOLIDS') {
+        zenFeedDetail = isDutch ? 'Hapjes' : 'Solids';
+      } else {
+        zenFeedDetail = isDutch ? 'Voeding' : 'Feed';
+      }
+    }
+
+    let zenSleepTime = '—';
+    let zenSleepDetail = isDutch ? 'Geen slaapje' : 'No sleep';
+    if (isSleeping) {
+      zenSleepTime = isDutch ? 'Slaapt nu' : 'Sleeping now';
+      zenSleepDetail = activeTimers?.sleep?.startMs ? formatRelative(activeTimers.sleep.startMs, now, language) : (isDutch ? 'Timer actief' : 'Timer active');
+    } else if (latestSleep) {
+      const sleepEnd = latestSleep.endDt || (latestSleep.beginDt + (latestSleep.durationMs || 0));
+      zenSleepTime = formatRelative(sleepEnd, now, language);
+      const dur = latestSleep.durationMs ? formatDurationMs(latestSleep.durationMs, language) : '';
+      zenSleepDetail = dur ? `${dur} ${isDutch ? 'slaap' : 'sleep'}` : (isDutch ? 'Dutje' : 'Nap');
+    }
+
+    let zenDiaperTime = '—';
+    let zenDiaperDetail = isDutch ? 'Geen pamper' : 'No diaper';
+    if (lastDiaper) {
+      zenDiaperTime = formatRelative(lastDiaper.beginDt, now, language);
+      const dt = (lastDiaper.details?.diaperType || '').toUpperCase();
+      if (dt === 'DIRTY') zenDiaperDetail = isDutch ? 'Kaka' : 'Dirty';
+      else if (dt === 'BOTH') zenDiaperDetail = isDutch ? 'Nat & kaka' : 'Wet & dirty';
+      else if (dt === 'CLEAN') zenDiaperDetail = isDutch ? 'Schoon' : 'Clean';
+      else zenDiaperDetail = isDutch ? 'Nat' : 'Wet';
+    }
+
+    return (
+      <div className="zen-sanctuary-card" id="zen-sanctuary-card">
+        <div className="zen-sanctuary-header">
+          <div className="zen-state-indicator">
+            <span className={`zen-state-dot ${isSleeping ? 'sleeping' : 'awake'}`} />
+            <span className="zen-state-text">
+              {isSleeping
+                ? (isDutch ? `${babyName} slaapt rustig` : `${babyName} is resting peacefully`)
+                : (isDutch ? `${babyName} is wakker · ${getAwakeDurationText()}` : `${babyName} is awake and content · ${getAwakeDurationText()}`)}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            className="zen-customize-hint-btn"
+            onClick={handleOpenCustomize}
+            title={isDutch ? 'Snelle statuskaarten aanpassen' : 'Customize quick status cards'}
+            aria-label="Customize"
+          >
+            <SlidersHorizontal size={13} />
+          </button>
+        </div>
+
+        <div className="zen-sanctuary-trio">
+          <button
+            type="button"
+            className="zen-trio-item feed"
+            onClick={() => openModal(lastFeed?.type === 'BOTTLE' ? 'BOTTLE' : 'BREAST')}
+            id="zen-glance-feed-btn"
+          >
+            <div className="zen-item-top">
+              <Utensils size={13} className="zen-item-icon" />
+              <span className="zen-item-title">{t('settings.zenLastFeed')}</span>
+            </div>
+            <div className="zen-item-time">{zenFeedTime}</div>
+            <div className="zen-item-sub">{zenFeedDetail}</div>
+          </button>
+
+          <button
+            type="button"
+            className="zen-trio-item sleep"
+            onClick={() => openModal('SLEEP')}
+            id="zen-glance-sleep-btn"
+          >
+            <div className="zen-item-top">
+              <Moon size={13} className="zen-item-icon" />
+              <span className="zen-item-title">{t('settings.zenLastSleep')}</span>
+            </div>
+            <div className="zen-item-time">{zenSleepTime}</div>
+            <div className="zen-item-sub">{zenSleepDetail}</div>
+          </button>
+
+          <button
+            type="button"
+            className="zen-trio-item diaper"
+            onClick={() => openModal('DIAPER')}
+            id="zen-glance-diaper-btn"
+          >
+            <div className="zen-item-top">
+              <Sparkles size={13} className="zen-item-icon" />
+              <span className="zen-item-title">{t('settings.zenLastDiaper')}</span>
+            </div>
+            <div className="zen-item-time">{zenDiaperTime}</div>
+            <div className="zen-item-sub">{zenDiaperDetail}</div>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="hero-glance-card">

@@ -30,6 +30,7 @@ import { PumpIcon } from '../icons/PumpIcon';
 
 export function CalendarView() {
   const { events, activeChild, activeChildId, preferences, openModal, t, language } = useApp();
+  const isDutch = language === 'nl';
 
   // Mode: 'week' (multi-day rhythm), 'month' (calendar grid), 'day' (24h rhythm), or 'timeline' (complete activity stream)
   const [viewMode, setViewMode] = useState('week');

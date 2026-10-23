@@ -213,6 +213,19 @@
   --status-red-light: rgba(255, 110, 110, 0.18);
   --status-red-border: rgba(255, 110, 110, 0.4);
 
+  /* Accent Colors (OLED High Contrast) */
+  --color-terracotta: #E06D48;
+  --color-terracotta-light: rgba(224, 109, 72, 0.18);
+  --color-terracotta-hover: #EA8463;
+
+  --color-sage: #50C878;
+  --color-sage-light: rgba(80, 200, 120, 0.18);
+  --color-sage-hover: #69D48C;
+
+  --color-caramel: #FBBF24;
+  --color-caramel-light: rgba(251, 191, 36, 0.18);
+  --color-caramel-hover: #FCD34D;
+
   /* Shadows for OLED */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.8);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.9);
@@ -9307,6 +9320,1213 @@ input, select, textarea {
   background: #F59E0B;
   display: inline-block;
 }
+
+/* ==========================================================================
+   Zen Mode & Zen Theme Component Styles
+   ========================================================================== */
+
+/* 1. Header Zen Toggle Button */
+.header-zen-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 36px;
+  padding: 0 0.65rem;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.header-zen-toggle-btn:hover {
+  border-color: var(--color-terracotta);
+  color: var(--color-terracotta);
+  transform: translateY(-1px);
+}
+
+.header-zen-toggle-btn:active {
+  transform: scale(0.94);
+}
+
+.header-zen-toggle-btn.active {
+  background-color: var(--color-terracotta-light);
+  border-color: var(--color-terracotta);
+  color: var(--color-terracotta);
+}
+
+.header-zen-toggle-btn .zen-lotus-icon {
+  color: inherit;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.header-zen-toggle-btn.active .zen-lotus-icon {
+  transform: rotate(20deg) scale(1.08);
+}
+
+.header-zen-toggle-btn .zen-btn-label {
+  font-family: var(--font-sans);
+  letter-spacing: 0.02em;
+}
+
+/* 2. Zen Reminders Pill */
+.zen-reminders-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.95rem;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-bottom: -0.25rem;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.zen-reminders-pill:hover {
+  border-color: var(--color-sage);
+  background-color: var(--bg-card-hover);
+  transform: translateY(-1px);
+}
+
+.zen-reminders-left {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zen-bell-icon {
+  color: var(--color-sage);
+  flex-shrink: 0;
+}
+
+.zen-reminders-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zen-reminders-text strong {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.zen-reminders-action {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--color-sage);
+  margin-left: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* 3. Zen Status Sanctuary Card */
+.zen-sanctuary-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem 1.25rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.zen-sanctuary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.zen-state-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.zen-state-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--status-green);
+  display: inline-block;
+  box-shadow: 0 0 0 3px rgba(82, 122, 91, 0.15);
+}
+
+.zen-state-dot.sleeping {
+  background-color: var(--color-sleep);
+  box-shadow: 0 0 0 3px rgba(91, 114, 136, 0.15);
+}
+
+.zen-state-text {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.zen-customize-hint-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.zen-customize-hint-btn:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-card-subtle);
+}
+
+.zen-sanctuary-trio {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.zen-trio-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background-color: var(--bg-card-subtle);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 0.75rem 0.85rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.zen-trio-item:hover {
+  background-color: var(--bg-card-hover);
+  border-color: var(--border-subtle);
+  transform: translateY(-1px);
+}
+
+.zen-trio-item:active {
+  transform: scale(0.97);
+}
+
+.zen-item-top {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.zen-item-icon {
+  color: var(--text-tertiary);
+}
+
+.zen-trio-item.feed .zen-item-icon {
+  color: var(--color-bottle);
+}
+
+.zen-trio-item.sleep .zen-item-icon {
+  color: var(--color-sleep);
+}
+
+.zen-trio-item.diaper .zen-item-icon {
+  color: var(--color-diaper);
+}
+
+.zen-item-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+}
+
+.zen-item-time {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.zen-item-sub {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-top: 0.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+@media (max-width: 480px) {
+  .zen-sanctuary-trio {
+    gap: 0.5rem;
+  }
+  .zen-trio-item {
+    padding: 0.65rem 0.65rem;
+  }
+  .zen-item-time {
+    font-size: 0.78rem;
+  }
+  .zen-item-sub {
+    font-size: 0.68rem;
+  }
+}
+
+/* ==========================================================================
+   Zen Mode Decluttering & Layout Simplification
+   ========================================================================== */
+[data-zen-mode='true'] .header-reminders-btn.zen-subtle .header-due-badge {
+  animation: none;
+  background-color: var(--color-terracotta);
+  box-shadow: none;
+}
+
+/* Streamlined Quick Actions in Zen Mode */
+[data-zen-mode='true'] .quick-actions-strip-wrap {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 0.85rem 0.95rem;
+  box-shadow: var(--shadow-sm);
+}
+
+[data-zen-mode='true'] .quick-actions-header {
+  margin-bottom: 0.65rem;
+}
+
+[data-zen-mode='true'] .dock-icon-circle {
+  box-shadow: none;
+  border-color: transparent;
+  background-color: var(--bg-card-subtle);
+}
+
+[data-zen-mode='true'] .dock-btn-label {
+  font-weight: 500;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+/* Calmer Category Cards in Grouped Feed */
+[data-zen-mode='true'] .category-card {
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+[data-zen-mode='true'] .category-card-header {
+  padding: 0.85rem 1rem;
+}
+
+[data-zen-mode='true'] .feed-view-mode-toggle {
+  background-color: var(--bg-card-subtle);
+}
+
+/* Subtle Floating Dock in Zen Mode */
+[data-zen-mode='true'] .bottom-nav {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-dock);
+}
+
+/* Active Timers Dock in Zen Mode: Gentle breathing instead of flashing */
+[data-zen-mode='true'] .active-timers-dock {
+  border-color: var(--border-subtle);
+  box-shadow: var(--shadow-md);
+}
+
+[data-zen-mode='true'] .timer-pulse-circle {
+  animation: pulseLight 3s infinite ease-in-out;
+}
+
+/* ==========================================================================
+   Zen Minimalist Architecture Styles (ZenTodayView)
+   Original Light Colors: Warm Linen, Cream, Terracotta
+   ========================================================================== */
+
+.zen-minimal-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+  max-width: 680px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* 1. Zen Discreet Banner Pill */
+.zen-banner-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1rem;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.zen-banner-pill:hover {
+  border-color: var(--color-terracotta);
+  background-color: var(--bg-card-hover);
+  transform: translateY(-1px);
+}
+
+.zen-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zen-bell-leaf {
+  color: var(--color-terracotta);
+  flex-shrink: 0;
+}
+
+.zen-banner-link {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-terracotta);
+  margin-left: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* 2. Zen Active Timer Bar */
+.zen-active-timer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1rem;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  animation: fadeIn 0.25s ease-out;
+}
+
+.zen-timer-info {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.zen-timer-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-terracotta);
+  animation: pulseLight 2s infinite ease-in-out;
+}
+
+.zen-timer-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.zen-timer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.zen-timer-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-subtle);
+  background-color: var(--bg-card-subtle);
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.zen-timer-action-btn:hover {
+  background-color: var(--bg-card-hover);
+  border-color: var(--border-strong);
+}
+
+.zen-timer-action-btn.finish {
+  background-color: var(--color-terracotta-light);
+  color: var(--color-terracotta);
+  border-color: var(--color-terracotta);
+}
+
+/* 3. Zen Hero Card */
+.zen-hero-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 22px;
+  padding: 1.35rem 1.45rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.zen-hero-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.zen-hero-state-row {
+  display: flex;
+  align-items: center;
+  gap: 0.95rem;
+}
+
+.zen-aura-orb {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-normal);
+  flex-shrink: 0;
+}
+
+.zen-aura-orb.awake {
+  background-color: var(--status-green-light);
+  color: var(--status-green);
+  box-shadow: 0 0 0 6px var(--status-green-border);
+}
+
+.zen-aura-orb.sleeping {
+  background-color: var(--color-sleep-light);
+  color: var(--color-sleep);
+  box-shadow: 0 0 0 6px rgba(59, 107, 155, 0.1);
+}
+
+.zen-hero-title {
+  font-family: var(--font-display, var(--font-sans));
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.zen-hero-subtitle {
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  margin-top: 0.2rem;
+  font-weight: 400;
+}
+
+.zen-cue-tag {
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+/* Trio At-A-Glance Cards */
+.zen-hero-trio {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.zen-trio-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background-color: var(--bg-card-subtle);
+  border: 1px solid transparent;
+  border-radius: 14px;
+  padding: 0.8rem 0.9rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.zen-trio-card:hover {
+  background-color: var(--bg-card-hover);
+  border-color: var(--border-subtle);
+  transform: translateY(-2px);
+}
+
+.zen-trio-card:active {
+  transform: scale(0.97);
+}
+
+.zen-trio-icon-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.35rem;
+}
+
+.zen-icon-feed {
+  color: var(--color-bottle);
+}
+
+.zen-icon-breast {
+  color: var(--color-breast);
+}
+
+.zen-icon-bottle {
+  color: var(--color-bottle);
+}
+
+.zen-icon-sleep {
+  color: var(--color-sleep);
+}
+
+.zen-icon-diaper {
+  color: var(--color-diaper);
+}
+
+.zen-icon-pump {
+  color: var(--color-pump);
+}
+
+.zen-icon-solids {
+  color: var(--color-solids);
+}
+
+.zen-icon-growth {
+  color: var(--color-growth);
+}
+
+.zen-icon-health {
+  color: var(--color-health);
+}
+
+.zen-icon-routine {
+  color: var(--color-routine);
+}
+
+.zen-icon-daycare {
+  color: var(--color-daycare);
+}
+
+.zen-icon-note {
+  color: var(--color-note);
+}
+
+.zen-icon-milestone {
+  color: var(--color-milestone);
+}
+
+.zen-icon-default {
+  color: var(--text-secondary);
+}
+
+.zen-trio-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+}
+
+.zen-trio-time {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.zen-trio-sub {
+  font-size: 0.73rem;
+  color: var(--text-secondary);
+  margin-top: 0.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* 4. Minimalist Quick Log Bar */
+.zen-quicklog-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.zen-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  padding: 0 0.25rem;
+}
+
+.zen-count-tag {
+  font-size: 0.7rem;
+  background-color: var(--bg-card-subtle);
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+}
+
+.zen-quicklog-bar {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.55rem;
+}
+
+.zen-log-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.75rem 0.45rem;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+}
+
+.zen-log-pill:hover {
+  border-color: var(--color-terracotta);
+  background-color: var(--bg-card-hover);
+  transform: translateY(-2px);
+}
+
+.zen-log-pill:active {
+  transform: scale(0.95);
+}
+
+.zen-log-pill.more {
+  color: var(--text-secondary);
+  background-color: var(--bg-card-subtle);
+  border-color: transparent;
+}
+
+.zen-log-pill.more:hover {
+  background-color: var(--bg-card-hover);
+  border-color: var(--border-subtle);
+}
+
+.zen-pill-icon.breast {
+  color: var(--color-breast);
+}
+
+.zen-pill-icon.bottle {
+  color: var(--color-bottle);
+}
+
+.zen-pill-icon.sleep {
+  color: var(--color-sleep);
+}
+
+.zen-pill-icon.diaper {
+  color: var(--color-diaper);
+}
+
+.zen-pill-icon.pump {
+  color: var(--color-pump);
+}
+
+.zen-pill-icon.solids {
+  color: var(--color-solids);
+}
+
+.zen-pill-icon.growth {
+  color: var(--color-growth);
+}
+
+.zen-pill-icon.health {
+  color: var(--color-health);
+}
+
+.zen-pill-icon.routine {
+  color: var(--color-routine);
+}
+
+.zen-pill-icon.daycare {
+  color: var(--color-daycare);
+}
+
+.zen-pill-icon.note {
+  color: var(--color-note);
+}
+
+.zen-pill-icon.milestone {
+  color: var(--color-milestone);
+}
+
+.zen-pill-icon.feed {
+  color: var(--color-breast);
+}
+
+.zen-pill-icon.default {
+  color: var(--text-secondary);
+}
+
+/* 5. The Zen Journal Section */
+.zen-journal-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.zen-journal-list {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.zen-journal-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.15rem;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.zen-journal-item:last-child {
+  border-bottom: none;
+}
+
+.zen-journal-item:hover {
+  background-color: var(--bg-card-hover);
+}
+
+.zen-journal-item:active {
+  background-color: var(--bg-card-subtle);
+}
+
+.zen-item-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.zen-item-timestamp {
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  min-width: 44px;
+}
+
+.zen-item-icon-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.zen-item-icon-circle.breast {
+  background-color: var(--color-breast-light);
+  color: var(--color-breast);
+}
+
+.zen-item-icon-circle.bottle {
+  background-color: var(--color-bottle-light);
+  color: var(--color-bottle);
+}
+
+.zen-item-icon-circle.sleep {
+  background-color: var(--color-sleep-light);
+  color: var(--color-sleep);
+}
+
+.zen-item-icon-circle.diaper {
+  background-color: var(--color-diaper-light);
+  color: var(--color-diaper);
+}
+
+.zen-item-icon-circle.solids {
+  background-color: var(--color-solids-light);
+  color: var(--color-solids);
+}
+
+.zen-item-icon-circle.pump {
+  background-color: var(--color-pump-light);
+  color: var(--color-pump);
+}
+
+.zen-item-icon-circle.growth {
+  background-color: var(--color-growth-light);
+  color: var(--color-growth);
+}
+
+.zen-item-icon-circle.health {
+  background-color: var(--color-health-light);
+  color: var(--color-health);
+}
+
+.zen-item-icon-circle.daycare {
+  background-color: var(--color-daycare-light);
+  color: var(--color-daycare);
+}
+
+.zen-item-icon-circle.default {
+  background-color: var(--bg-card-subtle);
+  color: var(--text-secondary);
+}
+
+.zen-item-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.zen-item-heading {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.zen-item-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 0.1rem;
+}
+
+.zen-item-caregiver {
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+}
+
+.zen-journal-empty {
+  background-color: var(--bg-card);
+  border: 1px dashed var(--border-subtle);
+  border-radius: 18px;
+  padding: 2.2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.45rem;
+}
+
+.zen-empty-icon {
+  color: var(--color-terracotta);
+  margin-bottom: 0.25rem;
+  opacity: 0.75;
+}
+
+.zen-journal-empty p {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.zen-journal-empty span {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+/* 6. More Activities Sheet */
+.zen-more-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-width: 520px;
+  margin: 0 auto;
+  background-color: var(--bg-card);
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  padding: 1.25rem 1.45rem 2rem;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-subtle);
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 200;
+}
+
+.zen-more-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.15rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.zen-more-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.zen-more-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zen-more-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+.zen-more-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem 0.25rem;
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+}
+
+.zen-more-item:hover {
+  transform: translateY(-2px);
+}
+
+.zen-more-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background-color: var(--bg-card-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-terracotta);
+  transition: all var(--transition-fast);
+}
+
+.zen-more-icon-box.breast { background-color: var(--color-breast-light); color: var(--color-breast); }
+.zen-more-icon-box.bottle { background-color: var(--color-bottle-light); color: var(--color-bottle); }
+.zen-more-icon-box.sleep { background-color: var(--color-sleep-light); color: var(--color-sleep); }
+.zen-more-icon-box.diaper { background-color: var(--color-diaper-light); color: var(--color-diaper); }
+.zen-more-icon-box.pump { background-color: var(--color-pump-light); color: var(--color-pump); }
+.zen-more-icon-box.solids { background-color: var(--color-solids-light); color: var(--color-solids); }
+.zen-more-icon-box.growth { background-color: var(--color-growth-light); color: var(--color-growth); }
+.zen-more-icon-box.health { background-color: var(--color-health-light); color: var(--color-health); }
+.zen-more-icon-box.routine { background-color: var(--color-routine-light); color: var(--color-routine); }
+.zen-more-icon-box.daycare { background-color: var(--color-daycare-light); color: var(--color-daycare); }
+.zen-more-icon-box.note { background-color: var(--color-note-light); color: var(--color-note); }
+.zen-more-icon-box.milestone { background-color: var(--color-milestone-light); color: var(--color-milestone); }
+
+.zen-more-item:hover .zen-more-icon-box {
+  transform: scale(1.06);
+}
+
+.zen-customize-sheet-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  width: 100%;
+  margin-top: 1.15rem;
+  padding: 0.65rem 0.85rem;
+  background-color: var(--bg-card-subtle);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.zen-customize-sheet-link:hover {
+  background-color: var(--bg-card-hover);
+  border-color: var(--color-terracotta);
+  color: var(--color-terracotta);
+}
+
+@media (max-width: 480px) {
+  .zen-quicklog-bar {
+    grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+    gap: 0.35rem;
+  }
+  .zen-log-pill {
+    padding: 0.65rem 0.25rem;
+    font-size: 0.74rem;
+    gap: 0.25rem;
+  }
+  .zen-hero-card {
+    padding: 1.15rem 1.15rem;
+  }
+  .zen-trio-card {
+    padding: 0.65rem 0.65rem;
+  }
+  .zen-trio-time {
+    font-size: 0.8rem;
+  }
+  .zen-trio-sub {
+    font-size: 0.68rem;
+  }
+}
+
+/* ==========================================================================
+   Zen Dark: Minimalist Architecture in OLED Pitch-Black Mode
+   ========================================================================== */
+[data-theme='dark'] .zen-hero-card {
+  background-color: #0d0d0d;
+  border-color: #242424;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+}
+
+[data-theme='dark'] .zen-aura-orb.awake {
+  background-color: rgba(80, 200, 120, 0.18);
+  color: #50C878;
+  box-shadow: 0 0 0 6px rgba(80, 200, 120, 0.12);
+}
+
+[data-theme='dark'] .zen-aura-orb.sleeping {
+  background-color: rgba(96, 165, 250, 0.18);
+  color: #60A5FA;
+  box-shadow: 0 0 0 6px rgba(96, 165, 250, 0.12);
+}
+
+[data-theme='dark'] .zen-trio-card {
+  background-color: #141414;
+  border-color: #222222;
+}
+
+[data-theme='dark'] .zen-trio-card:hover {
+  background-color: #1a1a1a;
+  border-color: #333333;
+}
+
+[data-theme='dark'] .zen-log-pill {
+  background-color: #121212;
+  border-color: #262626;
+  color: #F7F7F8;
+  box-shadow: none;
+}
+
+[data-theme='dark'] .zen-log-pill:hover {
+  background-color: #1c1c1c;
+  border-color: var(--color-terracotta);
+}
+
+[data-theme='dark'] .zen-log-pill.more {
+  background-color: #161616;
+  color: #B4B4BC;
+}
+
+[data-theme='dark'] .zen-log-pill.more:hover {
+  background-color: #1e1e1e;
+  border-color: #333333;
+}
+
+[data-theme='dark'] .zen-journal-list {
+  background-color: #0d0d0d;
+  border-color: #242424;
+  box-shadow: none;
+}
+
+[data-theme='dark'] .zen-journal-item {
+  border-bottom-color: #1a1a1a;
+}
+
+[data-theme='dark'] .zen-journal-item:hover {
+  background-color: #161616;
+}
+
+[data-theme='dark'] .zen-journal-item:active {
+  background-color: #1c1c1c;
+}
+
+[data-theme='dark'] .zen-journal-empty {
+  background-color: #0d0d0d;
+  border-color: #262626;
+}
+
+[data-theme='dark'] .zen-more-sheet {
+  background-color: #0d0d0d;
+  border-color: #262626;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.95);
+}
+
+[data-theme='dark'] .zen-more-header {
+  border-bottom-color: #222222;
+}
+
+[data-theme='dark'] .zen-more-icon-box {
+  background-color: #181818;
+  color: var(--color-terracotta);
+}
+
+[data-theme='dark'] .zen-more-item:hover .zen-more-icon-box {
+  background-color: rgba(224, 109, 72, 0.18);
+  color: var(--color-terracotta);
+}
+
+[data-theme='dark'] .zen-active-timer-bar {
+  background-color: #0d0d0d;
+  border-color: #262626;
+}
+
+[data-theme='dark'] .zen-reminders-pill {
+  background-color: #0d0d0d;
+  border-color: #262626;
+}
+
+[data-theme='dark'] .header-zen-toggle-btn {
+  background-color: #121212;
+  border-color: #262626;
+  color: #B4B4BC;
+}
+
+[data-theme='dark'] .header-zen-toggle-btn.active {
+  background-color: rgba(224, 109, 72, 0.18);
+  border-color: #E06D48;
+  color: #E06D48;
+}
+
 
 
 
