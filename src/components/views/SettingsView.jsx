@@ -1,7 +1,45 @@
 import React, { useState, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { parseCSVToRows, convertCsvRowsToEvents, convertJsonToEvents } from '../../utils/csvParser';
-import { Upload, Download, FileSpreadsheet, Sparkles, Trash2, Baby, Sliders, Moon, Sun, Plus, Edit2, Heart, Lock, Key, LogOut, ShieldCheck, Bell, Send, AlertTriangle, CheckCircle2, Info, Server, RefreshCw, Eye, EyeOff, Bot, ExternalLink, School, Users, Flower2 } from 'lucide-react';
+import {
+  Upload,
+  Download,
+  FileSpreadsheet,
+  Sparkles,
+  Trash2,
+  Baby,
+  Sliders,
+  Moon,
+  Sun,
+  Plus,
+  Edit2,
+  Lock,
+  Key,
+  LogOut,
+  Bell,
+  Send,
+  AlertTriangle,
+  CheckCircle2,
+  Server,
+  RefreshCw,
+  Eye,
+  EyeOff,
+  ExternalLink,
+  School,
+  Users,
+  Flower2,
+  Check,
+  Smartphone,
+  Home,
+  User,
+  Database,
+  Layers,
+  Thermometer,
+  Scale,
+  Droplet,
+  Languages,
+  Vibrate,
+} from 'lucide-react';
 import { syncService } from '../../services/syncService';
 import { triggerHaptic } from '../../utils/haptics';
 import confetti from 'canvas-confetti';
@@ -14,13 +52,15 @@ export function SettingsView() {
     setActiveChildId,
     events,
     caregivers,
+    activeCaregiver,
+    activeCaregiverId,
+    setActiveCaregiverId,
     reminders,
     dueReminders,
     openModal,
     preferences,
     setPreferences,
     isZenMode,
-    toggleZenMode,
     resetToSample,
     clearAllData,
     exportCSV,
@@ -35,6 +75,9 @@ export function SettingsView() {
   } = useApp();
 
   const isDutch = language === 'nl';
+
+  // Category navigation tabs: 'all', 'family', 'user', 'device', 'data'
+  const [activeTab, setActiveTab] = useState('all');
 
   const fileInputRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
@@ -103,13 +146,13 @@ export function SettingsView() {
   };
 
   const handleTestAlert = async () => {
-    setTestAlertStatus({ loading: true, message: 'Triggering test notification...' });
+    setTestAlertStatus({ loading: true, message: isDutch ? 'Testmelding versturen...' : 'Triggering test notification...' });
     try {
       const res = await testNotification();
       setTestAlertStatus(res);
       setTimeout(() => setTestAlertStatus(null), 8000);
     } catch (err) {
-      setTestAlertStatus({ success: false, message: err.message || 'Notification failed' });
+      setTestAlertStatus({ success: false, message: err.message || (isDutch ? 'Melding mislukt' : 'Notification failed') });
       setTimeout(() => setTestAlertStatus(null), 8000);
     }
   };
@@ -146,7 +189,6 @@ export function SettingsView() {
     }
   };
 
-  // Process selected or dropped file
   const handleFileProcess = (file) => {
     if (!file) return;
     setImportError('');
@@ -163,10 +205,9 @@ export function SettingsView() {
           const json = JSON.parse(content);
           parsedResult = convertJsonToEvents(json, activeChildId);
         } else {
-          // Parse CSV
           const rows = parseCSVToRows(content);
           if (rows.length === 0) {
-            setImportError(isDutch ? 'Geen geldige rijen gevonden in dit CSV-bestand.' : 'Could not find valid rows in this CSV file. Please make sure it is a valid export.');
+            setImportError(isDutch ? 'Geen geldige rijen gevonden in dit CSV-bestand.' : 'Could not find valid rows in this CSV file.');
             return;
           }
           parsedResult = convertCsvRowsToEvents(rows, activeChildId);
@@ -182,7 +223,6 @@ export function SettingsView() {
           return;
         }
 
-        // Open Import Preview Modal for user inspection
         openModal('IMPORT_PREVIEW', {
           fileName: file.name,
           parsedEvents,
@@ -193,7 +233,7 @@ export function SettingsView() {
         });
       } catch (err) {
         console.error('File parsing error:', err);
-        setImportError('Failed to parse file: ' + err.message);
+        setImportError((isDutch ? 'Fout bij verwerken: ' : 'Failed to parse file: ') + err.message);
       }
     };
 
@@ -228,7 +268,7 @@ export function SettingsView() {
         spread: 60,
         origin: { y: 0.6 },
       });
-    } catch { }
+    } catch {}
     alert(t('settings.sampleSuccess'));
   };
 
@@ -239,227 +279,800 @@ export function SettingsView() {
     }
   };
 
+  // Helper to check section visibility
+  const showSection = (tabKey) => activeTab === 'all' || activeTab === tabKey;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      {/* Settings Header */}
       <div>
-        <h2>{t('settings.title')}</h2>
+        <h2 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 700 }}>{t('settings.title')}</h2>
         <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
           {t('settings.subtitle')}
         </span>
       </div>
 
-      {/* 1. Data Import Dropzone (Core feature!) */}
-      <div className="trend-card" style={{ gap: '1rem' }}>
-        <div className="trend-card-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: 'var(--color-terracotta-light)', color: 'var(--color-terracotta)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Upload size={16} />
-            </div>
-            <h3>{t('settings.importTitle')}</h3>
-          </div>
-        </div>
-
-        <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-          {t('settings.importDesc')}
-        </p>
-
-        {/* Drag and Drop Zone */}
-        <div
-          className={`dropzone-box ${dragOver ? 'drag-over' : ''}`}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onClick={() => fileInputRef.current && fileInputRef.current.click()}
-          id="csv-dropzone"
+      {/* Category Filter Tabs */}
+      <div className="settings-tab-bar" role="tablist" aria-label="Settings Categories">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'all'}
+          className={`settings-tab-btn ${activeTab === 'all' ? 'active' : ''}`}
+          onClick={() => {
+            triggerHaptic('light', preferences?.haptics);
+            setActiveTab('all');
+          }}
         >
-          <input
-            type="file"
-            ref={fileInputRef}
-            style={{ display: 'none' }}
-            accept=".csv, .json, text/csv, application/json"
-            onChange={e => e.target.files && handleFileProcess(e.target.files[0])}
-          />
-          <div className="dropzone-icon">
-            <FileSpreadsheet size={32} />
-          </div>
-          <div>
-            <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>
-              {t('settings.dragDropTitle')}
-            </div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-              {t('settings.dragDropSub')}
-            </div>
-          </div>
-        </div>
+          <Layers size={14} />
+          <span>{t('settings.tabAll')}</span>
+        </button>
 
-        {importError && (
-          <div style={{ backgroundColor: 'var(--status-red-light)', color: 'var(--status-red)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)', fontSize: '0.82rem' }}>
-            ⚠️ {importError}
-          </div>
-        )}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'family'}
+          className={`settings-tab-btn ${activeTab === 'family' ? 'active' : ''}`}
+          onClick={() => {
+            triggerHaptic('light', preferences?.haptics);
+            setActiveTab('family');
+          }}
+        >
+          <Home size={14} />
+          <span>{t('settings.tabFamily')}</span>
+        </button>
 
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'user'}
+          className={`settings-tab-btn ${activeTab === 'user' ? 'active' : ''}`}
+          onClick={() => {
+            triggerHaptic('light', preferences?.haptics);
+            setActiveTab('user');
+          }}
+        >
+          <User size={14} />
+          <span>{t('settings.tabUser')}</span>
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'device'}
+          className={`settings-tab-btn ${activeTab === 'device' ? 'active' : ''}`}
+          onClick={() => {
+            triggerHaptic('light', preferences?.haptics);
+            setActiveTab('device');
+          }}
+        >
+          <Smartphone size={14} />
+          <span>{t('settings.tabDevice')}</span>
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'data'}
+          className={`settings-tab-btn ${activeTab === 'data' ? 'active' : ''}`}
+          onClick={() => {
+            triggerHaptic('light', preferences?.haptics);
+            setActiveTab('data');
+          }}
+        >
+          <Database size={14} />
+          <span>{t('settings.tabData')}</span>
+        </button>
       </div>
 
-      {/* 2. Export & Backup Section */}
-      <div className="trend-card">
-        <div className="trend-card-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: 'var(--color-sage-light)', color: 'var(--color-sage)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Download size={16} />
+      {/* ========================================================================= */}
+      {/* 1. USER / CAREGIVER SETTINGS (Specific to who is using this device)       */}
+      {/* ========================================================================= */}
+      {showSection('user') && (
+        <div className="trend-card" style={{ gap: '1rem' }}>
+          <div className="trend-card-header">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <div
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(206, 107, 76, 0.12)',
+                  color: 'var(--color-terracotta, #CE6B4C)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <User size={17} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700 }}>
+                  {t('settings.userSection')}
+                </h3>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
+                  {t('settings.userSectionDesc')}
+                </div>
+              </div>
             </div>
-            <h3>{t('settings.exportTitle')}</h3>
+
+            <span className="settings-scope-badge user">
+              <User size={10} />
+              {t('settings.badgeUser')}
+            </span>
           </div>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>{t('settings.recordsCount', { count: events.length })}</span>
-        </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-          <button className="btn-secondary" onClick={exportCSV} style={{ padding: '0.85rem', flexDirection: 'column', gap: '0.2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}>
-              <FileSpreadsheet size={16} color="var(--color-sage)" />
-              {t('settings.exportCsvBtn')}
+          <div>
+            <div style={{ fontSize: '0.84rem', fontWeight: 600, marginBottom: '0.2rem' }}>
+              {t('settings.activeCaregiverTitle')}:{' '}
+              <span style={{ color: activeCaregiver?.color || 'var(--color-terracotta)' }}>
+                {activeCaregiver?.name || (isDutch ? 'Geen verzorger' : 'No caregiver')}
+              </span>
             </div>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{t('settings.exportCsvSub')}</span>
-          </button>
-
-          <button className="btn-secondary" onClick={exportJSON} style={{ padding: '0.85rem', flexDirection: 'column', gap: '0.2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}>
-              <Download size={16} color="var(--color-slate)" />
-              {t('settings.exportJsonBtn')}
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+              {t('settings.activeCaregiverDesc')}
             </div>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{t('settings.exportJsonSub')}</span>
-          </button>
-        </div>
 
-        {events.length > 0 && (
-          <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
+            {/* Quick Caregiver Switcher Cards */}
+            <div className="settings-caregivers-grid">
+              {caregivers.map((cg) => {
+                const isSelected = cg.id === activeCaregiverId;
+                return (
+                  <button
+                    key={cg.id}
+                    type="button"
+                    className={`settings-caregiver-card ${isSelected ? 'active' : ''}`}
+                    onClick={() => {
+                      triggerHaptic('success', preferences?.haptics);
+                      setActiveCaregiverId(cg.id);
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: '50%',
+                        backgroundColor: cg.color || 'var(--color-terracotta)',
+                        color: '#FFFFFF',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {cg.name?.charAt(0).toUpperCase() || 'C'}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                      <div
+                        style={{
+                          fontSize: '0.84rem',
+                          fontWeight: 600,
+                          whiteSpace: 'nowrap',
+                          textOverflow: 'ellipsis',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {cg.name}
+                      </div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                        {cg.role || (isDutch ? 'Verzorger' : 'Caregiver')}
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <Check size={14} color="var(--color-terracotta)" style={{ flexShrink: 0 }} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <hr className="settings-divider" />
+
+          {/* Quick Status & Actions Customization (User / Caregiver specific) */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.6rem' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <Sliders size={15} color="var(--color-terracotta)" />
+                <div style={{ fontSize: '0.86rem', fontWeight: 600 }}>{t('customizeQuick.title')}</div>
+              </div>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+                {t('settings.quickStatusDescUser', { name: activeCaregiver?.name || (isDutch ? 'deze verzorger' : 'this caregiver') })}
+              </div>
+            </div>
+
             <button
-              onClick={handleClear}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--status-red)', fontSize: '0.8rem', fontWeight: 600, padding: '0.4rem 0.6rem' }}
+              type="button"
+              className="settings-action-btn"
+              onClick={() => {
+                triggerHaptic('light', preferences?.haptics);
+                openModal('CUSTOMIZE_QUICK');
+              }}
             >
-              <Trash2 size={14} />
-              {t('settings.clearData')}
+              <Sliders size={14} />
+              <span>{isDutch ? 'Aanpassen' : 'Customize'}</span>
             </button>
           </div>
-        )}
-      </div>
 
-      {/* 3. Children Management */}
-      <div className="trend-card">
-        <div className="trend-card-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: 'var(--color-caramel-light)', color: 'var(--color-caramel)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Baby size={16} />
-            </div>
-            <h3>{t('settings.babyProfiles')}</h3>
-          </div>
-
-          <button
-            className="btn-secondary"
-            style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
-            onClick={() => openModal('CHILD_SETTINGS', null)}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderTop: '1px solid var(--border-subtle)',
+              paddingTop: '0.75rem',
+              flexWrap: 'wrap',
+              gap: '0.5rem',
+            }}
           >
-            <Plus size={14} style={{ marginRight: 3 }} />
-            {t('settings.addChild')}
-          </button>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          {childList.map(c => (
-            <div
-              key={c.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0.75rem 1rem',
-                backgroundColor: c.id === activeChildId ? 'var(--bg-card-subtle)' : 'transparent',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-subtle)',
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+              {isDutch
+                ? 'Nieuwe verzorgers toevoegen of namen en kleuren aanpassen?'
+                : 'Need to add caregivers or change names and colors?'}
+            </div>
+            <button
+              type="button"
+              className="settings-action-btn"
+              onClick={() => {
+                triggerHaptic('light', preferences?.haptics);
+                openModal('CAREGIVER');
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--color-terracotta)', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
-                  {c.name.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{c.name}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('settings.bornOn', { date: c.birthdate })}</div>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                {c.id !== activeChildId && (
-                  <button
-                    className="btn-secondary"
-                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
-                    onClick={() => setActiveChildId(c.id)}
-                  >
-                    {t('settings.selectBaby')}
-                  </button>
-                )}
-                <button
-                  className="btn-secondary"
-                  style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
-                  onClick={() => openModal('CHILD_SETTINGS', c)}
-                  aria-label={t('childModal.titleEdit')}
-                >
-                  <Edit2 size={13} />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 3a. Family & Daycare Settings */}
-      <div className="trend-card" style={{ gap: '1rem' }}>
-        <div className="trend-card-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                backgroundColor: 'var(--color-daycare-light)',
-                color: 'var(--color-daycare)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <School size={16} />
-            </div>
-            <div>
-              <h3>{t('settings.familyTitle')}</h3>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                {t('settings.familyDesc')}
-              </div>
-            </div>
+              <Users size={14} />
+              <span>{t('settings.manageCaregiversBtn')}</span>
+            </button>
           </div>
         </div>
+      )}
 
-        {/* Default Daycare Name Input */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-          <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.daycareNameLabel')}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
-              {t('settings.daycareNameDesc')}
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <div style={{ position: 'relative', flex: 1 }}>
-              <School
-                size={16}
+      {/* ========================================================================= */}
+      {/* 2. DEVICE SETTINGS (Appearance, Zen Mode, Haptics, Local Notifications)   */}
+      {/* ========================================================================= */}
+      {showSection('device') && (
+        <div className="trend-card" style={{ gap: '1.1rem' }}>
+          <div className="trend-card-header">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <div
                 style={{
-                  position: 'absolute',
-                  left: '0.85rem',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: 'var(--color-daycare)',
-                  pointerEvents: 'none',
+                  width: 34,
+                  height: 34,
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(147, 51, 234, 0.1)',
+                  color: '#9333EA',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
-              />
+              >
+                <Smartphone size={17} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700 }}>
+                  {t('settings.deviceSection')}
+                </h3>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
+                  {t('settings.deviceSectionDesc')}
+                </div>
+              </div>
+            </div>
+
+            <span className="settings-scope-badge device">
+              <Smartphone size={10} />
+              {t('settings.badgeDevice')}
+            </span>
+          </div>
+
+          {/* Row 1: Zen Mode Switch */}
+          <div className="setting-row">
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <Flower2 size={15} color="var(--color-terracotta)" />
+                <div style={{ fontSize: '0.86rem', fontWeight: 600 }}>{t('settings.zenModeLabel')}</div>
+              </div>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+                {t('settings.zenModeDesc')}
+              </div>
+            </div>
+
+            <div className="segmented-control settings-control-uniform">
+              <button
+                type="button"
+                className={`segmented-btn ${!isZenMode ? 'active' : ''}`}
+                onClick={() => {
+                  setPreferences(p => ({ ...p, zenMode: false }));
+                  triggerHaptic('light', preferences?.haptics);
+                }}
+              >
+                {t('settings.zenModeOff')}
+              </button>
+              <button
+                type="button"
+                className={`segmented-btn ${isZenMode ? 'active' : ''}`}
+                onClick={() => {
+                  setPreferences(p => ({ ...p, zenMode: true }));
+                  triggerHaptic('success', preferences?.haptics);
+                }}
+              >
+                <Flower2 size={12} style={{ marginRight: 3 }} /> {t('settings.zenModeOn')}
+              </button>
+            </div>
+          </div>
+
+          <hr className="settings-divider" />
+
+          {/* Row 2: Theme / Appearance */}
+          <div className="setting-row">
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                {preferences.theme === 'dark' || preferences.theme === 'oled' ? (
+                  <Moon size={15} color="var(--color-slate)" />
+                ) : (
+                  <Sun size={15} color="#D97706" />
+                )}
+                <div style={{ fontSize: '0.86rem', fontWeight: 600 }}>{t('settings.appearance')}</div>
+              </div>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+                {isZenMode
+                  ? (isDutch ? 'Kies tussen Zen Licht en Zen Donker' : 'Choose between Zen Light and Zen Dark')
+                  : t('settings.appearanceDesc')}
+              </div>
+            </div>
+
+            <div className="segmented-control settings-control-uniform">
+              <button
+                type="button"
+                className={`segmented-btn ${preferences.theme === 'light' || !preferences.theme ? 'active' : ''}`}
+                onClick={() => {
+                  setPreferences(p => ({ ...p, theme: 'light' }));
+                  triggerHaptic('light', preferences?.haptics);
+                }}
+                title={isZenMode ? (isDutch ? 'Zen Licht' : 'Zen Light') : t('header.themeWarmLinen')}
+              >
+                <Sun size={13} style={{ marginRight: 4 }} />
+                {isZenMode ? (isDutch ? 'Zen Licht' : 'Zen Light') : t('settings.themeLight')}
+              </button>
+              <button
+                type="button"
+                className={`segmented-btn ${preferences.theme === 'dark' || preferences.theme === 'oled' ? 'active' : ''}`}
+                onClick={() => {
+                  setPreferences(p => ({ ...p, theme: 'dark' }));
+                  triggerHaptic('light', preferences?.haptics);
+                }}
+                title={isZenMode ? (isDutch ? 'Zen Donker' : 'Zen Dark') : t('header.themeDark')}
+              >
+                <Moon size={13} style={{ marginRight: 4 }} />
+                {isZenMode ? (isDutch ? 'Zen Donker' : 'Zen Dark') : t('settings.themeDark')}
+              </button>
+            </div>
+          </div>
+
+          <hr className="settings-divider" />
+
+          {/* Row 3: Language Selection */}
+          <div className="setting-row">
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <Languages size={15} color="var(--color-slate)" />
+                <div style={{ fontSize: '0.86rem', fontWeight: 600 }}>{t('settings.languageTitle')}</div>
+              </div>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+                {t('settings.languageDesc')}
+              </div>
+            </div>
+
+            <div className="segmented-control settings-control-uniform">
+              <button
+                type="button"
+                className={`segmented-btn ${language === 'nl' ? 'active' : ''}`}
+                onClick={() => {
+                  setPreferences(p => ({ ...p, language: 'nl' }));
+                  triggerHaptic('light', preferences?.haptics);
+                }}
+              >
+                🇳🇱 {t('settings.langDutch')}
+              </button>
+              <button
+                type="button"
+                className={`segmented-btn ${language === 'en' ? 'active' : ''}`}
+                onClick={() => {
+                  setPreferences(p => ({ ...p, language: 'en' }));
+                  triggerHaptic('light', preferences?.haptics);
+                }}
+              >
+                🇬🇧 {t('settings.langEnglish')}
+              </button>
+            </div>
+          </div>
+
+          <hr className="settings-divider" />
+
+          {/* Row 4: Haptic Vibration */}
+          <div className="setting-row">
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <Vibrate size={15} color="var(--color-sage)" />
+                <div style={{ fontSize: '0.86rem', fontWeight: 600 }}>{t('settings.haptics')}</div>
+              </div>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+                {t('settings.hapticsDesc')}
+              </div>
+            </div>
+
+            <div className="segmented-control settings-control-uniform">
+              <button
+                type="button"
+                className={`segmented-btn ${preferences.haptics !== false ? 'active' : ''}`}
+                onClick={() => {
+                  setPreferences(p => ({ ...p, haptics: true }));
+                  triggerHaptic('success', true);
+                }}
+              >
+                ✓ {t('settings.hapticsOn')}
+              </button>
+              <button
+                type="button"
+                className={`segmented-btn ${preferences.haptics === false ? 'active' : ''}`}
+                onClick={() => setPreferences(p => ({ ...p, haptics: false }))}
+              >
+                ✕ {t('settings.hapticsOff')}
+              </button>
+            </div>
+          </div>
+
+          <hr className="settings-divider" />
+
+          {/* Row 5: Push Notifications on this Device */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <Bell size={15} color="var(--color-terracotta)" />
+                  <div style={{ fontSize: '0.86rem', fontWeight: 600 }}>{t('settings.notificationsTitle')}</div>
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+                  {t('settings.notificationsDesc')}
+                </div>
+              </div>
+
+              <span
+                style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 600,
+                  padding: '0.2rem 0.6rem',
+                  borderRadius: '999px',
+                  backgroundColor:
+                    notificationPermission === 'granted'
+                      ? 'rgba(46, 125, 50, 0.12)'
+                      : notificationPermission === 'insecure-context'
+                      ? 'rgba(237, 108, 2, 0.12)'
+                      : 'rgba(0, 0, 0, 0.06)',
+                  color:
+                    notificationPermission === 'granted'
+                      ? '#2E7D32'
+                      : notificationPermission === 'insecure-context'
+                      ? '#ED6C02'
+                      : 'var(--text-secondary)',
+                }}
+              >
+                {notificationPermission === 'granted'
+                  ? t('settings.notifActive')
+                  : notificationPermission === 'insecure-context'
+                  ? t('settings.notifInsecure')
+                  : notificationPermission === 'denied'
+                  ? t('settings.notifDenied')
+                  : t('settings.notifDisabled')}
+              </span>
+            </div>
+
+            {/* Insecure Context Warning */}
+            {notificationDiagnostics?.isSecure === false && (
+              <div
+                style={{
+                  padding: '0.75rem 0.9rem',
+                  backgroundColor: 'rgba(237, 108, 2, 0.08)',
+                  border: '1px solid rgba(237, 108, 2, 0.25)',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '0.78rem',
+                  color: 'var(--text-primary)',
+                  lineHeight: 1.4,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600, color: '#C25E00', marginBottom: '0.3rem' }}>
+                  <AlertTriangle size={15} />
+                  {t('settings.insecureTitle')}
+                </div>
+                <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
+                  {isDutch
+                    ? 'Browsers blokkeren pushmeldingen over gewone HTTP LAN-adressen (zoals http://192.168.x.x:3001). Gebruik HTTPS of voeg chrome://flags/#unsafely-treat-insecure-origin-as-secure toe.'
+                    : 'Browsers disable notifications over plain HTTP LAN. Use HTTPS or configure Chrome insecure origins flag.'}
+                </p>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+              {notificationPermission !== 'granted' && (
+                <button
+                  type="button"
+                  className="settings-action-btn"
+                  onClick={requestNotificationPermission}
+                  style={{ backgroundColor: 'var(--color-terracotta)', color: '#FFFFFF', borderColor: 'var(--color-terracotta)' }}
+                >
+                  <Bell size={14} />
+                  <span>{t('settings.enableTray')}</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                className="settings-action-btn"
+                onClick={handleTestAlert}
+                disabled={testAlertStatus?.loading}
+              >
+                <Send size={14} />
+                <span>{t('settings.sendTestAlert')}</span>
+              </button>
+            </div>
+
+            {testAlertStatus && (
+              <div
+                style={{
+                  padding: '0.55rem 0.8rem',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '0.78rem',
+                  backgroundColor: testAlertStatus.success ? 'rgba(46, 125, 50, 0.1)' : 'rgba(211, 47, 47, 0.1)',
+                  color: testAlertStatus.success ? '#2E7D32' : '#D32F2F',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                }}
+              >
+                {testAlertStatus.success ? <CheckCircle2 size={15} /> : <AlertTriangle size={15} />}
+                <span>{testAlertStatus.message}</span>
+              </div>
+            )}
+          </div>
+
+          <hr className="settings-divider" />
+
+          {/* Row 6: Server Connection & Sync Diagnostics */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <Server size={15} color="var(--color-slate)" />
+                  <div style={{ fontSize: '0.86rem', fontWeight: 600 }}>{t('settings.serverTitle')}</div>
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+                  {t('settings.serverDesc')}
+                </div>
+              </div>
+
+              <span
+                style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 600,
+                  padding: '0.2rem 0.6rem',
+                  borderRadius: '999px',
+                  backgroundColor: 'rgba(84, 108, 126, 0.12)',
+                  color: 'var(--color-slate, #546C7E)',
+                  maxWidth: 180,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {syncService.getServerBaseUrl() || t('settings.serverDefault')}
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+              <button
+                type="button"
+                className="settings-action-btn"
+                onClick={() => openModal('SERVER_SETUP')}
+              >
+                <Server size={14} />
+                <span>{t('settings.serverEdit')}</span>
+              </button>
+
+              <button
+                type="button"
+                className="settings-action-btn"
+                onClick={handleTestServer}
+                disabled={serverTestStatus?.loading}
+              >
+                <RefreshCw size={14} className={serverTestStatus?.loading ? 'spin' : ''} />
+                <span>{t('settings.serverTestBtn')}</span>
+              </button>
+            </div>
+
+            {serverTestStatus && (
+              <div
+                style={{
+                  padding: '0.55rem 0.8rem',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '0.78rem',
+                  backgroundColor: serverTestStatus.loading
+                    ? 'rgba(0, 0, 0, 0.04)'
+                    : serverTestStatus.success
+                    ? 'rgba(46, 125, 50, 0.1)'
+                    : 'rgba(211, 47, 47, 0.1)',
+                  color: serverTestStatus.loading
+                    ? 'var(--text-secondary)'
+                    : serverTestStatus.success
+                    ? '#2E7D32'
+                    : '#D32F2F',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                }}
+              >
+                {serverTestStatus.loading ? (
+                  <RefreshCw size={14} className="spin" />
+                ) : serverTestStatus.success ? (
+                  <CheckCircle2 size={15} />
+                ) : (
+                  <AlertTriangle size={15} />
+                )}
+                <span>{serverTestStatus.message}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 3. FAMILY SETTINGS (Synchronized with all caregivers in the household)    */}
+      {/* ========================================================================= */}
+      {showSection('family') && (
+        <div className="trend-card" style={{ gap: '1.25rem' }}>
+          <div className="trend-card-header">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <div
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(84, 108, 126, 0.12)',
+                  color: 'var(--color-slate, #546C7E)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Home size={17} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700 }}>
+                  {t('settings.familySection')}
+                </h3>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
+                  {t('settings.familySectionDesc')}
+                </div>
+              </div>
+            </div>
+
+            <span className="settings-scope-badge family">
+              <Home size={10} />
+              {t('settings.badgeFamily')}
+            </span>
+          </div>
+
+          {/* Part 1: Baby Profiles */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <Baby size={15} color="var(--color-caramel)" />
+                  <div style={{ fontSize: '0.86rem', fontWeight: 600 }}>{t('settings.babyProfiles')}</div>
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
+                  {isDutch ? 'Beheer babyprofielen en schakel tussen kinderen' : 'Manage baby profiles and active child'}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="settings-action-btn"
+                onClick={() => openModal('CHILD_SETTINGS', null)}
+              >
+                <Plus size={14} />
+                <span>{t('settings.addChild')}</span>
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+              {childList.map((c) => {
+                const isSelected = c.id === activeChildId;
+                const babyColor = c.avatarColor || 'terracotta';
+                return (
+                  <div
+                    key={c.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.65rem 0.85rem',
+                      backgroundColor: isSelected ? 'var(--bg-card-subtle)' : 'transparent',
+                      borderRadius: 'var(--radius-md)',
+                      border: isSelected ? `1.5px solid var(--color-${babyColor})` : '1px solid var(--border-subtle)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                      <div
+                        style={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: '50%',
+                          background: `var(--color-${babyColor})`,
+                          color: '#FFF',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 700,
+                          fontSize: '0.86rem',
+                          boxShadow: isSelected ? `0 0 0 2px var(--bg-card), 0 0 0 4px var(--color-${babyColor})` : 'none',
+                        }}
+                      >
+                        {c.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>
+                          {c.name} {isSelected && <span style={{ fontSize: '0.72rem', color: `var(--color-${babyColor})`, fontWeight: 600 }}>• {isDutch ? 'Actief' : 'Active'}</span>}
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                          {t('settings.bornOn', { date: c.birthdate })}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      {!isSelected && (
+                        <button
+                          type="button"
+                          className="settings-action-btn"
+                          style={{ height: 32, padding: '0 0.65rem', fontSize: '0.75rem' }}
+                          onClick={() => {
+                            triggerHaptic('light', preferences?.haptics);
+                            setActiveChildId(c.id);
+                          }}
+                        >
+                          {t('settings.selectBaby')}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="settings-action-btn"
+                        style={{ height: 32, width: 32, padding: 0 }}
+                        onClick={() => openModal('CHILD_SETTINGS', c)}
+                        aria-label={t('childModal.titleEdit')}
+                      >
+                        <Edit2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <hr className="settings-divider" />
+
+          {/* Part 2: Opvang & Crèche */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <School size={15} color="var(--color-daycare)" />
+                <div style={{ fontSize: '0.86rem', fontWeight: 600 }}>{t('settings.daycareNameLabel')}</div>
+              </div>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+                {t('settings.daycareNameDesc')}
+              </div>
+            </div>
+
+            <div className="settings-input-group">
               <input
                 type="text"
                 className="form-input"
@@ -469,788 +1082,500 @@ export function SettingsView() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleSaveDaycareName();
                 }}
-                style={{ paddingLeft: '2.5rem' }}
               />
+              <button
+                type="button"
+                className="btn btn-primary save-btn"
+                onClick={handleSaveDaycareName}
+                style={{ backgroundColor: 'var(--color-daycare)' }}
+              >
+                <span>{isDutch ? 'Opslaan' : 'Save'}</span>
+              </button>
             </div>
 
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={handleSaveDaycareName}
-              style={{
-                backgroundColor: 'var(--color-daycare)',
-                fontSize: '0.82rem',
-                padding: '0.5rem 1rem',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              <span>{isDutch ? 'Opslaan' : 'Save'}</span>
-            </button>
+            {daycareSavedToast && (
+              <span
+                style={{
+                  fontSize: '0.75rem',
+                  color: '#16A34A',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                }}
+              >
+                <CheckCircle2 size={14} />
+                <span>{t('settings.daycareSavedToast')}</span>
+              </span>
+            )}
           </div>
 
-          {daycareSavedToast && (
-            <span
-              style={{
-                fontSize: '0.78rem',
-                color: '#16A34A',
-                fontWeight: 600,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.3rem',
-                marginTop: '0.1rem',
-              }}
-            >
-              <CheckCircle2 size={14} />
-              <span>{t('settings.daycareSavedToast')}</span>
-            </span>
-          )}
-        </div>
+          <hr className="settings-divider" />
 
-        {/* Caregivers Management Shortcut */}
-        <div
-          style={{
-            borderTop: '1px solid var(--border-subtle)',
-            paddingTop: '0.75rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '0.5rem',
-          }}
-        >
-          <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.manageCaregiversBtn')}</div>
-            <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
-              {Array.isArray(caregivers) && caregivers.length > 0
-                ? (isDutch
-                    ? `${caregivers.length} verzorgers actief (${caregivers.map((c) => c.name).join(', ')})`
-                    : `${caregivers.length} caregivers configured (${caregivers.map((c) => c.name).join(', ')})`)
-                : (isDutch ? 'Configureer wie er registreert' : 'Configure caregivers')}
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => {
-              triggerHaptic('light', preferences?.haptics);
-              openModal('CAREGIVER');
-            }}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              fontSize: '0.8rem',
-              padding: '0.4rem 0.8rem',
-            }}
-          >
-            <Users size={14} />
-            <span>{t('settings.manageCaregiversBtn')}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 3b. Reminders & Schedules */}
-      <div className="trend-card">
-        <div className="trend-card-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: 'var(--color-caramel-light)', color: 'var(--color-caramel)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Bell size={16} />
-            </div>
+          {/* Part 3: Reminders & Schedules */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.6rem' }}>
             <div>
-              <h3>{t('reminders.title')}</h3>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('reminders.subtitle')}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <Bell size={15} color="var(--color-caramel)" />
+                <div style={{ fontSize: '0.86rem', fontWeight: 600 }}>{t('reminders.title')}</div>
+              </div>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+                {dueReminders?.length > 0
+                  ? (isDutch ? `⚠️ ${dueReminders.length} herinnering(en) te laat om uit te voeren` : `⚠️ ${dueReminders.length} reminder(s) due now`)
+                  : (isDutch ? `✓ ${reminders?.length || 0} schema('s) actief ingesteld` : `✓ ${reminders?.length || 0} active schedule(s)`)}
+              </div>
             </div>
-          </div>
 
-          <button
-            className="btn-secondary"
-            style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
-            onClick={() => openModal('REMINDERS')}
-          >
-            <Plus size={14} style={{ marginRight: 3 }} />
-            {t('reminders.addReminder')}
-          </button>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', backgroundColor: 'var(--bg-card-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-          <div>
-            <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>
-              {isDutch ? 'Actieve herinneringen voor' : 'Active reminders for'} {activeChild?.name || 'Baby'}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
-              {dueReminders?.length > 0
-                ? (isDutch ? `⚠️ ${dueReminders.length} herinnering(en) te laat om uit te voeren` : `⚠️ ${dueReminders.length} reminder(s) due now`)
-                : (isDutch ? `✓ ${reminders?.length || 0} schema('s) actief ingesteld` : `✓ ${reminders?.length || 0} active schedule(s)`)}
-            </div>
-          </div>
-
-          <button
-            className="btn-primary"
-            style={{ padding: '0.45rem 0.85rem', fontSize: '0.8rem', backgroundColor: 'var(--color-caramel)' }}
-            onClick={() => openModal('REMINDERS')}
-          >
-            {t('reminders.manageReminders')}
-          </button>
-        </div>
-      </div>
-
-      {/* 4. Display & Units Preferences */}
-      <div className="trend-card">
-        <div className="trend-card-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: 'var(--bg-card-subtle)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Sliders size={16} />
-            </div>
-            <h3>{t('settings.displayUnits')}</h3>
-          </div>
-        </div>
-
-        {/* Language Selection */}
-        <div className="setting-row">
-          <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.languageTitle')}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('settings.languageDesc')}</div>
-          </div>
-          <div className="segmented-control" style={{ width: 220 }}>
             <button
               type="button"
-              className={`segmented-btn ${language === 'nl' ? 'active' : ''}`}
+              className="settings-action-btn"
               onClick={() => {
-                setPreferences(p => ({ ...p, language: 'nl' }));
                 triggerHaptic('light', preferences?.haptics);
+                openModal('REMINDERS');
               }}
-            >
-              🇳🇱 {t('settings.langDutch')}
-            </button>
-            <button
-              type="button"
-              className={`segmented-btn ${language === 'en' ? 'active' : ''}`}
-              onClick={() => {
-                setPreferences(p => ({ ...p, language: 'en' }));
-                triggerHaptic('light', preferences?.haptics);
-              }}
-            >
-              🇬🇧 {t('settings.langEnglish')}
-            </button>
-          </div>
-        </div>
-
-        {/* Volume Units */}
-        <div className="setting-row">
-          <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.volumeUnit')}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('settings.volumeUnitDesc')}</div>
-          </div>
-          <div className="segmented-control" style={{ width: 140 }}>
-            <button
-              type="button"
-              className={`segmented-btn ${preferences.volumeUnit === 'oz' ? 'active' : ''}`}
-              onClick={() => setPreferences(p => ({ ...p, volumeUnit: 'oz' }))}
-            >
-              Oz (fl oz)
-            </button>
-            <button
-              type="button"
-              className={`segmented-btn ${preferences.volumeUnit === 'ml' ? 'active' : ''}`}
-              onClick={() => setPreferences(p => ({ ...p, volumeUnit: 'ml' }))}
-            >
-              mL
-            </button>
-          </div>
-        </div>
-
-        {/* Weight Units */}
-        <div className="setting-row">
-          <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.weightUnit')}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('settings.weightUnitDesc')}</div>
-          </div>
-          <div className="segmented-control" style={{ width: 140 }}>
-            <button
-              type="button"
-              className={`segmented-btn ${preferences.weightUnit === 'lb' ? 'active' : ''}`}
-              onClick={() => setPreferences(p => ({ ...p, weightUnit: 'lb' }))}
-            >
-              lb / oz
-            </button>
-            <button
-              type="button"
-              className={`segmented-btn ${preferences.weightUnit === 'kg' ? 'active' : ''}`}
-              onClick={() => setPreferences(p => ({ ...p, weightUnit: 'kg' }))}
-            >
-              kg
-            </button>
-          </div>
-        </div>
-
-        {/* Theme Mode */}
-        <div className="setting-row">
-          <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.appearance')}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-              {isZenMode
-                ? (language === 'nl' ? 'Kies tussen Zen Licht en Zen Donker' : 'Choose between Zen Light and Zen Dark')
-                : t('settings.appearanceDesc')}
-            </div>
-          </div>
-          <div className="segmented-control" style={{ width: 230 }}>
-            <button
-              type="button"
-              className={`segmented-btn ${preferences.theme === 'light' || (!preferences.theme) ? 'active' : ''}`}
-              onClick={() => {
-                setPreferences(p => ({ ...p, theme: 'light' }));
-                triggerHaptic('light', preferences?.haptics);
-              }}
-              title={isZenMode ? (language === 'nl' ? 'Zen Licht' : 'Zen Light') : t('header.themeWarmLinen')}
-            >
-              <Sun size={13} style={{ marginRight: 4 }} />
-              {isZenMode ? (language === 'nl' ? 'Zen Licht' : 'Zen Light') : t('settings.themeLight')}
-            </button>
-            <button
-              type="button"
-              className={`segmented-btn ${preferences.theme === 'dark' || preferences.theme === 'oled' ? 'active' : ''}`}
-              onClick={() => {
-                setPreferences(p => ({ ...p, theme: 'dark' }));
-                triggerHaptic('light', preferences?.haptics);
-              }}
-              title={isZenMode ? (language === 'nl' ? 'Zen Donker' : 'Zen Dark') : t('header.themeDark')}
-            >
-              <Moon size={13} style={{ marginRight: 4 }} />
-              {isZenMode ? (language === 'nl' ? 'Zen Donker' : 'Zen Dark') : t('settings.themeDark')}
-            </button>
-          </div>
-        </div>
-
-        {/* Zen Mode Declutter Switch */}
-        <div className="setting-row">
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-              <Flower2 size={15} color="var(--color-terracotta)" />
-              <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.zenModeLabel')}</div>
-            </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('settings.zenModeDesc')}</div>
-          </div>
-          <div className="segmented-control" style={{ width: 170 }}>
-            <button
-              type="button"
-              className={`segmented-btn ${!isZenMode ? 'active' : ''}`}
-              onClick={() => {
-                setPreferences(p => ({ ...p, zenMode: false }));
-                triggerHaptic('light', preferences?.haptics);
-              }}
-            >
-              {t('settings.zenModeOff')}
-            </button>
-            <button
-              type="button"
-              className={`segmented-btn ${isZenMode ? 'active' : ''}`}
-              onClick={() => {
-                setPreferences(p => ({ ...p, zenMode: true }));
-                triggerHaptic('success', preferences?.haptics);
-              }}
-            >
-              <Flower2 size={12} style={{ marginRight: 3 }} /> {t('settings.zenModeOn')}
-            </button>
-          </div>
-        </div>
-
-        {/* Haptic Vibration */}
-        <div className="setting-row">
-          <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('settings.haptics')}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('settings.hapticsDesc')}</div>
-          </div>
-          <div className="segmented-control" style={{ width: 140 }}>
-            <button
-              type="button"
-              className={`segmented-btn ${preferences.haptics !== false ? 'active' : ''}`}
-              onClick={() => {
-                setPreferences(p => ({ ...p, haptics: true }));
-                triggerHaptic('success', true);
-              }}
-            >
-              {t('settings.hapticsOn')}
-            </button>
-            <button
-              type="button"
-              className={`segmented-btn ${preferences.haptics === false ? 'active' : ''}`}
-              onClick={() => setPreferences(p => ({ ...p, haptics: false }))}
-            >
-              {t('settings.hapticsOff')}
-            </button>
-          </div>
-        </div>
-
-        {/* Quick Status & Actions Customization */}
-        <div className="setting-row">
-          <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('customizeQuick.title')}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-              {isDutch
-                ? 'Kies welke statuskaarten en actieknoppen getoond worden'
-                : 'Choose which status cards and dock buttons are displayed'}
-            </div>
-          </div>
-          <button
-            type="button"
-            className="action-pill-btn"
-            onClick={() => {
-              triggerHaptic('light', preferences?.haptics);
-              openModal('CUSTOMIZE_QUICK');
-            }}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              padding: '0.45rem 0.85rem',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              backgroundColor: 'var(--bg-card-subtle)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-full)',
-              color: 'var(--text-primary)',
-              cursor: 'pointer',
-            }}
-          >
-            <Sliders size={13} />
-            <span>{isDutch ? 'Aanpassen' : 'Customize'}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 5. Live Notifications & Android Tray */}
-      <div className="card settings-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                background: 'var(--color-terracotta-light)',
-                color: 'var(--color-terracotta)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Bell size={16} />
-            </div>
-            <div>
-              <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('settings.notificationsTitle')}</h3>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                {t('settings.notificationsDesc')}
-              </p>
-            </div>
-          </div>
-
-          <span
-            style={{
-              fontSize: '0.72rem',
-              fontWeight: 600,
-              padding: '0.2rem 0.6rem',
-              borderRadius: '999px',
-              backgroundColor:
-                notificationPermission === 'granted'
-                  ? 'rgba(46, 125, 50, 0.12)'
-                  : notificationPermission === 'insecure-context'
-                    ? 'rgba(237, 108, 2, 0.12)'
-                    : 'rgba(0, 0, 0, 0.06)',
-              color:
-                notificationPermission === 'granted'
-                  ? '#2E7D32'
-                  : notificationPermission === 'insecure-context'
-                    ? '#ED6C02'
-                    : 'var(--text-secondary)',
-            }}
-          >
-            {notificationPermission === 'granted'
-              ? t('settings.notifActive')
-              : notificationPermission === 'insecure-context'
-                ? t('settings.notifInsecure')
-                : notificationPermission === 'denied'
-                  ? t('settings.notifDenied')
-                  : t('settings.notifDisabled')}
-          </span>
-        </div>
-
-        {/* Insecure Context Warning for Home Server Plain HTTP */}
-        {notificationDiagnostics?.isSecure === false && (
-          <div
-            style={{
-              padding: '0.75rem 0.9rem',
-              backgroundColor: 'rgba(237, 108, 2, 0.08)',
-              border: '1px solid rgba(237, 108, 2, 0.25)',
-              borderRadius: 'var(--radius-md)',
-              fontSize: '0.78rem',
-              color: 'var(--text-primary)',
-              lineHeight: 1.4,
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600, color: '#C25E00', marginBottom: '0.3rem' }}>
-              <AlertTriangle size={15} />
-              {t('settings.insecureTitle')}
-            </div>
-            <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
-              {isDutch
-                ? `Browsers blokkeren meldingen en Service Workers over gewone HTTP LAN-adressen (zoals http://192.168.x.x:3001). Om meldingen op je smartphone te ontvangen:`
-                : `Browsers strictly disable Notifications and Service Workers over plain HTTP LAN addresses (e.g. http://192.168.x.x:3001). To receive notifications on your phone:`}
-            </p>
-            <ul style={{ margin: '0.4rem 0 0 1.2rem', padding: 0, color: 'var(--text-secondary)' }}>
-              <li>
-                <strong>{isDutch ? 'Optie A (Aanbevolen):' : 'Option A (Recommended):'}</strong>{' '}
-                {isDutch ? 'Plaats HTTPS voor je server (bv. Caddy, Nginx Proxy Manager of Cloudflare Tunnel).' : 'Put HTTPS in front of your server (e.g., Caddy, Nginx Proxy Manager, or Cloudflare Tunnel).'}
-              </li>
-              <li>
-                <strong>{isDutch ? 'Optie B (Chrome op Android/desktop):' : 'Option B (Chrome on Android/Desktop):'}</strong>{' '}
-                {isDutch ? 'Open ' : 'Open '}
-                <code>chrome://flags/#unsafely-treat-insecure-origin-as-secure</code>, {isDutch ? 'voeg deze exacte URL toe (' : 'add this exact URL ('}
-                <code>{window.location.origin}</code>), {isDutch ? 'kies ' : 'set to '}
-                <strong>{isDutch ? 'Ingeschakeld' : 'Enabled'}</strong>{isDutch ? ' en herstart Chrome.' : ', and restart Chrome.'}
-              </li>
-            </ul>
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
-          {notificationPermission !== 'granted' && (
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={requestNotificationPermission}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
             >
               <Bell size={14} />
-              <span>{t('settings.enableTray')}</span>
+              <span>{t('reminders.manageReminders')}</span>
             </button>
-          )}
-
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={handleTestAlert}
-            disabled={testAlertStatus?.loading}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
-          >
-            <Send size={14} />
-            <span>{t('settings.sendTestAlert')}</span>
-          </button>
-        </div>
-
-        {/* Test Result Feedback */}
-        {testAlertStatus && (
-          <div
-            style={{
-              padding: '0.6rem 0.85rem',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.78rem',
-              backgroundColor: testAlertStatus.success ? 'rgba(46, 125, 50, 0.1)' : 'rgba(211, 47, 47, 0.1)',
-              color: testAlertStatus.success ? '#2E7D32' : '#D32F2F',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-            }}
-          >
-            {testAlertStatus.success ? <CheckCircle2 size={15} /> : <AlertTriangle size={15} />}
-            <span>{testAlertStatus.message}</span>
-          </div>
-        )}
-      </div>
-
-      {/* 6. Server Connection */}
-      <div className="card settings-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                background: 'rgba(84, 108, 126, 0.15)',
-                color: 'var(--color-slate, #546C7E)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Server size={16} />
-            </div>
-            <div>
-              <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('settings.serverTitle')}</h3>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                {t('settings.serverDesc')}
-              </p>
-            </div>
           </div>
 
-          <span
-            style={{
-              fontSize: '0.72rem',
-              fontWeight: 600,
-              padding: '0.2rem 0.6rem',
-              borderRadius: '999px',
-              backgroundColor: syncService.getServerBaseUrl() ? 'rgba(84, 108, 126, 0.12)' : 'rgba(0, 0, 0, 0.06)',
-              color: syncService.getServerBaseUrl() ? 'var(--color-slate, #546C7E)' : 'var(--text-secondary)',
-              maxWidth: 160,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {syncService.getServerBaseUrl() || t('settings.serverDefault')}
-          </span>
-        </div>
+          <hr className="settings-divider" />
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => openModal('SERVER_SETUP')}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
-          >
-            <Server size={14} />
-            <span>{t('settings.serverEdit')}</span>
-          </button>
+          {/* Part 4: Measurement Units */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div style={{ fontSize: '0.86rem', fontWeight: 600 }}>{t('settings.displayUnits')}</div>
 
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={handleTestServer}
-            disabled={serverTestStatus?.loading}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
-          >
-            <RefreshCw size={14} className={serverTestStatus?.loading ? 'spin' : ''} />
-            <span>{t('settings.serverTestBtn')}</span>
-          </button>
-        </div>
+            {/* Volume */}
+            <div className="setting-row">
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.82rem', fontWeight: 600 }}>
+                  <Droplet size={13} color="var(--color-breast)" />
+                  <span>{t('settings.volumeUnit')}</span>
+                </div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{t('settings.volumeUnitDesc')}</div>
+              </div>
+              <div className="segmented-control settings-control-uniform">
+                <button
+                  type="button"
+                  className={`segmented-btn ${preferences.volumeUnit === 'ml' || !preferences.volumeUnit ? 'active' : ''}`}
+                  onClick={() => {
+                    setPreferences(p => ({ ...p, volumeUnit: 'ml' }));
+                    triggerHaptic('light', preferences?.haptics);
+                  }}
+                >
+                  mL
+                </button>
+                <button
+                  type="button"
+                  className={`segmented-btn ${preferences.volumeUnit === 'oz' ? 'active' : ''}`}
+                  onClick={() => {
+                    setPreferences(p => ({ ...p, volumeUnit: 'oz' }));
+                    triggerHaptic('light', preferences?.haptics);
+                  }}
+                >
+                  fl oz
+                </button>
+              </div>
+            </div>
 
-        {serverTestStatus && (
-          <div
-            style={{
-              padding: '0.6rem 0.85rem',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.78rem',
-              backgroundColor: serverTestStatus.loading
-                ? 'rgba(0, 0, 0, 0.04)'
-                : serverTestStatus.success
-                ? 'rgba(46, 125, 50, 0.1)'
-                : 'rgba(211, 47, 47, 0.1)',
-              color: serverTestStatus.loading
-                ? 'var(--text-secondary)'
-                : serverTestStatus.success
-                ? '#2E7D32'
-                : '#D32F2F',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-            }}
-          >
-            {serverTestStatus.loading ? (
-              <RefreshCw size={14} className="spin" />
-            ) : serverTestStatus.success ? (
-              <CheckCircle2 size={15} />
-            ) : (
-              <AlertTriangle size={15} />
+            {/* Weight */}
+            <div className="setting-row">
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.82rem', fontWeight: 600 }}>
+                  <Scale size={13} color="var(--color-sage)" />
+                  <span>{t('settings.weightUnit')}</span>
+                </div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{t('settings.weightUnitDesc')}</div>
+              </div>
+              <div className="segmented-control settings-control-uniform">
+                <button
+                  type="button"
+                  className={`segmented-btn ${preferences.weightUnit === 'kg' || !preferences.weightUnit ? 'active' : ''}`}
+                  onClick={() => {
+                    setPreferences(p => ({ ...p, weightUnit: 'kg' }));
+                    triggerHaptic('light', preferences?.haptics);
+                  }}
+                >
+                  kg
+                </button>
+                <button
+                  type="button"
+                  className={`segmented-btn ${preferences.weightUnit === 'lb' ? 'active' : ''}`}
+                  onClick={() => {
+                    setPreferences(p => ({ ...p, weightUnit: 'lb' }));
+                    triggerHaptic('light', preferences?.haptics);
+                  }}
+                >
+                  lb
+                </button>
+              </div>
+            </div>
+
+            {/* Temperature */}
+            <div className="setting-row">
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.82rem', fontWeight: 600 }}>
+                  <Thermometer size={13} color="#EF4444" />
+                  <span>{t('settings.tempUnit')}</span>
+                </div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{t('settings.tempUnitDesc')}</div>
+              </div>
+              <div className="segmented-control settings-control-uniform">
+                <button
+                  type="button"
+                  className={`segmented-btn ${preferences.tempUnit === 'C' || !preferences.tempUnit ? 'active' : ''}`}
+                  onClick={() => {
+                    setPreferences(p => ({ ...p, tempUnit: 'C' }));
+                    triggerHaptic('light', preferences?.haptics);
+                  }}
+                >
+                  °C
+                </button>
+                <button
+                  type="button"
+                  className={`segmented-btn ${preferences.tempUnit === 'F' ? 'active' : ''}`}
+                  onClick={() => {
+                    setPreferences(p => ({ ...p, tempUnit: 'F' }));
+                    triggerHaptic('light', preferences?.haptics);
+                  }}
+                >
+                  °F
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <hr className="settings-divider" />
+
+          {/* Part 5: Google Gemini AI API Key */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <Sparkles size={15} color="#9333EA" />
+                  <div style={{ fontSize: '0.86rem', fontWeight: 600 }}>{t('settings.geminiTitle')}</div>
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+                  {t('settings.geminiDesc')}
+                </div>
+              </div>
+
+              <span
+                style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 600,
+                  padding: '0.2rem 0.6rem',
+                  borderRadius: '999px',
+                  backgroundColor: preferences?.geminiApiKey ? 'rgba(34, 197, 94, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                  color: preferences?.geminiApiKey ? '#16A34A' : 'var(--text-secondary)',
+                }}
+              >
+                {preferences?.geminiApiKey ? (isDutch ? '● Actief' : '● Active') : (isDutch ? '○ Niet ingesteld' : '○ Not Configured')}
+              </span>
+            </div>
+
+            <div style={{ position: 'relative', width: '100%' }}>
+              <input
+                type={showGeminiKey ? 'text' : 'password'}
+                className="form-input"
+                placeholder={t('settings.geminiApiKeyPlaceholder')}
+                value={geminiKeyInput}
+                onChange={(e) => setGeminiKeyInput(e.target.value)}
+                style={{ paddingRight: '2.5rem', fontFamily: 'monospace', fontSize: '0.84rem' }}
+              />
+              <button
+                type="button"
+                className="btn-icon-subtle"
+                onClick={() => setShowGeminiKey(!showGeminiKey)}
+                title={showGeminiKey ? 'Verberg sleutel' : 'Toon sleutel'}
+                style={{ position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)' }}
+              >
+                {showGeminiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+              <button
+                type="button"
+                className="settings-action-btn"
+                onClick={handleSaveGeminiKey}
+                style={{ backgroundColor: 'var(--color-terracotta)', color: '#FFFFFF', borderColor: 'var(--color-terracotta)' }}
+              >
+                <span>{t('settings.geminiSaveBtn')}</span>
+              </button>
+
+              <button
+                type="button"
+                className="settings-action-btn"
+                onClick={handleTestGeminiKey}
+                disabled={geminiTestStatus?.loading}
+              >
+                <RefreshCw size={14} className={geminiTestStatus?.loading ? 'spin' : ''} />
+                <span>{t('settings.geminiTestBtn')}</span>
+              </button>
+
+              <a
+                href="https://aistudio.google.com/app/apikey"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontSize: '0.75rem',
+                  color: 'var(--color-daycare)',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  marginLeft: 'auto',
+                }}
+              >
+                <span>Google AI Studio</span>
+                <ExternalLink size={11} />
+              </a>
+            </div>
+
+            {geminiSavedToast && (
+              <span style={{ fontSize: '0.75rem', color: '#16A34A', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                <CheckCircle2 size={14} />
+                <span>{isDutch ? 'API-sleutel opgeslagen!' : 'API Key saved!'}</span>
+              </span>
             )}
-            <span>{serverTestStatus.message}</span>
-          </div>
-        )}
-      </div>
 
-      {/* 6b. Google Gemini AI (Daycare Report Extraction) */}
-      <div className="card settings-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.18), rgba(59, 130, 246, 0.18))',
-                color: '#9333EA',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Sparkles size={16} />
-            </div>
+            {geminiTestStatus && (
+              <div
+                style={{
+                  padding: '0.55rem 0.8rem',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '0.78rem',
+                  backgroundColor: geminiTestStatus.loading
+                    ? 'rgba(0, 0, 0, 0.04)'
+                    : geminiTestStatus.success
+                    ? 'rgba(46, 125, 50, 0.1)'
+                    : 'rgba(211, 47, 47, 0.1)',
+                  color: geminiTestStatus.loading
+                    ? 'var(--text-secondary)'
+                    : geminiTestStatus.success
+                    ? '#2E7D32'
+                    : '#D32F2F',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                }}
+              >
+                {geminiTestStatus.loading ? (
+                  <RefreshCw size={14} className="spin" />
+                ) : geminiTestStatus.success ? (
+                  <CheckCircle2 size={15} />
+                ) : (
+                  <AlertTriangle size={15} />
+                )}
+                <span>{geminiTestStatus.message}</span>
+              </div>
+            )}
+          </div>
+
+          <hr className="settings-divider" />
+
+          {/* Part 6: Security & Sign Out */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
             <div>
-              <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('settings.geminiTitle')}</h3>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                {t('settings.geminiDesc')}
-              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <Lock size={15} color="var(--color-terracotta)" />
+                <div style={{ fontSize: '0.86rem', fontWeight: 600 }}>{t('settings.securityTitle')}</div>
+              </div>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+                {t('settings.securityDesc')}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <button
+                type="button"
+                className="settings-action-btn"
+                onClick={() => openModal('CHANGE_PASSWORD')}
+              >
+                <Key size={14} />
+                <span>{t('settings.changeFamilyPassword')}</span>
+              </button>
+
+              <button
+                type="button"
+                className="settings-action-btn"
+                onClick={logout}
+                style={{ color: 'var(--status-red)' }}
+              >
+                <LogOut size={14} />
+                <span>{t('settings.signOut')}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 4. DATA MANAGEMENT & BACKUP                                              */}
+      {/* ========================================================================= */}
+      {showSection('data') && (
+        <div className="trend-card" style={{ gap: '1.25rem' }}>
+          <div className="trend-card-header">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <div
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(92, 122, 107, 0.12)',
+                  color: 'var(--color-sage, #5C7A6B)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Database size={17} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700 }}>
+                  {t('settings.dataSection')}
+                </h3>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
+                  {t('settings.dataSectionDesc')}
+                </div>
+              </div>
+            </div>
+
+            <span className="settings-scope-badge data">
+              <Database size={10} />
+              {t('settings.badgeData')}
+            </span>
+          </div>
+
+          {/* Import Dropzone */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            <div style={{ fontSize: '0.86rem', fontWeight: 600 }}>{t('settings.importTitle')}</div>
+            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+              {t('settings.importDesc')}
+            </p>
+
+            <div
+              className={`dropzone-box ${dragOver ? 'drag-over' : ''}`}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onClick={() => fileInputRef.current && fileInputRef.current.click()}
+              id="csv-dropzone"
+            >
+              <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                accept=".csv, .json, text/csv, application/json"
+                onChange={(e) => e.target.files && handleFileProcess(e.target.files[0])}
+              />
+              <div className="dropzone-icon">
+                <FileSpreadsheet size={30} />
+              </div>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '0.92rem' }}>{t('settings.dragDropTitle')}</div>
+                <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
+                  {t('settings.dragDropSub')}
+                </div>
+              </div>
+            </div>
+
+            {importError && (
+              <div
+                style={{
+                  backgroundColor: 'var(--status-red-light)',
+                  color: 'var(--status-red)',
+                  padding: '0.65rem 0.85rem',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '0.8rem',
+                }}
+              >
+                ⚠️ {importError}
+              </div>
+            )}
+          </div>
+
+          <hr className="settings-divider" />
+
+          {/* Export & Backups */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: '0.86rem', fontWeight: 600 }}>{t('settings.exportTitle')}</div>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                {t('settings.recordsCount', { count: events.length })}
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={exportCSV}
+                style={{ padding: '0.75rem', flexDirection: 'column', gap: '0.2rem' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600, fontSize: '0.84rem' }}>
+                  <FileSpreadsheet size={15} color="var(--color-sage)" />
+                  {t('settings.exportCsvBtn')}
+                </div>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{t('settings.exportCsvSub')}</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={exportJSON}
+                style={{ padding: '0.75rem', flexDirection: 'column', gap: '0.2rem' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600, fontSize: '0.84rem' }}>
+                  <Download size={15} color="var(--color-slate)" />
+                  {t('settings.exportJsonBtn')}
+                </div>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{t('settings.exportJsonSub')}</span>
+              </button>
             </div>
           </div>
 
-          <span
-            style={{
-              fontSize: '0.72rem',
-              fontWeight: 600,
-              padding: '0.2rem 0.6rem',
-              borderRadius: '999px',
-              backgroundColor: preferences?.geminiApiKey ? 'rgba(34, 197, 94, 0.12)' : 'rgba(0, 0, 0, 0.06)',
-              color: preferences?.geminiApiKey ? '#16A34A' : 'var(--text-secondary)',
-            }}
-          >
-            {preferences?.geminiApiKey ? (isDutch ? '● Actief' : '● Active') : (isDutch ? '○ Niet ingesteld' : '○ Not Configured')}
-          </span>
-        </div>
+          <hr className="settings-divider" />
 
-        {/* API Key Input Field */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-          <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-            {t('settings.geminiApiKeyLabel')}
-          </label>
-          <div style={{ display: 'flex', gap: '0.5rem', position: 'relative' }}>
-            <input
-              type={showGeminiKey ? 'text' : 'password'}
-              className="form-input"
-              placeholder={t('settings.geminiApiKeyPlaceholder')}
-              value={geminiKeyInput}
-              onChange={(e) => setGeminiKeyInput(e.target.value)}
-              style={{ flex: 1, paddingRight: '2.5rem', fontFamily: 'monospace', fontSize: '0.85rem' }}
-            />
+          {/* Sample Data & Clear Data */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
             <button
               type="button"
-              className="btn-icon-subtle"
-              onClick={() => setShowGeminiKey(!showGeminiKey)}
-              title={showGeminiKey ? 'Verberg sleutel' : 'Toon sleutel'}
-              style={{ position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)' }}
+              className="settings-action-btn"
+              onClick={handleLoadDemoData}
             >
-              {showGeminiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+              <Sparkles size={14} color="var(--color-caramel)" />
+              <span>{t('settings.loadSampleBtn')}</span>
             </button>
-          </div>
-          <span style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            <span>{t('settings.geminiKeyHelp')}</span>
-            <a
-              href="https://aistudio.google.com/app/apikey"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: 'var(--color-daycare)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}
-            >
-              <span>Google AI Studio</span>
-              <ExternalLink size={11} />
-            </a>
-          </span>
-        </div>
 
-        {/* Action Buttons */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={handleSaveGeminiKey}
-            style={{ fontSize: '0.82rem', padding: '0.45rem 1rem' }}
-          >
-            <span>{t('settings.geminiSaveBtn')}</span>
-          </button>
-
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={handleTestGeminiKey}
-            disabled={geminiTestStatus?.loading}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
-          >
-            <RefreshCw size={14} className={geminiTestStatus?.loading ? 'spin' : ''} />
-            <span>{t('settings.geminiTestBtn')}</span>
-          </button>
-
-          {geminiSavedToast && (
-            <span style={{ fontSize: '0.78rem', color: '#16A34A', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-              <CheckCircle2 size={14} />
-              <span>{isDutch ? 'Opgeslagen!' : 'Saved!'}</span>
-            </span>
-          )}
-        </div>
-
-        {/* Test Result Status */}
-        {geminiTestStatus && (
-          <div
-            style={{
-              padding: '0.6rem 0.85rem',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.78rem',
-              backgroundColor: geminiTestStatus.loading
-                ? 'rgba(0, 0, 0, 0.04)'
-                : geminiTestStatus.success
-                ? 'rgba(46, 125, 50, 0.1)'
-                : 'rgba(211, 47, 47, 0.1)',
-              color: geminiTestStatus.loading
-                ? 'var(--text-secondary)'
-                : geminiTestStatus.success
-                ? '#2E7D32'
-                : '#D32F2F',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-            }}
-          >
-            {geminiTestStatus.loading ? (
-              <RefreshCw size={14} className="spin" />
-            ) : geminiTestStatus.success ? (
-              <CheckCircle2 size={15} />
-            ) : (
-              <AlertTriangle size={15} />
+            {events.length > 0 && (
+              <button
+                type="button"
+                onClick={handleClear}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  color: 'var(--status-red)',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  padding: '0.4rem 0.6rem',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                <Trash2 size={14} />
+                <span>{t('settings.clearData')}</span>
+              </button>
             )}
-            <span>{geminiTestStatus.message}</span>
-          </div>
-        )}
-      </div>
-
-      {/* 7. Security & Family Password */}
-      <div className="card settings-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: '50%',
-              background: 'var(--color-terracotta-light)',
-              color: 'var(--color-terracotta)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Lock size={16} />
-          </div>
-          <div>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 600 }}>{t('settings.securityTitle')}</h3>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-              {t('settings.securityDesc')}
-            </p>
           </div>
         </div>
-
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => openModal('CHANGE_PASSWORD')}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
-          >
-            <Key size={14} />
-            <span>{t('settings.changeFamilyPassword')}</span>
-          </button>
-
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={logout}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: 'var(--status-red)' }}
-          >
-            <LogOut size={14} />
-            <span>{t('settings.signOut')}</span>
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* App Version & Build Footer */}
-      <div style={{ textAlign: 'center', padding: '0.75rem 0 0.5rem', color: 'var(--text-tertiary)', fontSize: '0.75rem', lineHeight: 1.5 }}>
+      <div style={{ textAlign: 'center', padding: '0.75rem 0 0.5rem', color: 'var(--text-tertiary)', fontSize: '0.74rem', lineHeight: 1.5 }}>
         <div>
           Baby Tracker {typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v1.0'} {typeof __APP_BUILD_NUMBER__ !== 'undefined' && __APP_BUILD_NUMBER__ !== 'dev' ? `(build #${__APP_BUILD_NUMBER__})` : ''}
         </div>

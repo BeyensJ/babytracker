@@ -1002,7 +1002,15 @@ app.post('/api/children/active', (req, res) => {
 // 6. Preferences
 app.post('/api/preferences', (req, res) => {
   try {
-    const { theme: _ignoredTheme, ...sharedPrefs } = req.body;
+    const {
+      theme: _ignoredTheme,
+      zenMode: _ignoredZen,
+      language: _ignoredLang,
+      haptics: _ignoredHaptics,
+      quickStatusCards: _ignoredQuickStatus,
+      quickActionButtons: _ignoredQuickActions,
+      ...sharedPrefs
+    } = req.body;
     const prefs = db.updatePreferences(sharedPrefs);
     broadcast('PREFERENCES_UPDATED', prefs);
     res.json(prefs);
