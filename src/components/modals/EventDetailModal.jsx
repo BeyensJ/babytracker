@@ -39,6 +39,8 @@ import {
   MessageCircle,
   Send,
   School,
+  FileText,
+  ExternalLink,
 } from 'lucide-react';
 import { PumpIcon } from '../icons/PumpIcon';
 
@@ -101,7 +103,9 @@ export function EventDetailModal() {
   const det = currentEvent.details || {};
   const isMetric = preferences.weightUnit === 'kg';
   const isMetricVol = preferences.volumeUnit === 'ml';
-  const photoUrl = currentEvent.photoUrl || det.photoUrl;
+  const rawPhoto = currentEvent.photoUrl || det.photoUrl || det.renderUrl;
+  const isPdfPhoto = typeof rawPhoto === 'string' && rawPhoto.toLowerCase().endsWith('.pdf');
+  const photoUrl = isPdfPhoto ? (det.renderUrl || null) : rawPhoto;
 
   const likes = Array.isArray(currentEvent.likes) ? currentEvent.likes : [];
   const comments = Array.isArray(currentEvent.comments) ? currentEvent.comments : [];
@@ -732,8 +736,8 @@ export function EventDetailModal() {
           {photoUrl && (
             <div className="event-detail-section">
               <div className="event-detail-section-title">
-                <Camera size={14} />
-                <span>{t('eventDetail.photo')}</span>
+                {det.reportUrl ? <FileText size={14} /> : <Camera size={14} />}
+                <span>{det.reportUrl ? (isDutch ? 'Foto / Dagverslag' : 'Photo / Report') : t('eventDetail.photo')}</span>
               </div>
               <div
                 className="event-detail-photo-card"
@@ -760,6 +764,40 @@ export function EventDetailModal() {
                   <span>{t('eventDetail.viewPhoto')}</span>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Daycare Original PDF Document Link */}
+          {det.reportUrl && (
+            <div className="event-detail-section">
+              <div className="event-detail-section-title">
+                <FileText size={14} />
+                <span>{isDutch ? 'Origineel PDF Dagverslag' : 'Original PDF Report'}</span>
+              </div>
+              <a
+                href={syncService.resolveMediaUrl(det.reportUrl)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-secondary"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.65rem 0.95rem',
+                  textDecoration: 'none',
+                  borderRadius: '12px',
+                  marginTop: '0.35rem',
+                  width: '100%',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <FileText size={18} style={{ color: 'var(--color-daycare)' }} />
+                  <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                    {isDutch ? 'Open PDF verslag ↗' : 'Open PDF report ↗'}
+                  </span>
+                </div>
+                <ExternalLink size={15} style={{ opacity: 0.6 }} />
+              </a>
             </div>
           )}
 

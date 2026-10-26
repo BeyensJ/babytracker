@@ -21,6 +21,7 @@ import {
   Camera,
   MessageCircle,
   School,
+  FileText,
 } from 'lucide-react';
 import { PumpIcon } from './icons/PumpIcon';
 
@@ -383,31 +384,39 @@ export function TimelineItem({ event }) {
 
           {event.note && <div className="item-note">{event.note}</div>}
 
-          {(event.photoUrl || det.photoUrl) && (
-            <div className="timeline-item-photo-wrap">
-              <button
-                type="button"
-                className="timeline-item-photo-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowLightbox(true);
-                }}
-                title={isDutch ? 'Foto bekijken' : 'View photo'}
-                aria-label={isDutch ? 'Foto bekijken' : 'View photo'}
-              >
-                <img
-                  src={syncService.resolveMediaUrl(event.photoUrl || det.photoUrl)}
-                  alt={event.note || config.title}
-                  className="timeline-item-photo-img"
-                  loading="lazy"
-                />
-                <div className="timeline-photo-badge">
-                  <Camera size={11} />
-                  <span>{isDutch ? 'Foto' : 'Photo'}</span>
-                </div>
-              </button>
-            </div>
-          )}
+          {(() => {
+            const rawPhoto = event.photoUrl || det.photoUrl || det.renderUrl;
+            const isPdfFile = typeof rawPhoto === 'string' && rawPhoto.toLowerCase().endsWith('.pdf');
+            const displayPhoto = isPdfFile ? (det.renderUrl || null) : rawPhoto;
+
+            if (!displayPhoto) return null;
+
+            return (
+              <div className="timeline-item-photo-wrap">
+                <button
+                  type="button"
+                  className="timeline-item-photo-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowLightbox(true);
+                  }}
+                  title={isDutch ? 'Foto / verslag bekijken' : 'View photo / report'}
+                  aria-label={isDutch ? 'Foto / verslag bekijken' : 'View photo / report'}
+                >
+                  <img
+                    src={syncService.resolveMediaUrl(displayPhoto)}
+                    alt={event.note || config.title}
+                    className="timeline-item-photo-img"
+                    loading="lazy"
+                  />
+                  <div className="timeline-photo-badge">
+                    {det.reportUrl ? <FileText size={11} /> : <Camera size={11} />}
+                    <span>{det.reportUrl ? (isDutch ? 'Verslag' : 'Report') : (isDutch ? 'Foto' : 'Photo')}</span>
+                  </div>
+                </button>
+              </div>
+            );
+          })()}
 
           {det.caregiver && (
             <div className="timeline-item-footer-meta">
@@ -446,16 +455,23 @@ export function TimelineItem({ event }) {
         </div>
       </div>
 
-      {showLightbox && (event.photoUrl || det.photoUrl) && (
-        <PhotoLightbox
-          photoUrl={event.photoUrl || det.photoUrl}
-          caption={event.note || config.title}
-          timestamp={event.beginDt}
-          event={event}
-          language={language}
-          onClose={() => setShowLightbox(false)}
-        />
-      )}
+      {showLightbox && (() => {
+        const rawPhoto = event.photoUrl || det.photoUrl || det.renderUrl;
+        const isPdfFile = typeof rawPhoto === 'string' && rawPhoto.toLowerCase().endsWith('.pdf');
+        const displayPhoto = isPdfFile ? (det.renderUrl || null) : rawPhoto;
+        if (!displayPhoto) return null;
+
+        return (
+          <PhotoLightbox
+            photoUrl={displayPhoto}
+            caption={event.note || config.title}
+            timestamp={event.beginDt}
+            event={event}
+            language={language}
+            onClose={() => setShowLightbox(false)}
+          />
+        );
+      })()}
     </div>
   );
 }
