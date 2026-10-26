@@ -230,6 +230,17 @@
   --color-caramel-light: rgba(251, 191, 36, 0.18);
   --color-caramel-hover: #FCD34D;
 
+  --color-slate: #60A5FA;
+  --color-slate-light: rgba(96, 165, 250, 0.18);
+  --color-slate-hover: #93C5FD;
+
+  --color-berry: #C084FC;
+  --color-berry-light: rgba(192, 132, 252, 0.18);
+  --color-berry-hover: #D8B4FE;
+
+  --color-mustard: #FBBF24;
+  --color-mustard-light: rgba(251, 191, 36, 0.18);
+
   /* Shadows for OLED */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.8);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.9);
@@ -1778,9 +1789,9 @@ input, select, textarea {
 }
 
 .grouped-activity-card.feed { border-left: 3.5px solid var(--color-terracotta); }
-.grouped-activity-card.pump { border-left: 3.5px solid var(--color-berry); }
-.grouped-activity-card.sleep { border-left: 3.5px solid var(--color-slate); }
-.grouped-activity-card.diaper { border-left: 3.5px solid var(--color-sage); }
+.grouped-activity-card.pump { border-left: 3.5px solid var(--color-pump, var(--color-berry)); }
+.grouped-activity-card.sleep { border-left: 3.5px solid var(--color-sleep, var(--color-slate)); }
+.grouped-activity-card.diaper { border-left: 3.5px solid var(--color-diaper, var(--color-sage)); }
 .grouped-activity-card.daycare { border-left: 3.5px solid var(--color-daycare); }
 .grouped-activity-card.other { border-left: 3.5px solid var(--color-caramel); }
 
@@ -1815,9 +1826,9 @@ input, select, textarea {
 }
 
 .grouped-badge-wrap.feed { background-color: var(--color-terracotta-light); color: var(--color-terracotta); }
-.grouped-badge-wrap.pump { background-color: var(--color-berry-light); color: var(--color-berry); }
-.grouped-badge-wrap.sleep { background-color: var(--color-slate-light); color: var(--color-slate); }
-.grouped-badge-wrap.diaper { background-color: var(--color-sage-light); color: var(--color-sage); }
+.grouped-badge-wrap.pump { background-color: var(--color-pump-light, var(--color-berry-light)); color: var(--color-pump, var(--color-berry)); }
+.grouped-badge-wrap.sleep { background-color: var(--color-sleep-light, var(--color-slate-light)); color: var(--color-sleep, var(--color-slate)); }
+.grouped-badge-wrap.diaper { background-color: var(--color-diaper-light, var(--color-sage-light)); color: var(--color-diaper, var(--color-sage)); }
 .grouped-badge-wrap.daycare { background-color: var(--color-daycare-light); color: var(--color-daycare); }
 .grouped-badge-wrap.other { background-color: var(--color-caramel-light); color: var(--color-caramel); }
 
@@ -2286,16 +2297,18 @@ input, select, textarea {
   border-color: rgba(200, 92, 62, 0.28);
 }
 
+.timeline-item-resume-btn.sleep,
 .grouped-item-resume-btn.sleep {
-  background-color: var(--color-slate-light);
-  color: var(--color-slate);
-  border-color: rgba(92, 107, 130, 0.28);
+  background-color: var(--color-sleep-light, var(--color-slate-light));
+  color: var(--color-sleep, var(--color-slate));
+  border-color: rgba(96, 165, 250, 0.28);
 }
 
+.timeline-item-resume-btn.pump,
 .grouped-item-resume-btn.pump {
-  background-color: var(--color-berry-light);
-  color: var(--color-berry);
-  border-color: rgba(162, 79, 114, 0.28);
+  background-color: var(--color-pump-light, var(--color-berry-light));
+  color: var(--color-pump, var(--color-berry));
+  border-color: rgba(192, 132, 252, 0.28);
 }
 
 .grouped-item-resume-btn:hover {
@@ -2321,16 +2334,16 @@ input, select, textarea {
 
 .timeline-item-active-badge.sleep,
 .grouped-item-active-badge.sleep {
-  background-color: rgba(92, 107, 130, 0.12);
-  color: var(--color-slate);
-  border-color: rgba(92, 107, 130, 0.22);
+  background-color: var(--color-sleep-light, rgba(92, 107, 130, 0.12));
+  color: var(--color-sleep, var(--color-slate));
+  border-color: rgba(96, 165, 250, 0.22);
 }
 
 .timeline-item-active-badge.pump,
 .grouped-item-active-badge.pump {
-  background-color: rgba(162, 79, 114, 0.12);
-  color: var(--color-berry);
-  border-color: rgba(162, 79, 114, 0.22);
+  background-color: var(--color-pump-light, rgba(162, 79, 114, 0.12));
+  color: var(--color-pump, var(--color-berry));
+  border-color: rgba(192, 132, 252, 0.22);
 }
 
 .timeline-item-active-badge.daycare,
