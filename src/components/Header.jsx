@@ -87,6 +87,18 @@ export function Header({ onOpenSettings }) {
           <div className="baby-info">
             <div className="baby-name-row">
               <span className="baby-name">{activeChild?.name || 'Baby'}</span>
+              {activeChild?.sickMode?.active && (
+                <span
+                  className="header-sick-pill"
+                  title={isDutch ? 'Ziekte-modus is actief · Tik voor opties' : 'Sick Mode is active · Tap for options'}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openModal('SICK_MODE');
+                  }}
+                >
+                  🤒 {isDutch ? 'Ziek' : 'Sick'}
+                </span>
+              )}
               <ChevronDown size={14} color="var(--text-tertiary)" />
             </div>
             <span className="baby-age">{babyAge}</span>
@@ -184,7 +196,44 @@ export function Header({ onOpenSettings }) {
                 }}
               >
                 <Plus size={16} />
-                Add Another Child
+                {isDutch ? 'Kind toevoegen' : 'Add Another Child'}
+              </button>
+
+              <div style={{ height: 1, backgroundColor: 'var(--border-subtle)', margin: '0.2rem 0' }} />
+
+              <button
+                onClick={() => {
+                  setDropdownOpen(false);
+                  openModal('SICK_MODE');
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.5rem 0.65rem',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: activeChild?.sickMode?.active ? 'var(--color-health-light)' : 'transparent',
+                  color: activeChild?.sickMode?.active ? 'var(--color-health)' : 'var(--text-primary)',
+                  fontWeight: 600,
+                  fontSize: '0.82rem',
+                  width: '100%',
+                }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                  <span>🤒</span>
+                  <span>{isDutch ? 'Ziekte-modus' : 'Sick Mode'}</span>
+                </span>
+                <span
+                  style={{
+                    fontSize: '0.7rem',
+                    padding: '0.1rem 0.4rem',
+                    borderRadius: 999,
+                    backgroundColor: activeChild?.sickMode?.active ? 'var(--color-health)' : 'var(--bg-card-subtle)',
+                    color: activeChild?.sickMode?.active ? '#FFF' : 'var(--text-tertiary)',
+                  }}
+                >
+                  {activeChild?.sickMode?.active ? (isDutch ? 'Actief' : 'Active') : (isDutch ? 'Uit' : 'Off')}
+                </span>
               </button>
             </div>
           </>

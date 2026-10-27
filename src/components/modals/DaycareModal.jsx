@@ -99,9 +99,15 @@ export function DaycareModal() {
 
   // Daycare report attachment
   const [report, setReport] = useState(() => {
-    const url = modalInitialData?.details?.reportUrl || modalInitialData?.photoUrl || null;
-    const type = modalInitialData?.details?.reportType || (url && url.includes('.pdf') ? 'application/pdf' : 'image/jpeg');
-    return url ? { url, type } : null;
+    const rawUrl = modalInitialData?.details?.reportUrl || modalInitialData?.photoUrl || null;
+    const renderUrl = modalInitialData?.details?.renderUrl || (modalInitialData?.photoUrl && !modalInitialData.photoUrl.toLowerCase().includes('.pdf') ? modalInitialData.photoUrl : null);
+    const isPdf = Boolean(
+      modalInitialData?.details?.reportType?.includes('pdf') ||
+      (rawUrl && rawUrl.toLowerCase().includes('.pdf'))
+    );
+    const type = modalInitialData?.details?.reportType || (isPdf ? 'application/pdf' : 'image/jpeg');
+    const url = modalInitialData?.details?.reportUrl || (isPdf ? rawUrl : null) || rawUrl;
+    return (url || renderUrl) ? { url: url || renderUrl, type, renderUrl } : null;
   });
 
   const [extractedCount, setExtractedCount] = useState(() => {
@@ -174,13 +180,16 @@ export function DaycareModal() {
     const durationMs = Math.max(0, endDt - beginDt);
     const finalDaycareName = (daycareName && daycareName.trim()) || preferences?.daycareName || (isDutch ? 'Opvang / Crèche' : 'Daycare');
 
+    // For photoUrl, use the rendered image so photo thumbnails, lightbox, and cards can display the render as an image!
+    const effectivePhoto = report?.renderUrl || (report?.type?.includes('pdf') ? null : report?.url) || null;
+
     const eventPayload = {
       type: 'DAYCARE',
       beginDt,
       endDt,
       durationMs,
       note,
-      photoUrl: report?.url || null,
+      photoUrl: effectivePhoto,
       details: {
         ...(modalInitialData?.details || {}),
         daycareName: finalDaycareName,
@@ -188,6 +197,7 @@ export function DaycareModal() {
         pickUpCaregiver,
         reportUrl: report?.url || null,
         reportType: report?.type || null,
+        renderUrl: report?.renderUrl || null,
         extractedCount,
       },
     };
@@ -613,6 +623,7 @@ export function DaycareModal() {
               <DaycareReportUploader
                 reportUrl={report?.url || null}
                 reportType={report?.type || null}
+                renderUrl={report?.renderUrl || null}
                 onReportChange={(newReport) => setReport(newReport)}
                 daycareName={(daycareName && daycareName.trim()) || preferences?.daycareName || ''}
                 dateStr={dateStr}

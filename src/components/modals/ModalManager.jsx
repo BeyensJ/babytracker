@@ -20,6 +20,8 @@ import { CustomizeQuickModal } from './CustomizeQuickModal';
 import { RemindersModal } from './RemindersModal';
 import { DaycareModal } from './DaycareModal';
 import { ConfirmModal } from './ConfirmModal';
+import { SickModeModal } from './SickModeModal';
+import { DoctorSummaryModal } from './DoctorSummaryModal';
 
 export function ModalManager() {
   const { activeModal, closeModal, confirmDialog } = useApp();
@@ -32,6 +34,8 @@ export function ModalManager() {
       {activeModal === 'CUSTOMIZE_QUICK' && <CustomizeQuickModal />}
       {activeModal === 'REMINDERS' && <RemindersModal />}
       {activeModal === 'DAYCARE' && <DaycareModal />}
+      {activeModal === 'SICK_MODE' && <SickModeModal />}
+      {activeModal === 'DOCTOR_SUMMARY' && <DoctorSummaryModal />}
       {activeModal === 'BREAST' && <BreastfeedModal />}
       {activeModal === 'BOTTLE' && <BottleModal />}
       {activeModal === 'SLEEP' && <SleepModal />}

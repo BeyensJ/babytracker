@@ -1,5 +1,6 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
+import { SickModeBanner } from '../SickModeBanner';
 import { RemindersDueBanner } from '../RemindersDueBanner';
 import { QuickStatusBanner } from '../QuickStatusBanner';
 import { ActiveTimersDock } from '../ActiveTimersDock';
@@ -16,6 +17,7 @@ export function TodayView() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      <SickModeBanner />
       <RemindersDueBanner />
       <QuickStatusBanner />
       <ActiveTimersDock />

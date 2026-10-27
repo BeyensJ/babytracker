@@ -1,8 +1,9 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { syncService } from '../services/syncService';
 import { triggerHaptic } from '../utils/haptics';
 import { formatVolume } from '../utils/formatters';
+import { renderPdfToImage } from '../utils/pdfRenderer';
 import { PhotoLightbox } from './PhotoLightbox';
 import {
   FileText,
@@ -30,12 +31,13 @@ import confetti from 'canvas-confetti';
 export function DaycareReportUploader({
   reportUrl,
   reportType,
+  renderUrl,
   onReportChange,
   daycareName = '',
   dateStr = '',
   onExtractedCountChange,
 }) {
-  const { preferences, addEvent, openModal, closeModal, language, t, activeChild, showAlert } = useApp();
+  const { preferences, addEvent, closeModal, language, t, activeChild, showAlert } = useApp();
   const isDutch = language === 'nl';
   const fileInputRef = useRef(null);
 
@@ -107,9 +109,23 @@ export function DaycareReportUploader({
         reader.readAsDataURL(file);
       });
 
-      setRawFileDataUrl(dataUrl);
+      let renderDataUrl = null;
+      let uploadedRenderUrl = null;
 
-      // Upload to server storage
+      if (isPdf) {
+        try {
+          renderDataUrl = await renderPdfToImage(dataUrl);
+          if (renderDataUrl) {
+            uploadedRenderUrl = await syncService.uploadFile(renderDataUrl);
+          }
+        } catch (pdfErr) {
+          console.error('[DaycareReport] PDF rendering failed:', pdfErr);
+        }
+      }
+
+      setRawFileDataUrl(renderDataUrl || dataUrl);
+
+      // Upload PDF to server storage
       const uploadedUrl = await syncService.uploadFile(dataUrl);
       const mime = isPdf ? 'application/pdf' : (file.type || 'image/jpeg');
 
@@ -118,6 +134,7 @@ export function DaycareReportUploader({
         type: mime,
         name: file.name,
         size: file.size,
+        renderUrl: uploadedRenderUrl || renderDataUrl || null,
       });
 
       triggerHaptic('success', preferences?.haptics);
@@ -127,7 +144,7 @@ export function DaycareReportUploader({
     } finally {
       setIsUploading(false);
     }
-  }, [isDutch, onReportChange, preferences?.haptics]);
+  }, [isDutch, onReportChange, preferences?.haptics, showAlert]);
 
   const handleDrag = useCallback((e) => {
     e.preventDefault();
@@ -296,18 +313,21 @@ export function DaycareReportUploader({
         }
       }
 
+      const effectivePhoto = renderUrl || (isPdfReport ? null : reportUrl) || null;
+
       const eventPayload = {
         type: item.type || 'NOTE',
         beginDt,
         endDt,
         durationMs,
         note: effectiveRemark,
-        photoUrl: reportUrl || null,
+        photoUrl: effectivePhoto,
         details: {
           ...itemDetails,
           source: 'DAYCARE',
           daycareName: daycareName || extractedData.daycareName || '',
           reportUrl: reportUrl || null,
+          renderUrl: renderUrl || null,
           title: item.title || '',
           teacherRemark: effectiveRemark,
         },
@@ -334,6 +354,30 @@ export function DaycareReportUploader({
     reportType?.includes('pdf') ||
     (typeof reportUrl === 'string' && reportUrl.toLowerCase().includes('.pdf'))
   );
+
+  // Lazy-render PDF into image if an existing PDF report doesn't have a render yet
+  useEffect(() => {
+    if (isPdfReport && !renderUrl && reportUrl) {
+      let isMounted = true;
+      (async () => {
+        try {
+          const resolved = syncService.resolveMediaUrl(reportUrl);
+          const rendered = await renderPdfToImage(resolved);
+          if (isMounted && rendered && onReportChange) {
+            const uploaded = await syncService.uploadFile(rendered);
+            onReportChange({
+              url: reportUrl,
+              type: reportType || 'application/pdf',
+              renderUrl: uploaded || rendered,
+            });
+          }
+        } catch (e) {
+          console.warn('[DaycareReport] Lazy PDF render skipped:', e);
+        }
+      })();
+      return () => { isMounted = false; };
+    }
+  }, [isPdfReport, renderUrl, reportUrl, reportType, onReportChange]);
 
   const getEventIcon = (type) => {
     switch (type) {
@@ -427,25 +471,26 @@ export function DaycareReportUploader({
             </div>
 
             <div className="attached-actions">
-              {isPdfReport ? (
+              {(renderUrl || !isPdfReport) && (
+                <button
+                  type="button"
+                  className="btn-icon-subtle"
+                  onClick={() => setShowLightbox(true)}
+                  title={isDutch ? 'Foto / render vergroten' : 'Zoom photo / render'}
+                >
+                  <Eye size={16} />
+                </button>
+              )}
+              {isPdfReport && reportUrl && (
                 <a
                   href={syncService.resolveMediaUrl(reportUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-icon-subtle"
-                  title={isDutch ? 'Open PDF in nieuw tabblad' : 'Open PDF in new tab'}
+                  title={isDutch ? 'Open originele PDF in nieuw tabblad' : 'Open original PDF in new tab'}
                 >
                   <ExternalLink size={16} />
                 </a>
-              ) : (
-                <button
-                  type="button"
-                  className="btn-icon-subtle"
-                  onClick={() => setShowLightbox(true)}
-                  title={isDutch ? 'Foto vergroten' : 'Zoom photo'}
-                >
-                  <Eye size={16} />
-                </button>
               )}
               <button
                 type="button"
@@ -459,7 +504,44 @@ export function DaycareReportUploader({
           </div>
 
           {/* Thumbnail preview */}
-          {isPdfReport ? (
+          {renderUrl ? (
+            <div className="photo-preview-box" onClick={() => setShowLightbox(true)} style={{ position: 'relative' }}>
+              <img
+                src={syncService.resolveMediaUrl(renderUrl)}
+                alt="Daycare report render"
+                className="photo-preview-img"
+              />
+              <div className="photo-zoom-hint">
+                <Eye size={14} />
+                <span>{isDutch ? 'Tik voor vergroting' : 'Tap to zoom'}</span>
+              </div>
+              {isPdfReport && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '8px',
+                    left: '8px',
+                    backgroundColor: 'rgba(15, 23, 42, 0.78)',
+                    color: '#38BDF8',
+                    padding: '3px 8px',
+                    borderRadius: '6px',
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.04em',
+                    backdropFilter: 'blur(4px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    zIndex: 2,
+                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                  }}
+                >
+                  <FileText size={12} />
+                  <span>PDF RENDER</span>
+                </div>
+              )}
+            </div>
+          ) : isPdfReport ? (
             <div
               className="pdf-preview-box"
               onClick={() => window.open(syncService.resolveMediaUrl(reportUrl), '_blank')}
@@ -485,9 +567,9 @@ export function DaycareReportUploader({
           )}
 
           {/* Lightbox for image preview */}
-          {showLightbox && !isPdfReport && (
+          {showLightbox && (renderUrl || !isPdfReport) && (
             <PhotoLightbox
-              photoUrl={syncService.resolveMediaUrl(reportUrl)}
+              photoUrl={syncService.resolveMediaUrl(renderUrl || reportUrl)}
               onClose={() => setShowLightbox(false)}
             />
           )}

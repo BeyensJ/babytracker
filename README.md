@@ -57,6 +57,17 @@ Most commercial baby apps lock your family's most intimate data behind steep rec
 - **Interactive Review & Edit**: Review and fine-tune extracted items before importing them into your child's timeline.
 - **Customizable Default Remarks & Preset Tags**: Configure commonly used daycare notes and quick tags in Settings for rapid entry.
 
+### 🤒 Sick Mode & Pediatric Fever Management
+- **1-Tap Activation**: Toggle Sick Mode when baby catches a cold, fever, or ear infection. A prominent, calm hero dashboard appears at the top of the Timeline and Zen mode.
+- **Safe Medication Dose Timers**: Live pediatric dose countdowns prevent accidental double-dosing or missed doses in the middle of the night:
+  - **Paracetamol / Perdolan / Tylenol**: 4-hour minimum interval and 6-hour standard reminder countdown with 24-hour dose tallies (*"Safe to give"* vs. *"Wait 1h 15m"*).
+  - **Ibuprofen / Nurofen / Motrin**: 6-hour minimum interval countdown with 24-hour dose limits.
+  - **1-Tap Pre-filled Administration**: Instantly open logging with the exact medication, last dosage, and automatic caregiver attribution.
+- **Interactive Fever Curve Chart**: Visual SVG graph tracking temperature readings over time with color-coded threshold zones (Normal `<37.5°C`, Elevated `37.5–38.4°C`, High Fever `≥38.5°C`) and **medication markers** showing whether the fever dropped after a dose.
+- **Hydration & Dehydration Monitor**: Calculates 24-hour fluid intake (bottles and nursing duration) and wet diapers to alert parents against dehydration risk.
+- **Doctor Consultation Summary (Print & Copy)**: 1-click **"Doctor Summary"** report ready to print or copy to clipboard for pediatrician visits or urgent care with patient vitals, illness timeline, medication log table, and temperature history.
+- **Pediatric Red Flags Guidance**: Instant quick-reference guide on when to seek urgent emergency medical care (infants under 3 months, fever > 3 days, lethargy, dehydration).
+
 ### ⏰ Smart Reminders & Overdue Banners
 - **Flexible Recurrence Types**: Schedule reminders **Daily**, **Weekly** (select specific weekdays), **Monthly**, **Every X Hours** (interval timer), or **Once**.
 - **Categorized Reminders**: Link reminders directly to Health (vitamins, medications, vaccines), Feeding (Bottle, Breast), Sleep, Diapers, Daycare Drop-off / Pick-up, or Routines.

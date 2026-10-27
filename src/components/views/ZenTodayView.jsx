@@ -38,6 +38,7 @@ import {
   Utensils,
 } from 'lucide-react';
 import { PumpIcon } from '../icons/PumpIcon';
+import { SickModeBanner } from '../SickModeBanner';
 
 export function ZenTodayView() {
   const {
@@ -589,6 +590,8 @@ export function ZenTodayView() {
 
   return (
     <div className="zen-minimal-container animate-fade-in" id="zen-minimal-container">
+      <SickModeBanner />
+
       {/* 1. Subtle, Quiet Reminder Pill (Only when reminders are overdue) */}
       {dueReminders && dueReminders.length > 0 && (
         <div
