@@ -1077,6 +1077,29 @@ export function SettingsView() {
                       <button
                         type="button"
                         className="settings-action-btn"
+                        style={{
+                          height: 32,
+                          padding: '0 0.55rem',
+                          fontSize: '0.75rem',
+                          color: c.sickMode?.active ? 'var(--color-health)' : 'var(--text-secondary)',
+                          backgroundColor: c.sickMode?.active ? 'var(--color-health-light)' : 'transparent',
+                          borderColor: c.sickMode?.active ? 'var(--color-health)' : 'var(--border-subtle)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                        }}
+                        onClick={() => {
+                          if (!isSelected) setActiveChildId(c.id);
+                          openModal('SICK_MODE');
+                        }}
+                        title={isDutch ? 'Ziekte-modus beheren' : 'Manage Sick Mode'}
+                      >
+                        <span>🤒</span>
+                        <span>{c.sickMode?.active ? (isDutch ? 'Ziek' : 'Sick') : (isDutch ? 'Ziekte-modus' : 'Sick Mode')}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="settings-action-btn"
                         style={{ height: 32, width: 32, padding: 0 }}
                         onClick={() => openModal('CHILD_SETTINGS', c)}
                         aria-label={t('childModal.titleEdit')}
