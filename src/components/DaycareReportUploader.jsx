@@ -207,6 +207,7 @@ export function DaycareReportUploader({
         daycareName: daycareName || '',
         childName: activeChild?.name || 'Baby',
         apiKey: preferences.geminiApiKey,
+        defaultBottleContent: preferences?.defaultBottleContent || 'BREAST_MILK',
       });
 
       if (!res.success) {
@@ -301,7 +302,7 @@ export function DaycareReportUploader({
           itemDetails.inputAmount = volMl;
           itemDetails.amountFed = itemDetails.amountFed || `${volMl} ml`;
         }
-        itemDetails.milkType = itemDetails.milkType || 'FORMULA';
+        itemDetails.milkType = itemDetails.milkType || preferences?.defaultBottleContent || 'BREAST_MILK';
       } else if (item.type === 'SOLIDS') {
         itemDetails.food = itemDetails.food || item.title || (isDutch ? 'Hapje' : 'Meal');
         itemDetails.mealType = itemDetails.mealType || 'Lunch';

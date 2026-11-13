@@ -67,6 +67,7 @@ const DEFAULT_CAREGIVERS = [
 
 const DEFAULT_PREFERENCES = {
   volumeUnit: 'ml', // 'oz' or 'ml'
+  defaultBottleContent: 'BREAST_MILK', // 'BREAST_MILK' or 'FORMULA'
   weightUnit: 'kg', // 'lb' or 'kg'
   lengthUnit: 'cm', // 'in' or 'cm'
   tempUnit: 'C',    // 'F' or 'C'

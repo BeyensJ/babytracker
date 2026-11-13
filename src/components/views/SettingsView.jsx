@@ -38,6 +38,7 @@ import {
   Thermometer,
   Scale,
   Droplet,
+  Milk,
   Languages,
   Vibrate,
 } from 'lucide-react';
@@ -1343,6 +1344,39 @@ export function SettingsView() {
                   }}
                 >
                   °F
+                </button>
+              </div>
+            </div>
+
+            {/* Default Bottle Content */}
+            <div className="setting-row">
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.82rem', fontWeight: 600 }}>
+                  <Milk size={13} color="var(--color-bottle)" />
+                  <span>{t('settings.defaultBottleContent')}</span>
+                </div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{t('settings.defaultBottleContentDesc')}</div>
+              </div>
+              <div className="segmented-control settings-control-uniform">
+                <button
+                  type="button"
+                  className={`segmented-btn ${preferences.defaultBottleContent !== 'FORMULA' ? 'active' : ''}`}
+                  onClick={() => {
+                    setPreferences(p => ({ ...p, defaultBottleContent: 'BREAST_MILK' }));
+                    triggerHaptic('light', preferences?.haptics);
+                  }}
+                >
+                  {t('settings.bottleBreastMilk')}
+                </button>
+                <button
+                  type="button"
+                  className={`segmented-btn ${preferences.defaultBottleContent === 'FORMULA' ? 'active' : ''}`}
+                  onClick={() => {
+                    setPreferences(p => ({ ...p, defaultBottleContent: 'FORMULA' }));
+                    triggerHaptic('light', preferences?.haptics);
+                  }}
+                >
+                  {t('settings.bottleFormula')}
                 </button>
               </div>
             </div>
