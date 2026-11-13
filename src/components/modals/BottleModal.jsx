@@ -56,7 +56,7 @@ export function BottleModal() {
   });
 
   const [milkType, setMilkType] = useState(() => {
-    return modalInitialData?.details?.milkType || 'BREAST_MILK';
+    return modalInitialData?.details?.milkType || preferences?.defaultBottleContent || 'BREAST_MILK';
   });
 
   const [formulaName, setFormulaName] = useState(() => {

@@ -5,6 +5,19 @@ import { formatDurationMs } from '../../utils/formatters';
 import { triggerHaptic } from '../../utils/haptics';
 import { PhotoUploadField } from '../PhotoUploadField';
 
+/**
+ * Convert a millisecond duration into whole minutes and seconds (0-59),
+ * rounding to the nearest second before splitting so 59.5s+ rolls over cleanly.
+ */
+function msToMinutesAndSeconds(ms) {
+  if (!ms || ms <= 0) return { minutes: '', seconds: '' };
+  const totalSeconds = Math.round(ms / 1000);
+  return {
+    minutes: Math.floor(totalSeconds / 60),
+    seconds: totalSeconds % 60,
+  };
+}
+
 export function BreastfeedModal() {
   const {
     activeModal,
@@ -75,27 +88,14 @@ export function BreastfeedModal() {
   };
 
   // Manual logging state
+  const initialLeft = msToMinutesAndSeconds(modalInitialData?.details?.leftDurationMs || modalInitialData?.leftDurationMs || 0);
+  const initialRight = msToMinutesAndSeconds(modalInitialData?.details?.rightDurationMs || modalInitialData?.rightDurationMs || 0);
+
   const [side, setSide] = useState(modalInitialData?.details?.side || modalInitialData?.side || 'LEFT');
-  const [leftMinutes, setLeftMinutes] = useState(() => {
-    const ms = modalInitialData?.details?.leftDurationMs || modalInitialData?.leftDurationMs || 0;
-    if (ms > 0) return Math.floor(ms / 60000);
-    return '';
-  });
-  const [leftSeconds, setLeftSeconds] = useState(() => {
-    const ms = modalInitialData?.details?.leftDurationMs || modalInitialData?.leftDurationMs || 0;
-    if (ms > 0) return Math.round((ms % 60000) / 1000);
-    return '';
-  });
-  const [rightMinutes, setRightMinutes] = useState(() => {
-    const ms = modalInitialData?.details?.rightDurationMs || modalInitialData?.rightDurationMs || 0;
-    if (ms > 0) return Math.floor(ms / 60000);
-    return '';
-  });
-  const [rightSeconds, setRightSeconds] = useState(() => {
-    const ms = modalInitialData?.details?.rightDurationMs || modalInitialData?.rightDurationMs || 0;
-    if (ms > 0) return Math.round((ms % 60000) / 1000);
-    return '';
-  });
+  const [leftMinutes, setLeftMinutes] = useState(initialLeft.minutes);
+  const [leftSeconds, setLeftSeconds] = useState(initialLeft.seconds);
+  const [rightMinutes, setRightMinutes] = useState(initialRight.minutes);
+  const [rightSeconds, setRightSeconds] = useState(initialRight.seconds);
 
   const [photoUrl, setPhotoUrl] = useState(() => modalInitialData?.photoUrl || modalInitialData?.details?.photoUrl || null);
   const [note, setNote] = useState(modalInitialData?.note || '');

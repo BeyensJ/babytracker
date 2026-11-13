@@ -607,7 +607,7 @@ Pay special attention to extracting the exact amount fed for every bottle and so
   If both offered and leftover are written (e.g. "180/30" or "180ml aangeboden, 30ml rest"), calculate the actual amount drank (180 - 30 = 150ml).
   If a fraction is written like "1/2 fles" of a 180ml bottle, calculate the drank amount (90ml).
   Always provide the consumed volume in ml ("volumeMl") and as a readable string ("amountFed", e.g. "150 ml").
-  Also note milkType ("FORMULA", "BREAST_MILK", "WATER", "COW_MILK") and formula brand name if specified.
+  Also note milkType ("FORMULA", "BREAST_MILK", "WATER", "COW_MILK", or null if not explicitly specified) and formula brand name if specified.
 - For SOLIDS: Look for portions and food descriptions (e.g. "180g fruitpap", "200g groentehapje", "1 boterham", "half potje", "alles op").
   Provide the amount / portion in "amountFed" (e.g. "180g", "1 boterham", "3/4 portie") and description in "food" (e.g. "Fruitpap appel/banaan").
 
@@ -638,7 +638,7 @@ Format your response as a valid JSON object matching this exact structure:
         "offeredMl": number or null,       // For BOTTLE: ml offered if specified
         "leftoverMl": number or null,      // For BOTTLE: ml leftover if specified
         "volumeUnit": "ml" | "oz",         // For BOTTLE
-        "milkType": "FORMULA" | "BREAST_MILK" | "WATER" | "COW_MILK",
+        "milkType": "FORMULA" | "BREAST_MILK" | "WATER" | "COW_MILK" | null,
         "formulaName": string or null,     // Brand if specified
         "food": string or null,            // For SOLIDS: e.g. "Fruitpap"
         "mealType": string or null,        // For SOLIDS: "Lunch", "Snack", "Breakfast", "Dinner"
@@ -745,7 +745,7 @@ Format your response as a valid JSON object matching this exact structure:
         }
 
         if (!det.milkType) {
-          det.milkType = 'FORMULA';
+          det.milkType = req.body?.defaultBottleContent || currentState.preferences?.defaultBottleContent || 'BREAST_MILK';
         }
 
         if (det.amountFed && (!ev.title || ev.title.toLowerCase() === 'bottle' || ev.title.toLowerCase() === 'flesje' || ev.title === 'BOTTLE')) {

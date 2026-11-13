@@ -624,10 +624,10 @@ class SyncService {
     }
   }
 
-  async extractDaycareReport({ file, mimeType, date, daycareName, childName, apiKey }) {
+  async extractDaycareReport({ file, mimeType, date, daycareName, childName, apiKey, defaultBottleContent }) {
     const res = await this._fetch('/api/daycare/extract-report', {
       method: 'POST',
-      body: JSON.stringify({ file, mimeType, date, daycareName, childName, apiKey }),
+      body: JSON.stringify({ file, mimeType, date, daycareName, childName, apiKey, defaultBottleContent }),
     });
     if (!res.ok) {
       const errJson = await res.json().catch(() => ({}));
